@@ -1,0 +1,11 @@
+[package]
+name = "teloxide_tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+teloxide = "0.12.2"
+tokio = { version =  "1.38", features = ["rt-multi-thread", "macros"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+proc_macros = { path = "./proc_macros" }
