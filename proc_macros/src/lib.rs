@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Fields};
+use syn::{parse_macro_input, Data, DeriveInput, Fields, TypeGroup};
 
 #[proc_macro_derive(Changeable)]
 pub fn changeable_derive(input: TokenStream) -> TokenStream {
@@ -18,61 +18,84 @@ pub fn changeable_derive(input: TokenStream) -> TokenStream {
                     let field_name = &f.ident;
                     let field_type = &f.ty;
 
-                    // Generate methods that handle Option and &str to String conversion
-                    if let syn::Type::Path(type_path) = field_type {
-                        let last_segment = type_path.path.segments.last().unwrap();
-                        if last_segment.ident == "Option" {
-                            // Idk wtf this does, but somehow i managed to make it work
-                            let inner_type = if let syn::PathArguments::AngleBracketed(args) = &last_segment.arguments {
-                                if let Some(syn::GenericArgument::Type(inner_type)) = args.args.first() {
-                                    inner_type
+                    // Because of regular macros, some of the types can be in a group
+                    let type_path = match field_type {
+                        syn::Type::Path(type_path) => type_path,
+                        syn::Type::Group(ref type_group) => match type_group {
+                            TypeGroup {
+                                group_token: _,
+                                ref elem,
+                            } => {
+                                if let syn::Type::Path(ref type_path) = **elem {
+                                    type_path
                                 } else {
-                                    panic!("Unsupported Option field type")
+                                    panic!("Unsupported field type")
                                 }
+                            }
+                        },
+                        _ => panic!("Unsupported field type"),
+                    };
+
+                    let last_segment = type_path.path.segments.last().unwrap();
+                    if last_segment.ident == "Option" {
+                        // Idk wtf this does, but somehow i managed to make it work
+                        let inner_type = if let syn::PathArguments::AngleBracketed(args) =
+                            &last_segment.arguments
+                        {
+                            if let Some(syn::GenericArgument::Type(inner_type)) = args.args.first()
+                            {
+                                inner_type
                             } else {
                                 panic!("Unsupported Option field type")
-                            };
-
-                            quote! {
-                                // Takes care of the string conversion for free 
-                                // (and everything else that can Into for that matter)
-                                pub fn #field_name<T: Into<#inner_type>>(mut self, value: T) -> Self {
-                                    self.#field_name = Some(value.into());
-                                    self
-                                }
-                            }
-                        // Next is just a bunch of useful conversions, like &str to String, i64 to ChatId etc.
-                        } else if last_segment.ident == "String" {
-                            quote! {
-                                pub fn #field_name<T: Into<String>>(mut self, value: T) -> Self {
-                                    self.#field_name = value.into();
-                                    self
-                                }
-                            }
-                        } else if last_segment.ident == "ChatId" {
-                            quote! {
-                                pub fn #field_name(mut self, value: i64) -> Self {
-                                    self.#field_name = ChatId(value);
-                                    self
-                                }
-                            }
-                        } else if last_segment.ident == "UserId" {
-                            quote! {
-                                pub fn #field_name(mut self, value: u64) -> Self {
-                                    self.#field_name = UserId(value);
-                                    self
-                                }
                             }
                         } else {
-                            quote! {
-                                pub fn #field_name(mut self, value: #field_type) -> Self {
-                                    self.#field_name = value;
-                                    self
-                                }
+                            panic!("Unsupported Option field type")
+                        };
+
+                        quote! {
+                            // Takes care of the string conversion for free
+                            // (and everything else that can Into for that matter)
+                            pub fn #field_name<T: Into<#inner_type>>(mut self, value: T) -> Self {
+                                self.#field_name = Some(value.into());
+                                self
+                            }
+                        }
+                    // Next is just a bunch of useful conversions, like &str to String, i64 to ChatId etc.
+                    } else if last_segment.ident == "String" {
+                        quote! {
+                            pub fn #field_name<T: Into<String>>(mut self, value: T) -> Self {
+                                self.#field_name = value.into();
+                                self
+                            }
+                        }
+                    } else if last_segment.ident == "ChatId" {
+                        quote! {
+                            pub fn #field_name(mut self, value: i64) -> Self {
+                                self.#field_name = ChatId(value);
+                                self
+                            }
+                        }
+                    } else if last_segment.ident == "UserId" {
+                        quote! {
+                            pub fn #field_name(mut self, value: u64) -> Self {
+                                self.#field_name = UserId(value);
+                                self
+                            }
+                        }
+                    } else if last_segment.ident == "MessageId" {
+                        quote! {
+                            pub fn #field_name(mut self, value: i32) -> Self {
+                                self.#field_name = MessageId(value);
+                                self
                             }
                         }
                     } else {
-                        panic!("Unsupported field type")
+                        quote! {
+                            pub fn #field_name(mut self, value: #field_type) -> Self {
+                                self.#field_name = value;
+                                self
+                            }
+                        }
                     }
                 })
             }

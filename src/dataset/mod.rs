@@ -2,6 +2,7 @@ use proc_macros::Changeable;
 use teloxide::types::{ChatPhoto, User, UserId};
 pub mod chat;
 
+pub mod message;
 #[cfg(test)]
 mod tests;
 
@@ -41,7 +42,7 @@ impl MockUser {
         }
     }
 
-    pub fn to_object(self) -> User {
+    pub fn build(self) -> User {
         User {
             id: self.id,
             is_bot: self.is_bot,
@@ -77,7 +78,7 @@ impl MockChatPhoto {
         }
     }
 
-    pub fn to_object(self) -> ChatPhoto {
+    pub fn build(self) -> ChatPhoto {
         ChatPhoto {
             small_file_id: self.small_file_id,
             small_file_unique_id: self.small_file_unique_id,

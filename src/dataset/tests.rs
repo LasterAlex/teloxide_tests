@@ -1,10 +1,15 @@
+
 use proc_macros::Changeable;
-use teloxide::types::{ChatId, True, UserId};
+use teloxide::types::{
+    ChatId, MessageEntity, MessageId, True, UserId,
+};
 
 use crate::dataset::{
-    chat::{MockChannelChat, MockGroupChat, MockPrivateChat, MockSupergroupChat},
-    MockChatPhoto, MockUser,
+    chat::{MockChannelChat, MockGroupChat, MockPrivateChat, MockSupergroupChat, DEFAULT_CHAT_ID},
+    MockChatPhoto, MockUser, DEFAULT_FIRST_NAME,
 };
+
+use super::message::MockMessageText;
 
 #[derive(Changeable)]
 struct Test {
@@ -30,6 +35,10 @@ fn test_changeable() {
     assert_eq!(test.field4, Some(123));
 }
 
+//
+//
+//
+
 #[test]
 fn test_user() {
     let user = MockUser::new()
@@ -38,31 +47,35 @@ fn test_user() {
         .id(1234)
         .username("test_user");
 
-    let user_object = user.to_object();
+    let user_object = user.build();
     assert_eq!(user_object.first_name, "Test");
     assert_eq!(user_object.last_name, Some("User".to_string()));
     assert_eq!(user_object.id, UserId(1234));
     assert_eq!(user_object.username, Some("test_user".to_string()));
 }
 
+//
+//
+//
+
 #[test]
 fn test_public_group_chat() {
     let chat = MockGroupChat::new()
         .title("Test")
         .id(-1234)
-        .photo(MockChatPhoto::new());
+        .photo(MockChatPhoto::new().build());
 
-    let chat_object = chat.to_object();
+    let chat_object = chat.build();
     assert_eq!(chat_object.title(), Some("Test"));
     assert_eq!(chat_object.id, ChatId(-1234));
-    assert_eq!(chat_object.photo, Some(MockChatPhoto::new().to_object()));
+    assert_eq!(chat_object.photo, Some(MockChatPhoto::new().build()));
 }
 
 #[test]
 fn test_supergroup_chat() {
     let chat = MockSupergroupChat::new().join_by_request(True).id(-1234);
 
-    let chat_object = chat.to_object();
+    let chat_object = chat.build();
     assert_eq!(chat_object.id, ChatId(-1234));
     assert_eq!(chat_object.join_by_request(), Some(True));
 }
@@ -74,7 +87,7 @@ fn test_channel_chat() {
         .username("test_channel")
         .id(-1234);
 
-    let chat_object = chat.to_object();
+    let chat_object = chat.build();
     assert_eq!(chat_object.id, ChatId(-1234));
     assert_eq!(chat_object.linked_chat_id(), Some(-12345));
     assert_eq!(chat_object.username(), Some("test_channel"));
@@ -87,8 +100,41 @@ fn test_private_group_chat() {
         .id(1234)
         .bio("Test bio");
 
-    let chat_object = chat.to_object();
+    let chat_object = chat.build();
     assert_eq!(chat_object.first_name(), Some("Test"));
     assert_eq!(chat_object.id, ChatId(1234));
     assert_eq!(chat_object.bio(), Some("Test bio"));
+}
+
+//
+//
+//
+
+#[test]
+fn test_message_common_text() {
+    let simple_message = MockMessageText::new("simple");
+    let simple_message_object = simple_message.build();  // This is now teloxide::types::Message
+    
+    assert_eq!(simple_message_object.text(), Some("simple"));
+    assert_eq!(simple_message_object.from().unwrap().first_name, DEFAULT_FIRST_NAME);
+    assert_eq!(simple_message_object.chat.id, ChatId(DEFAULT_CHAT_ID));  // Some sane default values
+
+
+    let message = MockMessageText::new("text")
+        .id(123)  // If you want - you can change everything by just calling it as a method
+        .from(MockUser::new().first_name("Test").build())  // Sub categories need to be built in separately
+        .chat(MockGroupChat::new().id(-123).build())
+        .is_automatic_forward(true)
+        .entities(vec![MessageEntity::bold(0, 3)]);
+
+    let message_object = message.build();
+    assert_eq!(message_object.text(), Some("text"));
+    assert_eq!(message_object.id, MessageId(123));
+    assert_eq!(message_object.from().unwrap().first_name, "Test");
+    assert_eq!(message_object.chat.id, ChatId(-123));
+    assert_eq!(message_object.is_automatic_forward(), true);
+    assert_eq!(
+        message_object.entities(),
+        Some(vec![MessageEntity::bold(0, 3)]).as_deref()
+    );
 }
