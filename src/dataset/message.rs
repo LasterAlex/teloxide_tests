@@ -4,16 +4,7 @@ use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::*;
 
-use super::{MockLocation, MockPhotoSize, DEFAULT_USER_ID};
-
-pub const DEFAULT_MESSAGE_ID: i32 = 1;
-pub const DEFAULT_IS_TOPIC_MESSAGE: bool = false;
-pub const DEFAULT_IS_AUTOMATIC_FORWARD: bool = false;
-pub const DEFAULT_HAS_PROTECTED_CONTENT: bool = false;
-pub const DEFAULT_HAS_MEDIA_SPOILER: bool = false;
-pub const DEFAULT_POLL_ID: &str = "12345";
-pub const DEFAULT_IS_ANONYMOUS: bool = true;
-pub const DEFAULT_IS_CLOSED: bool = true;
+use super::{MockLocation, MockPhotoSize, MockVideo};
 
 macro_rules! Message {
     (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
@@ -27,9 +18,10 @@ macro_rules! Message {
             $($fpub $field : $type,)*
         }
         impl $name {
+            pub const ID: i32 = 1;
             $pub fn new_message($($field:$type,)*) -> Self{
                 Self {  // To not repeat this over and over again
-                    id: MessageId(DEFAULT_MESSAGE_ID),
+                    id: MessageId($name::ID),
                     thread_id: None,
                     date: Utc::now(),
                     chat: MockPrivateChat::new().build(),
@@ -71,6 +63,10 @@ macro_rules! MessageCommon {
             }
         }
         impl $name {
+            pub const IS_TOPIC_MESSAGE: bool = false;
+            pub const IS_AUTOMATIC_FORWARD: bool = false;
+            pub const HAS_PROTECTED_CONTENT: bool = false;
+
             $pub fn new_message_common($($field:$type,)*) -> Self {
                  $name::new_message(
                      Some(MockUser::new().build()),
@@ -80,9 +76,9 @@ macro_rules! MessageCommon {
                      None,
                      None,
                      None,
-                     DEFAULT_IS_TOPIC_MESSAGE,
-                     DEFAULT_IS_AUTOMATIC_FORWARD,
-                     DEFAULT_HAS_PROTECTED_CONTENT,
+                     $name::IS_TOPIC_MESSAGE,
+                     $name::IS_AUTOMATIC_FORWARD,
+                     $name::HAS_PROTECTED_CONTENT,
                      $($field,)*
                  )
             }
@@ -150,27 +146,28 @@ MessageCommon! {
 }
 
 impl MockMessageAnimation {
-    pub fn new(
-        width: u32,
-        height: u32,
-        duration: u32,
-        file_id: &str,
-        file_unique_id: &str,
-        file_size: u32,
-    ) -> Self {
+    pub const HAS_MEDIA_SPOILER: bool = false;
+    pub const WIDTH: u32 = 50;
+    pub const HEIGHT: u32 = 50;
+    pub const DURATION: u32 = 50;
+    pub const FILE_ID: &'static str = "file_id";
+    pub const UNIQUE_FILE_ID: &'static str = "file_unique_id";
+    pub const FILE_SIZE: u32 = 50;
+
+    pub fn new() -> Self {
         Self::new_message_common(
             None,
             vec![],
-            DEFAULT_HAS_MEDIA_SPOILER,
-            width,
-            height,
-            duration,
+            Self::HAS_MEDIA_SPOILER,
+            Self::WIDTH,
+            Self::HEIGHT,
+            Self::DURATION,
             None,
             None,
             None,
-            file_id.to_string(),
-            file_unique_id.to_string(),
-            file_size,
+            Self::FILE_ID.to_string(),
+            Self::UNIQUE_FILE_ID.to_string(),
+            Self::FILE_SIZE,
         )
     }
 
@@ -218,20 +215,25 @@ MessageCommon! {
 }
 
 impl MockMessageAudio {
-    pub fn new(duration: u32, file_id: &str, file_unique_id: &str, file_size: u32) -> Self {
+    pub const DURATION: u32 = 236;
+    pub const FILE_ID: &'static str = "CQADAgADbQEAAsnrIUpNoRRNsH7_hAI";
+    pub const UNIQUE_FILE_ID: &'static str = "file_unique_id";
+    pub const FILE_SIZE: u32 = 9507774;
+
+    pub fn new() -> Self {
         Self::new_message_common(
             None,
             vec![],
             None,
-            duration,
+            Self::DURATION,
             None,
             None,
             None,
             None,
             None,
-            file_id.to_string(),
-            file_unique_id.to_string(),
-            file_size,
+            Self::FILE_ID.to_string(),
+            Self::UNIQUE_FILE_ID.to_string(),
+            Self::FILE_SIZE,
         )
     }
 
@@ -270,12 +272,15 @@ MessageCommon! {
 }
 
 impl MockMessageContact {
-    pub fn new(phone_number: &str, first_name: &str) -> Self {
+    pub const PHONE_NUMBER: &'static str = "+123456789";
+    pub const FIRST_NAME: &'static str = "First";
+
+    pub fn new() -> Self {
         Self::new_message_common(
-            phone_number.to_string(),
-            first_name.to_string(),
+            Self::PHONE_NUMBER.to_string(),
+            Self::FIRST_NAME.to_string(),
             None,
-            Some(UserId(DEFAULT_USER_ID)),
+            None,
             None,
         )
     }
@@ -312,7 +317,11 @@ MessageCommon! {
 }
 
 impl MockMessageDocument {
-    pub fn new(file_id: &str, file_unique_id: &str, file_size: u32) -> Self {
+    pub const FILE_ID: &'static str = "BQADAgADpgADy_JxS66XQTBRHFleAg";
+    pub const UNIQUE_FILE_ID: &'static str = "file_unique_id";
+    pub const FILE_SIZE: u32 = 21331;
+
+    pub fn new() -> Self {
         Self::new_message_common(
             None,
             vec![],
@@ -320,9 +329,9 @@ impl MockMessageDocument {
             None,
             None,
             None,
-            file_id.to_string(),
-            file_unique_id.to_string(),
-            file_size,
+            Self::FILE_ID.to_string(),
+            Self::UNIQUE_FILE_ID.to_string(),
+            Self::FILE_SIZE,
         )
     }
 
@@ -359,11 +368,14 @@ MessageCommon! {
 }
 
 impl MockMessageGame {
-    pub fn new(title: &str, description: &str, photo: Vec<MockPhotoSize>) -> Self {
+    pub const TITLE: &'static str = "Title";
+    pub const DESCRIPTION: &'static str = "Description";
+
+    pub fn new() -> Self {
         Self::new_message_common(
-            title.to_string(),
-            description.to_string(),
-            photo.iter().map(|ps| ps.clone().build()).collect(),
+            Self::TITLE.to_string(),
+            Self::DESCRIPTION.to_string(),
+            vec![MockPhotoSize::new().build()],
             None,
             None,
             None,
@@ -399,11 +411,14 @@ MessageCommon! {
 }
 
 impl MockMessageVenue {
-    pub fn new(location: MockLocation, title: &str, address: &str) -> Self {
+    pub const TITLE: &'static str = "Title";
+    pub const ADDRESS: &'static str = "Address";
+
+    pub fn new() -> Self {
         Self::new_message_common(
-            location.build(),
-            title.to_string(),
-            address.to_string(),
+            MockLocation::new().build(),
+            Self::TITLE.to_string(),
+            Self::ADDRESS.to_string(),
             None,
             None,
             None,
@@ -440,8 +455,11 @@ MessageCommon! {
 }
 
 impl MockMessageLocation {
-    pub fn new(latitude: f64, longitude: f64) -> Self {
-        Self::new_message_common(latitude, longitude, None, None, None, None)
+    pub const LATITUDE: f64 = 50.0;
+    pub const LONGITUDE: f64 = 30.0;
+
+    pub fn new() -> Self {
+        Self::new_message_common(Self::LATITUDE, Self::LONGITUDE, None, None, None, None)
     }
 
     pub fn build(self) -> Message {
@@ -471,13 +489,15 @@ MessageCommon! {
 }
 
 impl MockMessagePhoto {
-    pub fn new(photo: Vec<MockPhotoSize>) -> Self {
+    pub const HAS_MEDIA_SPOILER: bool = false;
+
+    pub fn new() -> Self {
         Self::new_message_common(
             None,
             vec![],
             None,
-            false,
-            photo.iter().map(|ps| ps.clone().build()).collect(),
+            Self::HAS_MEDIA_SPOILER,
+            vec![MockPhotoSize::new().build()],
         )
     }
 
@@ -513,22 +533,24 @@ MessageCommon! {
 }
 
 impl MockMessagePoll {
-    pub fn new(
-        question: &str,
-        options: Vec<PollOption>,
-        total_voter_count: i32,
-        poll_type: PollType,
-        allows_multiple_answers: bool,
-    ) -> Self {
+    pub const POLL_ID: &'static str = "12345";
+    pub const QUESTION: &'static str = "Question";
+    pub const IS_CLOSED: bool = true;
+    pub const IS_ANONYMOUS: bool = true;
+    pub const TOTAL_VOTER_COUNT: i32 = 50;
+    pub const POLL_TYPE: PollType = PollType::Regular;
+    pub const ALLOW_MULTIPLE_ANSWERS: bool = true;
+
+    pub fn new() -> Self {
         Self::new_message_common(
-            DEFAULT_POLL_ID.to_string(),
-            question.to_string(),
-            options,
-            DEFAULT_IS_CLOSED,
-            total_voter_count,
-            DEFAULT_IS_ANONYMOUS,
-            poll_type,
-            allows_multiple_answers,
+            Self::POLL_ID.to_string(),
+            Self::QUESTION.to_string(),
+            vec![],
+            Self::IS_CLOSED,
+            Self::TOTAL_VOTER_COUNT,
+            Self::IS_ANONYMOUS,
+            Self::POLL_TYPE,
+            Self::ALLOW_MULTIPLE_ANSWERS,
             None,
             None,
             None,
@@ -577,26 +599,28 @@ MessageCommon! {
 }
 
 impl MockMessageSticker {
-    pub fn new(
-        width: u16,
-        height: u16,
-        kind: StickerKind,
-        format: StickerFormat,
-        file_id: String,
-        file_unique_id: String,
-        file_size: u32,
-    ) -> Self {
+    pub const WIDTH: u16 = 512;
+    pub const HEIGHT: u16 = 512;
+    pub const KIND: StickerKind = StickerKind::Regular {
+        premium_animation: None,
+    };
+    pub const FORMAT: StickerFormat = StickerFormat::Raster;
+    pub const FILE_ID: &'static str = "AAbbCCddEEffGGhh1234567890";
+    pub const FILE_UNIQUE_ID: &'static str = "file_unique_id";
+    pub const FILE_SIZE: u32 = 12345;
+
+    pub fn new() -> Self {
         Self::new_message_common(
-            width,
-            height,
-            kind,
-            format,
+            Self::WIDTH,
+            Self::HEIGHT,
+            Self::KIND,
+            Self::FORMAT,
             None,
             None,
             None,
-            file_id,
-            file_unique_id,
-            file_size,
+            Self::FILE_ID.to_string(),
+            Self::FILE_UNIQUE_ID.to_string(),
+            Self::FILE_SIZE,
         )
     }
 
@@ -617,6 +641,42 @@ impl MockMessageSticker {
                     emoji: self.emoji,
                     set_name: self.set_name,
                 },
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageVideo {
+        pub caption: Option<String>,
+        pub caption_entities: Vec<MessageEntity>,
+        pub media_group_id: Option<String>,
+        pub has_media_spoiler: bool,
+        pub video: Video,
+    }
+}
+
+impl MockMessageVideo {
+    pub const HAS_MEDIA_SPOILER: bool = false;
+
+    pub fn new() -> Self {
+        Self::new_message_common(
+            None,
+            vec![],
+            None,
+            Self::HAS_MEDIA_SPOILER,
+            MockVideo::new().build(),
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Video(MediaVideo {
+                caption: self.caption,
+                caption_entities: self.caption_entities,
+                media_group_id: self.media_group_id,
+                has_media_spoiler: self.has_media_spoiler,
+                video: self.video,
             }))
     }
 }

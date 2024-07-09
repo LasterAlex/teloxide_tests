@@ -1,7 +1,5 @@
 use proc_macros::Changeable;
-use teloxide::types::{
-    ChatId, MessageEntity, MessageId, PollType, StickerFormat, StickerKind, True, UserId,
-};
+use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
 
 use crate::dataset::{chat::*, message::*, *};
 
@@ -52,7 +50,7 @@ fn test_user() {
 
 #[test]
 fn test_location() {
-    let location = MockLocation::new(0.0, 1.0);
+    let location = MockLocation::new().latitude(0.0).longitude(1.0);
     let location_object = location.build();
     assert_eq!(location_object.latitude, 0.0);
     assert_eq!(location_object.longitude, 1.0);
@@ -122,9 +120,10 @@ fn test_message_common_text() {
     assert_eq!(simple_message_object.text(), Some("simple"));
     assert_eq!(
         simple_message_object.from().unwrap().first_name,
-        DEFAULT_FIRST_NAME
+        MockUser::FIRST_NAME
     );
-    assert_eq!(simple_message_object.chat.id, ChatId(DEFAULT_CHAT_ID)); // Some sane default values
+    assert_eq!(simple_message_object.chat.id, ChatId(MockUser::ID as i64)); // Some sane default values
+    // User id because it is a private chat
 
     let message = MockMessageText::new("text")
         .id(123) // If you want - you can change everything by just calling it as a method
@@ -147,7 +146,7 @@ fn test_message_common_text() {
 
 #[test]
 fn test_message_common_animation() {
-    let message = MockMessageAnimation::new(10, 10, 100, "file_id", "file_unique_id", 50)
+    let message = MockMessageAnimation::new()
         .caption("caption")
         .caption_entities(vec![MessageEntity::bold(0, 3)]);
 
@@ -161,7 +160,7 @@ fn test_message_common_animation() {
 
 #[test]
 fn test_message_common_audio() {
-    let message = MockMessageAudio::new(100, "file_id", "file_unique_id", 50)
+    let message = MockMessageAudio::new()
         .caption("caption")
         .caption_entities(vec![MessageEntity::bold(0, 3)])
         .media_group_id("123");
@@ -177,16 +176,19 @@ fn test_message_common_audio() {
 
 #[test]
 fn test_message_common_contact() {
-    let message = MockMessageContact::new("phone_number", "first_name")
+    let message = MockMessageContact::new()
         .last_name("last_name")
         .vcard("vcard");
 
     let message_object = message.build();
     assert_eq!(
         message_object.contact().unwrap().phone_number,
-        "phone_number"
+        MockMessageContact::PHONE_NUMBER
     );
-    assert_eq!(message_object.contact().unwrap().first_name, "first_name");
+    assert_eq!(
+        message_object.contact().unwrap().first_name,
+        MockUser::FIRST_NAME
+    );
     assert_eq!(
         message_object.contact().unwrap().last_name,
         Some("last_name".to_string())
@@ -199,7 +201,7 @@ fn test_message_common_contact() {
 
 #[test]
 fn test_message_common_document() {
-    let message = MockMessageDocument::new("file_id", "file_unique_id", 50)
+    let message = MockMessageDocument::new()
         .caption("caption")
         .caption_entities(vec![MessageEntity::bold(0, 3)]);
 
@@ -213,83 +215,87 @@ fn test_message_common_document() {
 
 #[test]
 fn test_message_common_game() {
-    let message = MockMessageGame::new(
-        "test",
-        "description",
-        vec![MockPhotoSize::new(
-            90,
-            51,
-            "AgADBAADFak0G88YZAf8OAug7bHyS9x2ZxkABHVfpJywcloRAAGAAQABAg",
-            "file_unique_id",
-            1101,
-        )],
-    );
+    let message = MockMessageGame::new();
 
     let message_object = message.build();
-    assert_eq!(message_object.game().unwrap().title, "test");
-    assert_eq!(message_object.game().unwrap().description, "description");
+    assert_eq!(message_object.game().unwrap().title, MockMessageGame::TITLE);
+    assert_eq!(
+        message_object.game().unwrap().description,
+        MockMessageGame::DESCRIPTION
+    );
 }
 
 #[test]
 fn test_message_common_venue() {
-    let message = MockMessageVenue::new(MockLocation::new(0.0, 0.0), "title", "address");
+    let message = MockMessageVenue::new();
 
     let message_object = message.build();
-    assert_eq!(message_object.venue().unwrap().title, "title");
-    assert_eq!(message_object.venue().unwrap().address, "address");
+    assert_eq!(
+        message_object.venue().unwrap().title,
+        MockMessageVenue::TITLE
+    );
+    assert_eq!(
+        message_object.venue().unwrap().address,
+        MockMessageVenue::ADDRESS
+    );
 }
 
 #[test]
 fn test_message_common_location() {
-    let message = MockMessageLocation::new(0.0, 1.0);
+    let message = MockMessageLocation::new();
 
     let message_object = message.build();
-    assert_eq!(message_object.location().unwrap().latitude, 0.0);
-    assert_eq!(message_object.location().unwrap().longitude, 1.0);
+    assert_eq!(
+        message_object.location().unwrap().latitude,
+        MockMessageLocation::LATITUDE
+    );
+    assert_eq!(
+        message_object.location().unwrap().longitude,
+        MockMessageLocation::LONGITUDE
+    );
 }
 
 #[test]
 fn test_message_common_photo() {
-    let message = MockMessagePhoto::new(vec![MockPhotoSize::new(
-        90,
-        51,
-        "AgADBAADFak0G88YZAf8OAug7bHyS9x2ZxkABHVfpJywcloRAAGAAQABAg",
-        "file_unique_id",
-        1101,
-    )]);
+    let message = MockMessagePhoto::new();
 
     let message_object = message.build();
-    assert_eq!(message_object.photo().unwrap()[0].width, 90);
-    assert_eq!(message_object.photo().unwrap()[0].height, 51);
+    assert_eq!(
+        message_object.photo().unwrap()[0].width,
+        MockPhotoSize::WIDTH
+    );
+    assert_eq!(
+        message_object.photo().unwrap()[0].height,
+        MockPhotoSize::HEIGHT
+    );
 }
 
 #[test]
 fn test_message_common_poll() {
-    let message = MockMessagePoll::new("question", vec![], 0, PollType::Quiz, false);
+    let message = MockMessagePoll::new();
 
     let message_object = message.build();
-    assert_eq!(message_object.poll().unwrap().question, "question");
-    assert_eq!(message_object.poll().unwrap().poll_type, PollType::Quiz);
+    assert_eq!(
+        message_object.poll().unwrap().question,
+        MockMessagePoll::QUESTION
+    );
+    assert_eq!(
+        message_object.poll().unwrap().poll_type,
+        MockMessagePoll::POLL_TYPE
+    );
 }
 
 #[test]
 fn test_message_common_sticker() {
-    let message = MockMessageSticker::new(
-        100,
-        100,
-        StickerKind::Regular {
-            premium_animation: None,
-        },
-        StickerFormat::Raster,
-        "file_id".to_string(),
-        "file_unique_id".to_string(),
-        50,
-    );
+    let message = MockMessageSticker::new();
 
     let message_object = message.build();
-    assert_eq!(message_object.sticker().unwrap().file.id, "file_id");
+    assert_eq!(
+        message_object.sticker().unwrap().file.id,
+        MockMessageSticker::FILE_ID
+    );
     assert_eq!(
         message_object.sticker().unwrap().format,
-        StickerFormat::Raster
+        MockMessageSticker::FORMAT
     );
 }

@@ -4,10 +4,7 @@ use teloxide::types::{
     Message, PublicChatChannel, PublicChatGroup, PublicChatKind, PublicChatSupergroup, True,
 };
 
-pub const DEFAULT_CHAT_ID: i64 = -12345678;
-pub const DEFAULT_AGGRESSIVE_ANTI_SPAM_ENABLED: bool = false;
-pub const DEFAULT_HAS_HIDDEN_MEMBERS: bool = false;
-pub const DEFAULT_IS_FORUM: bool = false;
+use super::MockUser;
 
 macro_rules! Chat {
     (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
@@ -22,14 +19,18 @@ macro_rules! Chat {
             $($fpub $field : $type,)*
         }
         impl $name {
+            pub const ID: i64 = -12345678;
+            pub const HAS_HIDDEN_MEMBERS: bool = false;
+            pub const AGGRESSIVE_ANTI_SPAM_ENABLED: bool = false;
+
             $pub fn new_chat($($field:$type,)*) -> Self{
                 Self {  // To not repeat this over and over again
-                    id: ChatId(DEFAULT_CHAT_ID),
+                    id: ChatId(Self::ID),
                     photo: None,
                     pinned_message: None,
                     message_auto_delete_time: None,
-                    has_hidden_members: DEFAULT_HAS_HIDDEN_MEMBERS,
-                    has_aggressive_anti_spam_enabled: DEFAULT_AGGRESSIVE_ANTI_SPAM_ENABLED,
+                    has_hidden_members: Self::HAS_HIDDEN_MEMBERS,
+                    has_aggressive_anti_spam_enabled: Self::AGGRESSIVE_ANTI_SPAM_ENABLED,
                     $($field,)*
                 }
             }
@@ -145,11 +146,13 @@ PublicChat! {
 }
 
 impl MockSupergroupChat {
+    pub const IS_FORUM: bool = false;
+
     pub fn new() -> Self {
         Self::new_public_chat(
             None,
             None,
-            DEFAULT_IS_FORUM,
+            Self::IS_FORUM,
             None,
             None,
             None,
@@ -194,7 +197,7 @@ Chat! {
 
 impl MockPrivateChat {
     pub fn new() -> Self {
-        Self::new_chat(None, None, None, None, None, None, None)
+        Self::new_chat(None, None, None, None, None, None, None).id(MockUser::ID as i64)
     }
 
     pub fn build(self) -> Chat {
