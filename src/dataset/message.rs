@@ -3,8 +3,10 @@ use chrono::{DateTime, Utc};
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    Animation, Audio, Chat, FileMeta, Forward, InlineKeyboardMarkup, MediaAnimation, MediaAudio, MediaKind, MediaText, Message, MessageCommon, MessageEntity, MessageId, MessageKind, PhotoSize, User
+    Animation, Audio, Chat, Contact, Document, FileMeta, Forward, InlineKeyboardMarkup, MediaAnimation, MediaAudio, MediaContact, MediaDocument, MediaKind, MediaText, Message, MessageCommon, MessageEntity, MessageId, MessageKind, PhotoSize, User, UserId
 };
+
+use super::DEFAULT_USER_ID;
 
 pub const DEFAULT_MESSAGE_ID: i32 = 1;
 pub const DEFAULT_IS_TOPIC_MESSAGE: bool = false;
@@ -252,5 +254,91 @@ impl MockMessageAudio {
                     mime_type: self.mime_type,
                 },
             }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageContact {
+        pub phone_number: String,
+        pub first_name: String,
+        pub last_name: Option<String>,
+        pub user_id: Option<UserId>,
+        pub vcard: Option<String>,
+    }
+}
+
+impl MockMessageContact {
+    pub fn new(phone_number: &str, first_name: &str) -> Self {
+        Self::new_message_common(
+            phone_number.to_string(),
+            first_name.to_string(),
+            None,
+            Some(UserId(DEFAULT_USER_ID)),
+            None,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone().build_message_common(MediaKind::Contact(MediaContact {
+            contact: Contact {
+                phone_number: self.phone_number,
+                first_name: self.first_name,
+                last_name: self.last_name,
+                user_id: self.user_id,
+                vcard: self.vcard,
+            },
+        }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageDocument {
+        pub caption: Option<String>,
+        pub caption_entities: Vec<MessageEntity>,
+        pub media_group_id: Option<String>,
+        // Document
+        pub thumb: Option<PhotoSize>,
+        pub file_name: Option<String>,
+        pub mime_type: Option<Mime>,
+        // FileMeta
+        pub file_id: String,
+        pub file_unique_id: String,
+        pub file_size: u32,
+    }
+}
+
+impl MockMessageDocument {
+    pub fn new(file_id: &str, file_unique_id: &str, file_size: u32) -> Self {
+        Self::new_message_common(
+            None,
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            file_id.to_string(),
+            file_unique_id.to_string(),
+            file_size,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone().build_message_common(MediaKind::Document(MediaDocument {
+            caption: self.caption,
+            caption_entities: self.caption_entities,
+            media_group_id: self.media_group_id,
+            document: Document {
+                file: FileMeta {
+                    id: self.file_id,
+                    unique_id: self.file_unique_id,
+                    size: self.file_size,
+                },
+                thumb: self.thumb,
+                file_name: self.file_name,
+                mime_type: self.mime_type,
+            },
+        }))
     }
 }

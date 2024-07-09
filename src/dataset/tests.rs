@@ -3,7 +3,7 @@ use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
 
 use crate::dataset::{
     chat::{MockChannelChat, MockGroupChat, MockPrivateChat, MockSupergroupChat, DEFAULT_CHAT_ID},
-    message::{MockMessageAnimation, MockMessageAudio},
+    message::{MockMessageAnimation, MockMessageAudio, MockMessageContact, MockMessageDocument},
     MockChatPhoto, MockUser, DEFAULT_FIRST_NAME,
 };
 
@@ -166,4 +166,31 @@ fn test_message_common_audio() {
         Some(vec![MessageEntity::bold(0, 3)]).as_deref()
     );
     assert_eq!(message_object.media_group_id(), Some("123"));
+}
+
+#[test]
+fn test_message_common_contact() {
+    let message = MockMessageContact::new("phone_number", "first_name")
+        .last_name("last_name")
+        .vcard("vcard");
+
+    let message_object = message.build();
+    assert_eq!(message_object.contact().unwrap().phone_number, "phone_number");
+    assert_eq!(message_object.contact().unwrap().first_name, "first_name");
+    assert_eq!(message_object.contact().unwrap().last_name, Some("last_name".to_string()));
+    assert_eq!(message_object.contact().unwrap().vcard, Some("vcard".to_string()));
+}
+
+#[test]
+fn test_message_common_document() {
+    let message = MockMessageDocument::new("file_id", "file_unique_id", 50)
+        .caption("caption")
+        .caption_entities(vec![MessageEntity::bold(0, 3)]);
+
+    let message_object = message.build();
+    assert_eq!(message_object.caption(), Some("caption"));
+    assert_eq!(
+        message_object.caption_entities(),
+        Some(vec![MessageEntity::bold(0, 3)]).as_deref()
+    );
 }
