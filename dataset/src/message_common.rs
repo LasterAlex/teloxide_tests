@@ -1,5 +1,5 @@
 use super::{MockLocation, MockPhotoSize, MockVideo};
-use crate::dataset::{chat::MockPrivateChat, MockUser};
+use crate::{chat::MockPrivateChat, MockUser};
 use crate::Message;
 use chrono::{DateTime, Utc};
 use mime::Mime;

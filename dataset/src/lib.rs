@@ -4,10 +4,10 @@ use teloxide::types::{ChatPhoto, FileMeta, Location, PhotoSize, User, UserId, Vi
 pub mod chat;
 
 pub mod message_common;
-#[cfg(test)]
-mod tests;
 pub mod message;
 pub mod queries;
+#[cfg(test)]
+mod tests;
 
 //
 //
@@ -224,3 +224,4 @@ impl MockVideo {
         }
     }
 }
+

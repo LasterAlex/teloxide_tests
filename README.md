@@ -1,8 +1,8 @@
 # Teloxide tests
 
-I am trying to make tests for teloxide by bot mocking.
+I am trying to make tests for teloxide using fake server and a bot with an url to that server.
 
-The mocking shouldn't be very difficult. Complex - yes, but it isn't what was holding back that issue. The problem is an easy way to make test objects and check the request data. That's why im prioritizing it now.
+Basic dataset is done, now of concern is a fake server.
 
 ## Todo
 
@@ -12,6 +12,12 @@ The mocking shouldn't be very difficult. Complex - yes, but it isn't what was ho
     - [ ] Add dataset of queries (low priority)
     - [ ] Add dataset of messages (low priority)
     - [ ] Add structs without a category (low priority)
-- [ ] Add the bot mocking
-- [ ] Try to think of a good way to compare the behaviour of the bot
+- [ ] Add fake server
+    - [ ] Add most common endpoints
+    - [ ] Add tests
+    - [ ] Add all common messages (low priority)
+    - [ ] Add all queries (low priority)
+    - [ ] Add all messages (super low priority)
+    - [ ] Add everything else (may never be done)
+- [ ] Make mocked bot that sends requests to fake server
 - [ ] Make it into a library

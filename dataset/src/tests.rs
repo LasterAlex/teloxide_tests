@@ -1,4 +1,4 @@
-use crate::dataset::{chat::*, message_common::*, *};
+use crate::{chat::*, message_common::*, *};
 use proc_macros::Changeable;
 use queries::MockCallbackQuery;
 use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
@@ -131,6 +131,7 @@ fn test_message_common_text() {
         .entities(vec![MessageEntity::bold(0, 3)]);
 
     let message_object = message.build();
+
     assert_eq!(message_object.text(), Some("text"));
     assert_eq!(message_object.id, MessageId(123));
     assert_eq!(message_object.from().unwrap().first_name, "Test");
