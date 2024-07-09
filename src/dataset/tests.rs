@@ -1,5 +1,7 @@
 use proc_macros::Changeable;
-use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
+use teloxide::types::{
+    ChatId, MessageEntity, MessageId, PollType, StickerFormat, StickerKind, True, UserId,
+};
 
 use crate::dataset::{chat::*, message::*, *};
 
@@ -259,4 +261,35 @@ fn test_message_common_photo() {
     let message_object = message.build();
     assert_eq!(message_object.photo().unwrap()[0].width, 90);
     assert_eq!(message_object.photo().unwrap()[0].height, 51);
+}
+
+#[test]
+fn test_message_common_poll() {
+    let message = MockMessagePoll::new("question", vec![], 0, PollType::Quiz, false);
+
+    let message_object = message.build();
+    assert_eq!(message_object.poll().unwrap().question, "question");
+    assert_eq!(message_object.poll().unwrap().poll_type, PollType::Quiz);
+}
+
+#[test]
+fn test_message_common_sticker() {
+    let message = MockMessageSticker::new(
+        100,
+        100,
+        StickerKind::Regular {
+            premium_animation: None,
+        },
+        StickerFormat::Raster,
+        "file_id".to_string(),
+        "file_unique_id".to_string(),
+        50,
+    );
+
+    let message_object = message.build();
+    assert_eq!(message_object.sticker().unwrap().file.id, "file_id");
+    assert_eq!(
+        message_object.sticker().unwrap().format,
+        StickerFormat::Raster
+    );
 }

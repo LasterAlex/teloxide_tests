@@ -2,12 +2,7 @@ use crate::dataset::{chat::MockPrivateChat, MockUser};
 use chrono::{DateTime, Utc};
 use mime::Mime;
 use proc_macros::Changeable;
-use teloxide::types::{
-    Animation, Audio, Chat, Contact, Document, FileMeta, Forward, Game, InlineKeyboardMarkup,
-    Location, MediaAnimation, MediaAudio, MediaContact, MediaDocument, MediaGame, MediaKind,
-    MediaLocation, MediaPhoto, MediaText, MediaVenue, Message, MessageCommon, MessageEntity,
-    MessageId, MessageKind, PhotoSize, User, UserId, Venue,
-};
+use teloxide::types::*;
 
 use super::{MockLocation, MockPhotoSize, DEFAULT_USER_ID};
 
@@ -16,6 +11,9 @@ pub const DEFAULT_IS_TOPIC_MESSAGE: bool = false;
 pub const DEFAULT_IS_AUTOMATIC_FORWARD: bool = false;
 pub const DEFAULT_HAS_PROTECTED_CONTENT: bool = false;
 pub const DEFAULT_HAS_MEDIA_SPOILER: bool = false;
+pub const DEFAULT_POLL_ID: &str = "12345";
+pub const DEFAULT_IS_ANONYMOUS: bool = true;
+pub const DEFAULT_IS_CLOSED: bool = true;
 
 macro_rules! Message {
     (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
@@ -491,6 +489,134 @@ impl MockMessagePhoto {
                 media_group_id: self.media_group_id,
                 has_media_spoiler: self.has_media_spoiler,
                 photo: self.photo,
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessagePoll {
+        pub poll_id: String,
+        pub question: String,
+        pub options: Vec<PollOption>,
+        pub is_closed: bool,
+        pub total_voter_count: i32,
+        pub is_anonymous: bool,
+        pub poll_type: PollType,
+        pub allows_multiple_answers: bool,
+        pub correct_option_id: Option<u8>,
+        pub explanation: Option<String>,
+        pub explanation_entities: Option<Vec<MessageEntity>>,
+        pub open_period: Option<u16>,
+        pub close_date: Option<DateTime<Utc>>,
+    }
+}
+
+impl MockMessagePoll {
+    pub fn new(
+        question: &str,
+        options: Vec<PollOption>,
+        total_voter_count: i32,
+        poll_type: PollType,
+        allows_multiple_answers: bool,
+    ) -> Self {
+        Self::new_message_common(
+            DEFAULT_POLL_ID.to_string(),
+            question.to_string(),
+            options,
+            DEFAULT_IS_CLOSED,
+            total_voter_count,
+            DEFAULT_IS_ANONYMOUS,
+            poll_type,
+            allows_multiple_answers,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Poll(MediaPoll {
+                poll: Poll {
+                    id: self.poll_id,
+                    question: self.question,
+                    options: self.options,
+                    is_closed: self.is_closed,
+                    total_voter_count: self.total_voter_count,
+                    is_anonymous: self.is_anonymous,
+                    poll_type: self.poll_type,
+                    allows_multiple_answers: self.allows_multiple_answers,
+                    correct_option_id: self.correct_option_id,
+                    explanation: self.explanation,
+                    explanation_entities: self.explanation_entities,
+                    open_period: self.open_period,
+                    close_date: self.close_date,
+                },
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageSticker {
+        pub width: u16,
+        pub height: u16,
+        pub kind: StickerKind,
+        pub format: StickerFormat,
+        pub thumb: Option<PhotoSize>,
+        pub emoji: Option<String>,
+        pub set_name: Option<String>,
+        // File meta
+        pub file_id: String,
+        pub file_unique_id: String,
+        pub file_size: u32,
+    }
+}
+
+impl MockMessageSticker {
+    pub fn new(
+        width: u16,
+        height: u16,
+        kind: StickerKind,
+        format: StickerFormat,
+        file_id: String,
+        file_unique_id: String,
+        file_size: u32,
+    ) -> Self {
+        Self::new_message_common(
+            width,
+            height,
+            kind,
+            format,
+            None,
+            None,
+            None,
+            file_id,
+            file_unique_id,
+            file_size,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Sticker(MediaSticker {
+                sticker: Sticker {
+                    file: FileMeta {
+                        id: self.file_id,
+                        unique_id: self.file_unique_id,
+                        size: self.file_size,
+                    },
+                    width: self.width,
+                    height: self.height,
+                    kind: self.kind,
+                    format: self.format,
+                    thumb: self.thumb,
+                    emoji: self.emoji,
+                    set_name: self.set_name,
+                },
             }))
     }
 }
