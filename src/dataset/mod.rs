@@ -1,5 +1,5 @@
 use proc_macros::Changeable;
-use teloxide::types::{ChatPhoto, User, UserId};
+use teloxide::types::{ChatPhoto, FileMeta, Location, PhotoSize, User, UserId};
 pub mod chat;
 
 pub mod message;
@@ -84,6 +84,80 @@ impl MockChatPhoto {
             small_file_unique_id: self.small_file_unique_id,
             big_file_id: self.big_file_id,
             big_file_unique_id: self.big_file_unique_id,
+        }
+    }
+}
+
+#[derive(Changeable, Clone)]
+pub struct MockLocation {
+    pub latitude: f64,
+    pub longitude: f64,
+    pub horizontal_accuracy: Option<f64>,
+    pub live_period: Option<u32>,
+    pub heading: Option<u16>,
+    pub proximity_alert_radius: Option<u32>,
+}
+
+impl MockLocation {
+    pub fn new(latitude: f64, longitude: f64) -> Self {
+        Self {
+            latitude,
+            longitude,
+            horizontal_accuracy: None,
+            live_period: None,
+            heading: None,
+            proximity_alert_radius: None,
+        }
+    }
+
+    pub fn build(self) -> Location {
+        Location {
+            longitude: self.longitude,
+            latitude: self.latitude,
+            horizontal_accuracy: self.horizontal_accuracy,
+            live_period: self.live_period,
+            heading: self.heading,
+            proximity_alert_radius: self.proximity_alert_radius,
+        }
+    }
+}
+
+#[derive(Changeable, Clone)]
+pub struct MockPhotoSize {
+    pub width: u32,
+    pub height: u32,
+    // FileMeta
+    pub file_id: String,
+    pub file_unique_id: String,
+    pub file_size: u32,
+}
+
+impl MockPhotoSize {
+    pub fn new(
+        width: u32,
+        height: u32,
+        file_id: &str,
+        file_unique_id: &str,
+        file_size: u32,
+    ) -> Self {
+        Self {
+            width,
+            height,
+            file_id: file_id.to_string(),
+            file_unique_id: file_unique_id.to_string(),
+            file_size,
+        }
+    }
+
+    pub fn build(self) -> PhotoSize {
+        PhotoSize {
+            file: FileMeta {
+                id: self.file_id,
+                unique_id: self.file_unique_id,
+                size: self.file_size,
+            },
+            width: self.width,
+            height: self.height,
         }
     }
 }

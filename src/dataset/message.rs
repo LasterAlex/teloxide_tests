@@ -5,11 +5,11 @@ use proc_macros::Changeable;
 use teloxide::types::{
     Animation, Audio, Chat, Contact, Document, FileMeta, Forward, Game, InlineKeyboardMarkup,
     Location, MediaAnimation, MediaAudio, MediaContact, MediaDocument, MediaGame, MediaKind,
-    MediaText, MediaVenue, Message, MessageCommon, MessageEntity, MessageId, MessageKind,
-    PhotoSize, User, UserId, Venue,
+    MediaLocation, MediaPhoto, MediaText, MediaVenue, Message, MessageCommon, MessageEntity,
+    MessageId, MessageKind, PhotoSize, User, UserId, Venue,
 };
 
-use super::DEFAULT_USER_ID;
+use super::{MockLocation, MockPhotoSize, DEFAULT_USER_ID};
 
 pub const DEFAULT_MESSAGE_ID: i32 = 1;
 pub const DEFAULT_IS_TOPIC_MESSAGE: bool = false;
@@ -361,11 +361,11 @@ MessageCommon! {
 }
 
 impl MockMessageGame {
-    pub fn new(title: &str, description: &str) -> Self {
+    pub fn new(title: &str, description: &str, photo: Vec<MockPhotoSize>) -> Self {
         Self::new_message_common(
             title.to_string(),
             description.to_string(),
-            vec![],
+            photo.iter().map(|ps| ps.clone().build()).collect(),
             None,
             None,
             None,
@@ -401,9 +401,9 @@ MessageCommon! {
 }
 
 impl MockMessageVenue {
-    pub fn new(location: Location, title: &str, address: &str) -> Self {
+    pub fn new(location: MockLocation, title: &str, address: &str) -> Self {
         Self::new_message_common(
-            location,
+            location.build(),
             title.to_string(),
             address.to_string(),
             None,
@@ -425,6 +425,72 @@ impl MockMessageVenue {
                     google_place_id: self.google_place_id,
                     google_place_type: self.google_place_type,
                 },
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageLocation {
+        pub latitude: f64,
+        pub longitude: f64,
+        pub horizontal_accuracy: Option<f64>,
+        pub live_period: Option<u32>,
+        pub heading: Option<u16>,
+        pub proximity_alert_radius: Option<u32>,
+    }
+}
+
+impl MockMessageLocation {
+    pub fn new(latitude: f64, longitude: f64) -> Self {
+        Self::new_message_common(latitude, longitude, None, None, None, None)
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Location(MediaLocation {
+                location: Location {
+                    longitude: self.longitude,
+                    latitude: self.latitude,
+                    horizontal_accuracy: self.horizontal_accuracy,
+                    live_period: self.live_period,
+                    heading: self.heading,
+                    proximity_alert_radius: self.proximity_alert_radius,
+                },
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessagePhoto {
+        pub caption: Option<String>,
+        pub caption_entities: Vec<MessageEntity>,
+        pub media_group_id: Option<String>,
+        pub has_media_spoiler: bool,
+        pub photo: Vec<PhotoSize>,
+    }
+}
+
+impl MockMessagePhoto {
+    pub fn new(photo: Vec<MockPhotoSize>) -> Self {
+        Self::new_message_common(
+            None,
+            vec![],
+            None,
+            false,
+            photo.iter().map(|ps| ps.clone().build()).collect(),
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Photo(MediaPhoto {
+                caption: self.caption,
+                caption_entities: self.caption_entities,
+                media_group_id: self.media_group_id,
+                has_media_spoiler: self.has_media_spoiler,
+                photo: self.photo,
             }))
     }
 }

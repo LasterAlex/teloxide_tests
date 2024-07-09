@@ -1,14 +1,7 @@
 use proc_macros::Changeable;
-use teloxide::types::{ChatId, Location, MessageEntity, MessageId, True, UserId};
+use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
 
-use crate::dataset::{
-    chat::{MockChannelChat, MockGroupChat, MockPrivateChat, MockSupergroupChat, DEFAULT_CHAT_ID},
-    message::{
-        MockMessageAnimation, MockMessageAudio, MockMessageContact, MockMessageDocument,
-        MockMessageGame, MockMessageVenue,
-    },
-    MockChatPhoto, MockUser, DEFAULT_FIRST_NAME,
-};
+use crate::dataset::{chat::*, message::*, *};
 
 use super::message::MockMessageText;
 
@@ -53,6 +46,14 @@ fn test_user() {
     assert_eq!(user_object.last_name, Some("User".to_string()));
     assert_eq!(user_object.id, UserId(1234));
     assert_eq!(user_object.username, Some("test_user".to_string()));
+}
+
+#[test]
+fn test_location() {
+    let location = MockLocation::new(0.0, 1.0);
+    let location_object = location.build();
+    assert_eq!(location_object.latitude, 0.0);
+    assert_eq!(location_object.longitude, 1.0);
 }
 
 //
@@ -210,7 +211,17 @@ fn test_message_common_document() {
 
 #[test]
 fn test_message_common_game() {
-    let message = MockMessageGame::new("test", "description");
+    let message = MockMessageGame::new(
+        "test",
+        "description",
+        vec![MockPhotoSize::new(
+            90,
+            51,
+            "AgADBAADFak0G88YZAf8OAug7bHyS9x2ZxkABHVfpJywcloRAAGAAQABAg",
+            "file_unique_id",
+            1101,
+        )],
+    );
 
     let message_object = message.build();
     assert_eq!(message_object.game().unwrap().title, "test");
@@ -219,20 +230,33 @@ fn test_message_common_game() {
 
 #[test]
 fn test_message_common_venue() {
-    let message = MockMessageVenue::new(
-        Location {
-            latitude: 0.0,
-            longitude: 0.0,
-            horizontal_accuracy: None,
-            live_period: None,
-            heading: None,
-            proximity_alert_radius: None,
-        },
-        "title",
-        "address",
-    );
+    let message = MockMessageVenue::new(MockLocation::new(0.0, 0.0), "title", "address");
 
     let message_object = message.build();
     assert_eq!(message_object.venue().unwrap().title, "title");
     assert_eq!(message_object.venue().unwrap().address, "address");
+}
+
+#[test]
+fn test_message_common_location() {
+    let message = MockMessageLocation::new(0.0, 1.0);
+
+    let message_object = message.build();
+    assert_eq!(message_object.location().unwrap().latitude, 0.0);
+    assert_eq!(message_object.location().unwrap().longitude, 1.0);
+}
+
+#[test]
+fn test_message_common_photo() {
+    let message = MockMessagePhoto::new(vec![MockPhotoSize::new(
+        90,
+        51,
+        "AgADBAADFak0G88YZAf8OAug7bHyS9x2ZxkABHVfpJywcloRAAGAAQABAg",
+        "file_unique_id",
+        1101,
+    )]);
+
+    let message_object = message.build();
+    assert_eq!(message_object.photo().unwrap()[0].width, 90);
+    assert_eq!(message_object.photo().unwrap()[0].height, 51);
 }
