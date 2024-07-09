@@ -1,9 +1,12 @@
 use proc_macros::Changeable;
-use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
+use teloxide::types::{ChatId, Location, MessageEntity, MessageId, True, UserId};
 
 use crate::dataset::{
     chat::{MockChannelChat, MockGroupChat, MockPrivateChat, MockSupergroupChat, DEFAULT_CHAT_ID},
-    message::{MockMessageAnimation, MockMessageAudio, MockMessageContact, MockMessageDocument},
+    message::{
+        MockMessageAnimation, MockMessageAudio, MockMessageContact, MockMessageDocument,
+        MockMessageGame, MockMessageVenue,
+    },
     MockChatPhoto, MockUser, DEFAULT_FIRST_NAME,
 };
 
@@ -157,7 +160,8 @@ fn test_message_common_animation() {
 fn test_message_common_audio() {
     let message = MockMessageAudio::new(100, "file_id", "file_unique_id", 50)
         .caption("caption")
-        .caption_entities(vec![MessageEntity::bold(0, 3)]).media_group_id("123");
+        .caption_entities(vec![MessageEntity::bold(0, 3)])
+        .media_group_id("123");
 
     let message_object = message.build();
     assert_eq!(message_object.caption(), Some("caption"));
@@ -175,10 +179,19 @@ fn test_message_common_contact() {
         .vcard("vcard");
 
     let message_object = message.build();
-    assert_eq!(message_object.contact().unwrap().phone_number, "phone_number");
+    assert_eq!(
+        message_object.contact().unwrap().phone_number,
+        "phone_number"
+    );
     assert_eq!(message_object.contact().unwrap().first_name, "first_name");
-    assert_eq!(message_object.contact().unwrap().last_name, Some("last_name".to_string()));
-    assert_eq!(message_object.contact().unwrap().vcard, Some("vcard".to_string()));
+    assert_eq!(
+        message_object.contact().unwrap().last_name,
+        Some("last_name".to_string())
+    );
+    assert_eq!(
+        message_object.contact().unwrap().vcard,
+        Some("vcard".to_string())
+    );
 }
 
 #[test]
@@ -193,4 +206,33 @@ fn test_message_common_document() {
         message_object.caption_entities(),
         Some(vec![MessageEntity::bold(0, 3)]).as_deref()
     );
+}
+
+#[test]
+fn test_message_common_game() {
+    let message = MockMessageGame::new("test", "description");
+
+    let message_object = message.build();
+    assert_eq!(message_object.game().unwrap().title, "test");
+    assert_eq!(message_object.game().unwrap().description, "description");
+}
+
+#[test]
+fn test_message_common_venue() {
+    let message = MockMessageVenue::new(
+        Location {
+            latitude: 0.0,
+            longitude: 0.0,
+            horizontal_accuracy: None,
+            live_period: None,
+            heading: None,
+            proximity_alert_radius: None,
+        },
+        "title",
+        "address",
+    );
+
+    let message_object = message.build();
+    assert_eq!(message_object.venue().unwrap().title, "title");
+    assert_eq!(message_object.venue().unwrap().address, "address");
 }

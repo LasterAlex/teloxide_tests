@@ -3,7 +3,10 @@ use chrono::{DateTime, Utc};
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    Animation, Audio, Chat, Contact, Document, FileMeta, Forward, InlineKeyboardMarkup, MediaAnimation, MediaAudio, MediaContact, MediaDocument, MediaKind, MediaText, Message, MessageCommon, MessageEntity, MessageId, MessageKind, PhotoSize, User, UserId
+    Animation, Audio, Chat, Contact, Document, FileMeta, Forward, Game, InlineKeyboardMarkup,
+    Location, MediaAnimation, MediaAudio, MediaContact, MediaDocument, MediaGame, MediaKind,
+    MediaText, MediaVenue, Message, MessageCommon, MessageEntity, MessageId, MessageKind,
+    PhotoSize, User, UserId, Venue,
 };
 
 use super::DEFAULT_USER_ID;
@@ -280,15 +283,16 @@ impl MockMessageContact {
     }
 
     pub fn build(self) -> Message {
-        self.clone().build_message_common(MediaKind::Contact(MediaContact {
-            contact: Contact {
-                phone_number: self.phone_number,
-                first_name: self.first_name,
-                last_name: self.last_name,
-                user_id: self.user_id,
-                vcard: self.vcard,
-            },
-        }))
+        self.clone()
+            .build_message_common(MediaKind::Contact(MediaContact {
+                contact: Contact {
+                    phone_number: self.phone_number,
+                    first_name: self.first_name,
+                    last_name: self.last_name,
+                    user_id: self.user_id,
+                    vcard: self.vcard,
+                },
+            }))
     }
 }
 
@@ -325,20 +329,102 @@ impl MockMessageDocument {
     }
 
     pub fn build(self) -> Message {
-        self.clone().build_message_common(MediaKind::Document(MediaDocument {
-            caption: self.caption,
-            caption_entities: self.caption_entities,
-            media_group_id: self.media_group_id,
-            document: Document {
-                file: FileMeta {
-                    id: self.file_id,
-                    unique_id: self.file_unique_id,
-                    size: self.file_size,
+        self.clone()
+            .build_message_common(MediaKind::Document(MediaDocument {
+                caption: self.caption,
+                caption_entities: self.caption_entities,
+                media_group_id: self.media_group_id,
+                document: Document {
+                    file: FileMeta {
+                        id: self.file_id,
+                        unique_id: self.file_unique_id,
+                        size: self.file_size,
+                    },
+                    thumb: self.thumb,
+                    file_name: self.file_name,
+                    mime_type: self.mime_type,
                 },
-                thumb: self.thumb,
-                file_name: self.file_name,
-                mime_type: self.mime_type,
-            },
-        }))
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageGame {
+        pub title: String,
+        pub description: String,
+        pub photo: Vec<PhotoSize>,
+        pub text: Option<String>,
+        pub text_entities: Option<Vec<MessageEntity>>,
+        pub animation: Option<Animation>,
+    }
+}
+
+impl MockMessageGame {
+    pub fn new(title: &str, description: &str) -> Self {
+        Self::new_message_common(
+            title.to_string(),
+            description.to_string(),
+            vec![],
+            None,
+            None,
+            None,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Game(MediaGame {
+                game: Game {
+                    title: self.title,
+                    description: self.description,
+                    photo: self.photo,
+                    text: self.text,
+                    text_entities: self.text_entities,
+                    animation: self.animation,
+                },
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageVenue {
+        pub location: Location,
+        pub title: String,
+        pub address: String,
+        pub foursquare_id: Option<String>,
+        pub foursquare_type: Option<String>,
+        pub google_place_id: Option<String>,
+        pub google_place_type: Option<String>,
+    }
+}
+
+impl MockMessageVenue {
+    pub fn new(location: Location, title: &str, address: &str) -> Self {
+        Self::new_message_common(
+            location,
+            title.to_string(),
+            address.to_string(),
+            None,
+            None,
+            None,
+            None,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Venue(MediaVenue {
+                venue: Venue {
+                    location: self.location,
+                    title: self.title,
+                    address: self.address,
+                    foursquare_id: self.foursquare_id,
+                    foursquare_type: self.foursquare_type,
+                    google_place_id: self.google_place_id,
+                    google_place_type: self.google_place_type,
+                },
+            }))
     }
 }
