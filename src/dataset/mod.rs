@@ -3,9 +3,10 @@ use proc_macros::Changeable;
 use teloxide::types::{ChatPhoto, FileMeta, Location, PhotoSize, User, UserId, Video};
 pub mod chat;
 
-pub mod message;
+pub mod message_common;
 #[cfg(test)]
 mod tests;
+pub mod message;
 
 //
 //

@@ -1,4 +1,4 @@
-use crate::dataset::{chat::*, message::*, *};
+use crate::dataset::{chat::*, message_common::*, *};
 use proc_macros::Changeable;
 use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
 
