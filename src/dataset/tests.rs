@@ -320,3 +320,36 @@ fn test_message_common_video_note() {
         MockMessageVideoNote::LENGTH
     );
 }
+
+#[test]
+fn test_message_common_voice() {
+    let message = MockMessageVoice::new();
+
+    let message_object = message.build();
+    assert_eq!(
+        message_object.voice().unwrap().duration,
+        MockMessageVoice::DURATION
+    );
+}
+
+#[test]
+fn test_message_common_migration_to_chat() {
+    let message = MockMessageMigrationToChat::new();
+
+    let message_object = message.build();
+    assert_eq!(
+        message_object.migrate_to_chat_id().unwrap(),
+        ChatId(MockMessageMigrationToChat::MIGRATE_TO_CHAT_ID)
+    );
+}
+
+#[test]
+fn test_message_common_migration_from_chat() {
+    let message = MockMessageMigrationFromChat::new();
+
+    let message_object = message.build();
+    assert_eq!(
+        message_object.migrate_from_chat_id().unwrap(),
+        ChatId(MockMessageMigrationFromChat::MIGRATE_FROM_CHAT_ID)
+    );
+}

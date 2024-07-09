@@ -684,13 +684,13 @@ impl MockMessageVideo {
 MessageCommon! {
     #[derive(Changeable, Clone)]
     pub struct MockMessageVideoNote {
-        length: u32,
-        duration: u32,
-        thumb: Option<PhotoSize>,
+        pub length: u32,
+        pub duration: u32,
+        pub thumb: Option<PhotoSize>,
         // File meta
-        file_id: String,
-        file_unique_id: String,
-        file_size: u32,
+        pub file_id: String,
+        pub file_unique_id: String,
+        pub file_size: u32,
     }
 }
 
@@ -725,6 +725,100 @@ impl MockMessageVideoNote {
                     duration: self.duration,
                     thumb: self.thumb,
                 },
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageVoice {
+        pub duration: u32,
+        pub mime_type: Option<Mime>,
+        pub caption: Option<String>,
+        pub caption_entities: Vec<MessageEntity>,
+        // File meta
+        pub file_id: String,
+        pub file_unique_id: String,
+        pub file_size: u32,
+    }
+}
+
+impl MockMessageVoice {
+    pub const DURATION: u32 = 1;
+    pub const FILE_ID: &'static str = "AwADawAgADADy_JxS2gopIVIIxlhAg";
+    pub const FILE_UNIQUE_ID: &'static str = "file_unique_id";
+    pub const FILE_SIZE: u32 = 4321;
+
+    pub fn new() -> Self {
+        Self::new_message_common(
+            Self::DURATION,
+            None,
+            None,
+            vec![],
+            Self::FILE_ID.to_string(),
+            Self::FILE_UNIQUE_ID.to_string(),
+            Self::FILE_SIZE,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Voice(MediaVoice {
+                voice: Voice {
+                    file: FileMeta {
+                        id: self.file_id,
+                        unique_id: self.file_unique_id,
+                        size: self.file_size,
+                    },
+                    duration: self.duration,
+                    mime_type: self.mime_type,
+                },
+                caption: self.caption,
+                caption_entities: self.caption_entities,
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageMigrationFromChat {
+        pub migrate_from_chat_id: i64,
+    }
+}
+
+impl MockMessageMigrationFromChat {
+    pub const MIGRATE_FROM_CHAT_ID: i64 = 1;
+
+    pub fn new() -> Self {
+        Self::new_message_common(Self::MIGRATE_FROM_CHAT_ID)
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Migration(ChatMigration::From {
+                chat_id: ChatId(self.migrate_from_chat_id),
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageMigrationToChat {
+        pub migrate_to_chat_id: i64,
+    }
+}
+
+impl MockMessageMigrationToChat {
+    pub const MIGRATE_TO_CHAT_ID: i64 = 1;
+
+    pub fn new() -> Self {
+        Self::new_message_common(Self::MIGRATE_TO_CHAT_ID)
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Migration(ChatMigration::To {
+                chat_id: ChatId(self.migrate_to_chat_id),
             }))
     }
 }
