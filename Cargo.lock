@@ -1171,6 +1171,7 @@ name = "teloxide_tests"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "mime",
  "proc_macros",
  "serde",
  "serde_json",

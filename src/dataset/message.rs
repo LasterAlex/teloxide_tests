@@ -1,15 +1,16 @@
 use crate::dataset::{chat::MockPrivateChat, MockUser};
 use chrono::{DateTime, Utc};
+use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    Chat, Forward, InlineKeyboardMarkup, MediaKind, MediaText, Message, MessageCommon,
-    MessageEntity, MessageId, MessageKind, User,
+    Animation, Audio, Chat, FileMeta, Forward, InlineKeyboardMarkup, MediaAnimation, MediaAudio, MediaKind, MediaText, Message, MessageCommon, MessageEntity, MessageId, MessageKind, PhotoSize, User
 };
 
 pub const DEFAULT_MESSAGE_ID: i32 = 1;
 pub const DEFAULT_IS_TOPIC_MESSAGE: bool = false;
 pub const DEFAULT_IS_AUTOMATIC_FORWARD: bool = false;
 pub const DEFAULT_HAS_PROTECTED_CONTENT: bool = false;
+pub const DEFAULT_HAS_MEDIA_SPOILER: bool = false;
 
 macro_rules! Message {
     (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
@@ -121,6 +122,135 @@ impl MockMessageText {
             .build_message_common(MediaKind::Text(MediaText {
                 text: self.text,
                 entities: self.entities,
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageAnimation {
+        pub caption: Option<String>,
+        pub caption_entities: Vec<MessageEntity>,
+        pub has_media_spoiler: bool,
+        // Animation
+        pub width: u32,
+        pub height: u32,
+        pub duration: u32,
+        pub thumb: Option<PhotoSize>,
+        pub file_name: Option<String>,
+        pub mime_type: Option<Mime>,
+        // FileMeta
+        pub file_id: String,
+        pub file_unique_id: String,
+        pub file_size: u32,
+    }
+}
+
+impl MockMessageAnimation {
+    pub fn new(
+        width: u32,
+        height: u32,
+        duration: u32,
+        file_id: &str,
+        file_unique_id: &str,
+        file_size: u32,
+    ) -> Self {
+        Self::new_message_common(
+            None,
+            vec![],
+            DEFAULT_HAS_MEDIA_SPOILER,
+            width,
+            height,
+            duration,
+            None,
+            None,
+            None,
+            file_id.to_string(),
+            file_unique_id.to_string(),
+            file_size,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Animation(MediaAnimation {
+                caption: self.caption,
+                caption_entities: self.caption_entities,
+                has_media_spoiler: self.has_media_spoiler,
+                animation: Animation {
+                    file: FileMeta {
+                        id: self.file_id,
+                        unique_id: self.file_unique_id,
+                        size: self.file_size,
+                    },
+                    width: self.width,
+                    height: self.height,
+                    duration: self.duration,
+                    thumb: self.thumb,
+                    file_name: self.file_name,
+                    mime_type: self.mime_type,
+                },
+            }))
+    }
+}
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageAudio {
+        pub caption: Option<String>,
+        pub caption_entities: Vec<MessageEntity>,
+        pub media_group_id: Option<String>,
+        // Audio
+        pub duration: u32,
+        pub performer: Option<String>,
+        pub title: Option<String>,
+        pub thumb: Option<PhotoSize>,
+        pub file_name: Option<String>,
+        pub mime_type: Option<Mime>,
+        // FileMeta
+        pub file_id: String,
+        pub file_unique_id: String,
+        pub file_size: u32,
+    }
+}
+
+impl MockMessageAudio {
+    pub fn new(duration: u32, file_id: &str, file_unique_id: &str, file_size: u32) -> Self {
+        Self::new_message_common(
+            None,
+            vec![],
+            None,
+            duration,
+            None,
+            None,
+            None,
+            None,
+            None,
+            file_id.to_string(),
+            file_unique_id.to_string(),
+            file_size,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::Audio(MediaAudio {
+                caption: self.caption,
+                caption_entities: self.caption_entities,
+                media_group_id: self.media_group_id,
+                audio: Audio {
+                    file: FileMeta {
+                        id: self.file_id,
+                        unique_id: self.file_unique_id,
+                        size: self.file_size,
+                    },
+                    duration: self.duration,
+                    performer: self.performer,
+                    title: self.title,
+                    thumb: self.thumb,
+                    file_name: self.file_name,
+                    mime_type: self.mime_type,
+                },
             }))
     }
 }

@@ -1,11 +1,9 @@
-
 use proc_macros::Changeable;
-use teloxide::types::{
-    ChatId, MessageEntity, MessageId, True, UserId,
-};
+use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
 
 use crate::dataset::{
     chat::{MockChannelChat, MockGroupChat, MockPrivateChat, MockSupergroupChat, DEFAULT_CHAT_ID},
+    message::{MockMessageAnimation, MockMessageAudio},
     MockChatPhoto, MockUser, DEFAULT_FIRST_NAME,
 };
 
@@ -113,16 +111,18 @@ fn test_private_group_chat() {
 #[test]
 fn test_message_common_text() {
     let simple_message = MockMessageText::new("simple");
-    let simple_message_object = simple_message.build();  // This is now teloxide::types::Message
-    
-    assert_eq!(simple_message_object.text(), Some("simple"));
-    assert_eq!(simple_message_object.from().unwrap().first_name, DEFAULT_FIRST_NAME);
-    assert_eq!(simple_message_object.chat.id, ChatId(DEFAULT_CHAT_ID));  // Some sane default values
+    let simple_message_object = simple_message.build(); // This is now teloxide::types::Message
 
+    assert_eq!(simple_message_object.text(), Some("simple"));
+    assert_eq!(
+        simple_message_object.from().unwrap().first_name,
+        DEFAULT_FIRST_NAME
+    );
+    assert_eq!(simple_message_object.chat.id, ChatId(DEFAULT_CHAT_ID)); // Some sane default values
 
     let message = MockMessageText::new("text")
-        .id(123)  // If you want - you can change everything by just calling it as a method
-        .from(MockUser::new().first_name("Test").build())  // Sub categories need to be built in separately
+        .id(123) // If you want - you can change everything by just calling it as a method
+        .from(MockUser::new().first_name("Test").build()) // Sub categories need to be built in separately
         .chat(MockGroupChat::new().id(-123).build())
         .is_automatic_forward(true)
         .entities(vec![MessageEntity::bold(0, 3)]);
@@ -137,4 +137,33 @@ fn test_message_common_text() {
         message_object.entities(),
         Some(vec![MessageEntity::bold(0, 3)]).as_deref()
     );
+}
+
+#[test]
+fn test_message_common_animation() {
+    let message = MockMessageAnimation::new(10, 10, 100, "file_id", "file_unique_id", 50)
+        .caption("caption")
+        .caption_entities(vec![MessageEntity::bold(0, 3)]);
+
+    let message_object = message.build();
+    assert_eq!(message_object.caption(), Some("caption"));
+    assert_eq!(
+        message_object.caption_entities(),
+        Some(vec![MessageEntity::bold(0, 3)]).as_deref()
+    );
+}
+
+#[test]
+fn test_message_common_audio() {
+    let message = MockMessageAudio::new(100, "file_id", "file_unique_id", 50)
+        .caption("caption")
+        .caption_entities(vec![MessageEntity::bold(0, 3)]).media_group_id("123");
+
+    let message_object = message.build();
+    assert_eq!(message_object.caption(), Some("caption"));
+    assert_eq!(
+        message_object.caption_entities(),
+        Some(vec![MessageEntity::bold(0, 3)]).as_deref()
+    );
+    assert_eq!(message_object.media_group_id(), Some("123"));
 }
