@@ -680,3 +680,51 @@ impl MockMessageVideo {
             }))
     }
 }
+
+MessageCommon! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageVideoNote {
+        length: u32,
+        duration: u32,
+        thumb: Option<PhotoSize>,
+        // File meta
+        file_id: String,
+        file_unique_id: String,
+        file_size: u32,
+    }
+}
+
+impl MockMessageVideoNote {
+    pub const LENGTH: u32 = 50;
+    pub const DURATION: u32 = 50;
+    pub const FILE_ID: &'static str = "file_id";
+    pub const FILE_UNIQUE_ID: &'static str = "file_unique_id";
+    pub const FILE_SIZE: u32 = 50;
+
+    pub fn new() -> Self {
+        Self::new_message_common(
+            Self::LENGTH,
+            Self::DURATION,
+            None,
+            Self::FILE_ID.to_string(),
+            Self::FILE_UNIQUE_ID.to_string(),
+            Self::FILE_SIZE,
+        )
+    }
+
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message_common(MediaKind::VideoNote(MediaVideoNote {
+                video_note: VideoNote {
+                    file: FileMeta {
+                        id: self.file_id,
+                        unique_id: self.file_unique_id,
+                        size: self.file_size,
+                    },
+                    length: self.length,
+                    duration: self.duration,
+                    thumb: self.thumb,
+                },
+            }))
+    }
+}

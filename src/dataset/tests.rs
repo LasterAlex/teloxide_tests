@@ -1,9 +1,6 @@
+use crate::dataset::{chat::*, message::*, *};
 use proc_macros::Changeable;
 use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
-
-use crate::dataset::{chat::*, message::*, *};
-
-use super::message::MockMessageText;
 
 #[derive(Changeable)]
 struct Test {
@@ -123,7 +120,7 @@ fn test_message_common_text() {
         MockUser::FIRST_NAME
     );
     assert_eq!(simple_message_object.chat.id, ChatId(MockUser::ID as i64)); // Some sane default values
-    // User id because it is a private chat
+                                                                            // User id because it is a private chat
 
     let message = MockMessageText::new("text")
         .id(123) // If you want - you can change everything by just calling it as a method
@@ -297,5 +294,29 @@ fn test_message_common_sticker() {
     assert_eq!(
         message_object.sticker().unwrap().format,
         MockMessageSticker::FORMAT
+    );
+}
+
+#[test]
+fn test_message_common_video() {
+    let message = MockMessageVideo::new();
+
+    let message_object = message.build();
+    assert_eq!(message_object.video().unwrap().width, MockVideo::WIDTH);
+    assert_eq!(message_object.video().unwrap().height, MockVideo::HEIGHT);
+}
+
+#[test]
+fn test_message_common_video_note() {
+    let message = MockMessageVideoNote::new();
+
+    let message_object = message.build();
+    assert_eq!(
+        message_object.video_note().unwrap().duration,
+        MockMessageVideoNote::DURATION
+    );
+    assert_eq!(
+        message_object.video_note().unwrap().length,
+        MockMessageVideoNote::LENGTH
     );
 }
