@@ -8,10 +8,10 @@ The mocking shouldn't be very difficult. Complex - yes, but it isn't what was ho
 
 - [ ] Add dataset of all needed structs
     - [x] Add dataset of chats
-    - [ ] Add dataset of common messages,
-    - [ ] Add dataset of messages
-    - [ ] Add dataset of callbacks
-    - [ ] Add structs without a category
-- [ ] Try to think of a good way to compare the behaviour of the bot
+    - [x] Add dataset of common messages
+    - [ ] Add dataset of queries (low priority)
+    - [ ] Add dataset of messages (low priority)
+    - [ ] Add structs without a category (low priority)
 - [ ] Add the bot mocking
+- [ ] Try to think of a good way to compare the behaviour of the bot
 - [ ] Make it into a library

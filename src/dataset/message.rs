@@ -36,3 +36,5 @@ macro_rules! Message {
         }
     }
 }
+
+// More messages like Webapp data is needed

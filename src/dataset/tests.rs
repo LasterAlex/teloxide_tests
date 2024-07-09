@@ -1,5 +1,6 @@
 use crate::dataset::{chat::*, message_common::*, *};
 use proc_macros::Changeable;
+use queries::MockCallbackQuery;
 use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
 
 #[derive(Changeable)]
@@ -352,4 +353,16 @@ fn test_message_common_migration_from_chat() {
         message_object.migrate_from_chat_id().unwrap(),
         ChatId(MockMessageMigrationFromChat::MIGRATE_FROM_CHAT_ID)
     );
+}
+
+//
+//
+//
+
+#[test]
+fn test_callback_query() {
+    let query = MockCallbackQuery::new();
+    let query_object = query.build();
+    assert_eq!(query_object.id, MockCallbackQuery::ID);
+    assert_eq!(query_object.from.first_name, MockUser::FIRST_NAME);
 }
