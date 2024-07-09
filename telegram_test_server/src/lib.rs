@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use teloxide::types::Message;
 
 pub struct Responses {
-    pub sent_messages: Vec<(SendMessageBody, Message)>,
+    pub sent_messages: Vec<(Message, SendMessageBody)>,
 }
 
 lazy_static! {
@@ -63,7 +63,7 @@ pub async fn test(url: web::Path<String>) -> impl Responder {
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+pub async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     HttpServer::new(|| {
         App::new()

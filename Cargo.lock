@@ -377,6 +377,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "telegram_test_server",
  "teloxide",
  "tokio",
  "url",

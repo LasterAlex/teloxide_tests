@@ -9,9 +9,9 @@ use std::{
 use dataset::message_common::MockMessageText;
 use dptree::deps;
 use teloxide::{
-    payloads::SendMessageSetters,
+    dispatching::UpdateHandler,
     prelude::*,
-    types::{InlineKeyboardButton, InlineKeyboardMarkup, Me, UpdateKind},
+    types::{Me, UpdateKind},
 };
 
 pub fn get_bot_id() -> i64 {
@@ -28,6 +28,26 @@ pub fn make_bot_string() -> String {
     )
 }
 
+pub async fn handler(
+    bot: Bot,
+    messages_total: Arc<AtomicU64>,
+    msg: Message,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    bot.send_message(
+        msg.chat.id,
+        format!(
+            "I received {} messages in total.",
+            messages_total.fetch_add(1, Ordering::Relaxed)
+        ),
+    )
+    .await?;
+    Ok(())
+}
+
+pub fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+    dptree::entry().branch(Update::filter_message().endpoint(handler))
+}
+
 #[tokio::main]
 async fn main() {
     env::set_var(
@@ -40,28 +60,12 @@ async fn main() {
     let bot = Bot::from_env().set_api_url(reqwest::Url::parse("http://localhost:8080").unwrap());
     let messages_total = Arc::new(AtomicU64::new(0));
 
-    let handler = dptree::entry().branch(Update::filter_message().endpoint(
-        |bot: Bot, messages_total: Arc<AtomicU64>, msg: Message| async move {
-            let previous = messages_total.fetch_add(1, Ordering::Relaxed);
-            bot.send_message(
-                msg.chat.id,
-                format!("I received {previous} messages in total."),
-            )
-            .reply_markup(InlineKeyboardMarkup::new(vec![vec![
-                InlineKeyboardButton::callback("123", "123"),
-            ]]))
-            .await
-            .unwrap();
-            respond(())
-        },
-    ));
-
     let update = Update {
         id: 1,
         kind: UpdateKind::Message(MockMessageText::new("hello").build()),
     };
     let me = serde_json::from_str::<Me>(&make_bot_string()).unwrap();
-    handler
+    get_schema()
         .dispatch(deps![
             messages_total.clone(),
             me.clone(),
@@ -69,4 +73,41 @@ async fn main() {
             update.clone()
         ])
         .await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use telegram_test_server::RESPONSES;
+
+    #[test]
+    fn test_bot() {
+        env::set_var(
+            "TELOXIDE_TOKEN",
+            "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
+        );
+        let runtime = tokio::runtime::Builder::new_current_thread().build().unwrap();
+        runtime.spawn(async move {
+            telegram_test_server::main().unwrap();
+        });
+        runtime.spawn(async move {
+            let bot =
+                Bot::from_env().set_api_url(reqwest::Url::parse("http://localhost:8080").unwrap());
+            let me = serde_json::from_str::<Me>(&make_bot_string()).unwrap();
+            let update = Update {
+                id: 1,
+                kind: UpdateKind::Message(MockMessageText::new("hello").build()),
+            };
+
+            let messages_total = Arc::new(AtomicU64::new(0));
+            get_schema()
+                .dispatch(deps![me, bot, update, messages_total])
+                .await;
+            let last_response = RESPONSES.lock().unwrap().sent_messages.pop().unwrap();
+            assert_eq!(
+                last_response.0.text(),
+                Some("I received 0 messages in total.")
+            );
+        });
+    }
 }

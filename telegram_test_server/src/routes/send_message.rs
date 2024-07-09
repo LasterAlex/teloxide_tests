@@ -51,7 +51,7 @@ pub async fn send_message(
         .lock()
         .unwrap()
         .sent_messages
-        .push((body.into_inner(), message.clone()));
+        .push((message.clone(), body.into_inner()));
 
     HttpResponse::Ok().body(
         json!({
