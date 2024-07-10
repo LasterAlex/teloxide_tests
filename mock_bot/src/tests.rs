@@ -19,7 +19,8 @@ async fn handler(
     bot: Bot,
     msg: Message,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-    bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
+    let sent_message = bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
+    assert!(msg.text().unwrap() == sent_message.text().unwrap()); // The message actually made it through!
     Ok(())
 }
 
