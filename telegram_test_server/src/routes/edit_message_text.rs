@@ -28,7 +28,16 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
     ) {
         (Some(_), Some(message_id), None) => {
             // This is a regular message, edit it
-            MESSAGES.edit_message(message_id, "text", &body.text);
+            if MESSAGES.edit_message(message_id, "text", &body.text).is_none() {
+                return HttpResponse::BadRequest().body(
+                    json!({ // This is how telegram returns the message
+                        "ok": false,
+                        "error_code": 400,
+                        "result": "Message not found",
+                    })
+                    .to_string(),
+                );
+            };
             MESSAGES.edit_message(
                 message_id,
                 "entities",
@@ -54,7 +63,7 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
                 .edited_messages_text
                 .push(EditedMessageText {
                     message: message.clone(),
-                    request: body.into_inner(),
+                    bot_request: body.into_inner(),
                 });
 
             HttpResponse::Ok().body(
@@ -73,7 +82,7 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
             })
             .to_string(),
         ),
-        _ => HttpResponse::Ok().body(
+        _ => HttpResponse::BadRequest().body(
             json!({
                 "ok": false,
                 "error_code": 400,

@@ -42,11 +42,11 @@ Hopefully it is as easy as doing what happens in `./mock_bot/src/tests.rs`
     - [ ] Add structs without a category (low priority)
 - [x] Add fake server
     - [ ] Add most common endpoints
-    - [ ] Add tests
     - [ ] Add all common messages (low priority)
     - [ ] Add all queries (low priority)
     - [ ] Add all messages (super low priority)
     - [ ] Add everything else (may never be done)
 - [x] Make mocked bot that sends requests to fake server
+- [x] Add tests to that bot
 - [x] Make it into a library
 - [ ] Publish it when it is ready

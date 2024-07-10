@@ -7,11 +7,11 @@ use serde::Deserialize;
 use serde_json::json;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::{SentMessage, MESSAGES, RESPONSES};
+use crate::{SentMessageText, MESSAGES, RESPONSES};
 
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct SendMessageBody {
+pub struct SendMessageTextBody {
     pub chat_id: i64,
     pub text: String,
     pub parse_mode: Option<ParseMode>,
@@ -25,7 +25,7 @@ pub struct SendMessageBody {
 }
 
 pub async fn send_message(
-    body: web::Json<SendMessageBody>,
+    body: web::Json<SendMessageTextBody>,
 ) -> impl Responder {
     let mut message = // Creates the message, which will be mutated to fit the needed shape
         MockMessageText::new(&body.text).chat(MockPrivateChat::new().id(body.chat_id).build());
@@ -50,9 +50,10 @@ pub async fn send_message(
     let last_id = MESSAGES.max_message_id();
     let message = message.id(last_id + 1).build();
     MESSAGES.add_message(message.clone());
-    RESPONSES.lock().unwrap().sent_messages.push(SentMessage {
+    RESPONSES.lock().unwrap().sent_messages.push(message.clone());
+    RESPONSES.lock().unwrap().sent_messages_text.push(SentMessageText {
         message: message.clone(),
-        request: body.into_inner(),
+        bot_request: body.into_inner(),
     });
 
     HttpResponse::Ok().body(

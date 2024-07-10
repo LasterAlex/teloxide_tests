@@ -1,10 +1,7 @@
 pub mod routes;
 use actix_web::{web, App, HttpServer};
 use lazy_static::lazy_static;
-use routes::{
-    edit_message_text::{edit_message_text, EditMessageTextBody},
-    send_message::{send_message, SendMessageBody},
-};
+use routes::{delete_message::*, edit_message_text::*, send_message::*};
 use std::sync::{
     atomic::{AtomicI32, Ordering},
     Mutex,
@@ -12,31 +9,37 @@ use std::sync::{
 use teloxide::types::Message;
 
 #[derive(Clone, Debug)]
-pub struct SentMessage {
+pub struct SentMessageText {
     // For better syntax, this is a struct, not a tuple
     pub message: Message,
-    pub request: SendMessageBody,
+    pub bot_request: SendMessageTextBody,
 }
 
 #[derive(Clone, Debug)]
 pub struct EditedMessageText {
     // For better syntax, this is a struct, not a tuple
     pub message: Message,
-    pub request: EditMessageTextBody,
+    pub bot_request: EditMessageTextBody,
 }
 
 #[derive(Clone, Debug)]
+pub struct DeletedMessage {
+    // For better syntax, this is a struct, not a tuple
+    pub message: Message,
+    pub bot_request: DeleteMessageBody,
+}
+
+#[derive(Clone, Debug, Default)]
 pub struct Responses {
-    pub sent_messages: Vec<SentMessage>,
+    pub sent_messages: Vec<Message>, // Just for convenience for simple tasks
+    pub sent_messages_text: Vec<SentMessageText>,
     pub edited_messages_text: Vec<EditedMessageText>,
+    pub deleted_messages: Vec<DeletedMessage>,
 }
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);  // Messages storage, just in case
-    pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses {  // This is what is needed from this server
-        sent_messages: vec![],
-        edited_messages_text: vec![],
-    });
+    pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses::default());  //
     pub static ref LAST_MESSAGE_ID: AtomicI32 = AtomicI32::new(0);
 }
 
@@ -87,14 +90,17 @@ pub async fn main() {
     // env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     // MESSAGES don't care if they are cleaned or not
-    RESPONSES.lock().unwrap().sent_messages.clear();
-    RESPONSES.lock().unwrap().edited_messages_text.clear();
+    *RESPONSES.lock().unwrap() = Responses::default();
 
     HttpServer::new(move || {
         App::new()
             // .wrap(Logger::default())
             .route("/bot{token}/SendMessage", web::post().to(send_message))
-            .route("/bot{token}/EditMessageText", web::post().to(edit_message_text))
+            .route(
+                "/bot{token}/EditMessageText",
+                web::post().to(edit_message_text),
+            )
+            .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
     })
     .bind(format!(
         "127.0.0.1:{}",
