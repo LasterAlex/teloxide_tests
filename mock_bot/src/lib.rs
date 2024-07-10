@@ -113,7 +113,12 @@ impl MockBot {
         }
     }
 
-    pub async fn get_state<S>(&self) -> S
+    async fn get_potential_storages<S>(
+        &self,
+    ) -> (
+        Option<Arc<Arc<InMemStorage<S>>>>,
+        Option<Arc<Arc<ErasedStorage<S>>>>,
+    )
     where
         S: Send + 'static + Clone,
     {
@@ -144,7 +149,38 @@ impl MockBot {
         .ok();
 
         panic::set_hook(default_panic); // Restore the default panic hook
+        (in_mem_storage, erased_storage)
+    }
 
+    pub async fn set_state<S>(&self, state: S)
+    where
+        S: Send + 'static + Clone,
+    {
+        let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
+        if let Some(storage) = in_mem_storage {
+            // If memory storage exists
+            (*storage)
+                .clone()
+                .update_dialogue(self.update.chat_id().expect("No chat id"), state)
+                .await
+                .expect("Failed to update dialogue");
+        } else if let Some(storage) = erased_storage {
+            // If erased storage exists
+            (*storage)
+                .clone()
+                .update_dialogue(self.update.chat_id().expect("No chat id"), state)
+                .await
+                .expect("Failed to update dialogue");
+        } else {
+            panic!("No storage was getected!");
+        }
+    }
+
+    pub async fn get_state<S>(&self) -> S
+    where
+        S: Send + 'static + Clone,
+    {
+        let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
         if let Some(storage) = in_mem_storage {
             // If memory storage exists
             (*storage)

@@ -1,6 +1,7 @@
 use super::*;
 use dataset::*;
 use serde::{Deserialize, Serialize};
+use teloxide::dptree::case;
 use teloxide::{
     dispatching::{
         dialogue::{self, InMemStorage},
@@ -32,17 +33,32 @@ async fn handler_with_state(
     Ok(())
 }
 
+async fn handler_with_not_start_state(
+    bot: Bot,
+    dialogue: MyDialogue,
+    msg: Message,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    bot.send_message(msg.chat.id, "Not start!").await?;
+
+    dialogue.update(State::Start).await?;
+    Ok(())
+}
+
 fn get_dialogue_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
-    dialogue::enter::<Update, InMemStorage<State>, State, _>()
-        .branch(Update::filter_message().endpoint(handler_with_state))
+    dialogue::enter::<Update, InMemStorage<State>, State, _>().branch(
+        Update::filter_message()
+            .branch(case![State::NotStart].endpoint(handler_with_not_start_state))
+            .endpoint(handler_with_state),
+    )
 }
 
 #[tokio::test]
-async fn test_echo_with_state() {
+async fn test_echo_with_start_state() {
     let bot = MockBot::new(MockMessageText::new("test"), get_dialogue_schema());
     let storage = InMemStorage::<State>::new();
+    bot.dependencies(deps![storage]);
+    bot.set_state(State::Start).await;
 
-    bot.dependencies(deps![storage.clone()]);
     bot.dispatch().await;
 
     let last_response = bot.get_responses().sent_messages.pop().unwrap();
@@ -50,6 +66,22 @@ async fn test_echo_with_state() {
     assert_eq!(state, State::NotStart);
 
     assert_eq!(last_response.text(), Some("test"));
+}
+
+#[tokio::test]
+async fn test_echo_with_not_start_test() {
+    let bot = MockBot::new(MockMessageText::new("test"), get_dialogue_schema());
+    let storage = InMemStorage::<State>::new();
+    bot.dependencies(deps![storage]);
+    bot.set_state(State::NotStart).await;
+
+    bot.dispatch().await;
+
+    let last_response = bot.get_responses().sent_messages.pop().unwrap();
+    let state: State = bot.get_state().await;
+    assert_eq!(state, State::Start);
+
+    assert_eq!(last_response.text(), Some("Not start!"));
 }
 
 //
