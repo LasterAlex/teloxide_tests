@@ -6,57 +6,19 @@ use std::{
     },
 };
 
-use dataset::IntoUpdate;
+use dataset::{IntoUpdate, MockMe};
 use telegram_test_server::Responses;
 use teloxide::{dispatching::UpdateHandler, prelude::*, types::Me};
 
-pub fn get_bot_id() -> i64 {
-    // Every token starts with a bot id
-    let token = env::var("TELOXIDE_TOKEN").unwrap();
-    let parts: Vec<&str> = token.split(':').collect();
-    parts[0].parse::<i64>().unwrap()
-}
-
-pub fn make_bot_string() -> String {
-    format!(
-        r#"{{"id":{bot_id},"is_bot":true,"first_name":"Test","last_name":"Bot","username":"test_bot","language_code":"en","can_join_groups":false,"can_read_all_group_messages":false,"supports_inline_queries":true}}"#,
-        bot_id = get_bot_id()
-    )
-}
-
-pub async fn handler(
-    bot: Bot,
-    msg: Message,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-    bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
-    Ok(())
-}
-
-pub fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
-    dptree::entry().branch(Update::filter_message().endpoint(handler))
-}
-
-#[tokio::main]
-async fn main() {
-    dotenv::dotenv().unwrap();
-    pretty_env_logger::init();
-
-    let bot = Bot::from_env();
-
-    Dispatcher::builder(bot, get_schema())
-        .build()
-        .dispatch()
-        .await;
-}
-
-pub static DISPATCHING_LOCK: Mutex<()> = Mutex::new(());
+static DISPATCHING_LOCK: Mutex<()> = Mutex::new(());
 
 pub struct MockBot {
     bot: Bot,
     update: Update,
     handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>,
-    responses: Mutex<Option<Responses>>,
+    me: Mutex<Me>,
     dependencies: Mutex<DependencyMap>,
+    responses: Mutex<Option<Responses>>,
 }
 
 impl MockBot {
@@ -78,6 +40,7 @@ impl MockBot {
             .set_api_url(reqwest::Url::parse(&format!("http://localhost:8080")).unwrap());
         Self {
             bot,
+            me: Mutex::new(MockMe::new().build()),
             update: update.into_update(update_id),
             handler_tree,
             responses: Mutex::new(None),
@@ -89,11 +52,14 @@ impl MockBot {
         *self.dependencies.lock().unwrap() = deps;
     }
 
+    pub fn me(&self, me: MockMe) {
+        *self.me.lock().unwrap() = me.build();
+    }
+
     pub async fn dispatch(&self) {
         let mut deps = self.dependencies.lock().unwrap();
         deps.insert(self.bot.clone());
-        let me = serde_json::from_str::<Me>(&make_bot_string()).unwrap();
-        deps.insert(me);
+        deps.insert(self.me.lock().unwrap().clone());
         deps.insert(self.update.clone());
 
         let lock = DISPATCHING_LOCK.lock();
@@ -128,6 +94,18 @@ mod tests {
     use super::*;
     use dataset::message_common::MockMessageText;
 
+    async fn handler(
+        bot: Bot,
+        msg: Message,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+        bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
+        Ok(())
+    }
+
+    fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+        dptree::entry().branch(Update::filter_message().endpoint(handler))
+    }
+
     #[tokio::test]
     async fn test_echo_hello() {
         let bot = MockBot::new(MockMessageText::new("hello"), get_schema());
@@ -147,9 +125,6 @@ mod tests {
 
         let last_response = bot.get_responses().sent_messages.pop().unwrap();
 
-        assert_eq!(
-            last_response.0.text(),
-            Some("hi")
-        );
+        assert_eq!(last_response.0.text(), Some("hi"));
     }
 }

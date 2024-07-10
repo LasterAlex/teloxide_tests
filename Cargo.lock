@@ -368,23 +368,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bot"
-version = "0.1.0"
-dependencies = [
- "dataset",
- "dotenv",
- "log",
- "pretty_env_logger",
- "reqwest",
- "serde",
- "serde_json",
- "telegram_test_server",
- "teloxide",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "brotli"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1176,6 +1159,23 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "mock_bot"
+version = "0.1.0"
+dependencies = [
+ "dataset",
+ "dotenv",
+ "log",
+ "pretty_env_logger",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "telegram_test_server",
+ "teloxide",
+ "tokio",
+ "url",
 ]
 
 [[package]]

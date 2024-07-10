@@ -26,4 +26,5 @@ I am going right now by the following steps:
     - [ ] Add all messages (super low priority)
     - [ ] Add everything else (may never be done)
 - [x] Make mocked bot that sends requests to fake server
-- [ ] Make it into a library
+- [x] Make it into a library
+- [ ] Publish it when it is ready

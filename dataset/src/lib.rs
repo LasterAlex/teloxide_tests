@@ -1,13 +1,13 @@
 use mime::Mime;
 use proc_macros::Changeable;
-use teloxide::types::{ChatPhoto, FileMeta, Location, PhotoSize, Update, User, UserId, Video};
+use teloxide::types::{ChatPhoto, FileMeta, Location, Me, PhotoSize, Update, User, UserId, Video};
 pub mod chat;
 
-pub mod message_common;
 pub mod message;
+pub mod message_common;
 pub mod queries;
-pub use message_common::*;
 pub use chat::*;
+pub use message_common::*;
 pub use queries::*;
 #[cfg(test)]
 mod tests;
@@ -62,6 +62,59 @@ impl MockUser {
             language_code: self.language_code,
             added_to_attachment_menu: self.added_to_attachment_menu,
             is_premium: self.is_premium,
+        }
+    }
+}
+
+pub struct MockMe {
+    pub id: UserId,
+    pub is_bot: bool,
+    pub first_name: String,
+    pub last_name: Option<String>,
+    pub username: Option<String>,
+    pub language_code: Option<String>,
+    pub can_join_groups: bool,
+    pub can_read_all_group_messages: bool,
+    pub supports_inline_queries: bool,
+}
+
+impl MockMe {
+    pub const ID: u64 = 12345678;
+    pub const IS_BOT: bool = true;
+    pub const FIRST_NAME: &'static str = "First";
+    pub const CAN_JOIN_GROUPS: bool = false;
+    pub const CAN_READ_ALL_GROUP_MESSAGES: bool = false;
+    pub const SUPPORTS_INLINE_QUERIES: bool = false;
+
+    pub fn new() -> Self {
+        Self {
+            id: UserId(Self::ID),
+            is_bot: Self::IS_BOT,
+            first_name: Self::FIRST_NAME.to_string(),
+            last_name: None,
+            username: None,
+            language_code: None,
+            can_join_groups: Self::CAN_JOIN_GROUPS,
+            can_read_all_group_messages: Self::CAN_READ_ALL_GROUP_MESSAGES,
+            supports_inline_queries: Self::SUPPORTS_INLINE_QUERIES,
+        }
+    }
+
+    pub fn build(self) -> Me {
+        let mut user = MockUser::new();
+
+        user.id = self.id;
+        user.is_bot = self.is_bot;
+        user.first_name = self.first_name;
+        user.last_name = self.last_name;
+        user.username = self.username;
+        user.language_code = self.language_code;
+
+        Me {
+            user: user.build(),
+            can_join_groups: self.can_join_groups,
+            can_read_all_group_messages: self.can_read_all_group_messages,
+            supports_inline_queries: self.supports_inline_queries,
         }
     }
 }
@@ -231,4 +284,3 @@ impl MockVideo {
         }
     }
 }
-
