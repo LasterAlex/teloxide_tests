@@ -28,12 +28,15 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
     ) {
         (Some(_), Some(message_id), None) => {
             // This is a regular message, edit it
-            if MESSAGES.edit_message(message_id, "text", &body.text).is_none() {
+            if MESSAGES
+                .edit_message(message_id, "text", body.text.clone())
+                .is_none()
+            {
                 return HttpResponse::BadRequest().body(
                     json!({ // This is how telegram returns the message
                         "ok": false,
                         "error_code": 400,
-                        "result": "Message not found",
+                        "description": "Message not found",
                     })
                     .to_string(),
                 );
@@ -41,17 +44,13 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
             MESSAGES.edit_message(
                 message_id,
                 "entities",
-                &serde_json::to_string(&body.entities.clone().unwrap_or(vec![])).unwrap(),
+                body.entities.clone().unwrap_or(vec![]),
             );
 
             match body.reply_markup.clone() {
                 // Only the inline keyboard can be inside of a message
-                Some(ReplyMarkup::InlineKeyboard(markup)) => {
-                    MESSAGES.edit_message(
-                        message_id,
-                        "reply_markup",
-                        serde_json::to_string(&markup).unwrap().as_str(),
-                    );
+                Some(ReplyMarkup::InlineKeyboard(reply_markup)) => {
+                    MESSAGES.edit_message(message_id, "reply_markup", reply_markup);
                 }
                 _ => {}
             }

@@ -1,7 +1,10 @@
 pub mod routes;
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpServer, Responder};
 use lazy_static::lazy_static;
-use routes::{delete_message::*, edit_message_text::*, send_message::*};
+use routes::{
+    delete_message::*, edit_message_reply_markup::*, edit_message_text::*, send_message::*,
+};
+use serde::Serialize;
 use std::sync::{
     atomic::{AtomicI32, Ordering},
     Mutex,
@@ -17,16 +20,20 @@ pub struct SentMessageText {
 
 #[derive(Clone, Debug)]
 pub struct EditedMessageText {
-    // For better syntax, this is a struct, not a tuple
     pub message: Message,
     pub bot_request: EditMessageTextBody,
 }
 
 #[derive(Clone, Debug)]
 pub struct DeletedMessage {
-    // For better syntax, this is a struct, not a tuple
     pub message: Message,
     pub bot_request: DeleteMessageBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct EditedMessageReplyMarkup {
+    pub message: Message,
+    pub bot_request: EditMessageReplyMarkupBody,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -34,6 +41,7 @@ pub struct Responses {
     pub sent_messages: Vec<Message>, // Just for convenience for simple tasks
     pub sent_messages_text: Vec<SentMessageText>,
     pub edited_messages_text: Vec<EditedMessageText>,
+    pub edited_messages_reply_markup: Vec<EditedMessageReplyMarkup>,
     pub deleted_messages: Vec<DeletedMessage>,
 }
 
@@ -48,13 +56,16 @@ impl MESSAGES {
         LAST_MESSAGE_ID.load(Ordering::Relaxed)
     }
 
-    pub fn edit_message(&self, message_id: i32, field: &str, value: &str) -> Option<Message> {
+    pub fn edit_message<T>(&self, message_id: i32, field: &str, value: T) -> Option<Message>
+    where
+        T: Serialize,
+    {
         let mut messages = self.lock().unwrap(); // Get the message lock
         let message = messages.iter().find(|m| m.id.0 == message_id)?; // Find the message
                                                                        // (return None if not found)
 
         let mut json = serde_json::to_value(&message).ok()?; // Convert the message to JSON
-        json[field] = value.into(); // Edit the field
+        json[field] = serde_json::to_value(value).ok()?; // Edit the field
         let new_message: Message = serde_json::from_value(json).ok()?; // Convert back to Message
 
         messages.retain(|m| m.id.0 != message_id); // Remove the old message
@@ -83,34 +94,40 @@ impl MESSAGES {
     }
 }
 
-pub const SERVER_PORT: Mutex<u16> = Mutex::new(6504);
-// The port is arbitrary. It is a mutex just in case someone uses 6504 port and needs to change it
+pub async fn ping() -> impl Responder {
+    "pong"
+}
 
-pub async fn main() {
-    // env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-
+pub async fn main(port: Mutex<u16>) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
-    HttpServer::new(move || {
-        App::new()
-            // .wrap(Logger::default())
-            .route("/bot{token}/SendMessage", web::post().to(send_message))
-            .route(
-                "/bot{token}/EditMessageText",
-                web::post().to(edit_message_text),
-            )
-            .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
-    })
-    .bind(format!(
-        "127.0.0.1:{}",
-        SERVER_PORT.lock().unwrap().to_string()
-    ))
-    .unwrap()
-    .workers(1)
-    .run()
-    .await
-    .unwrap();
+    let pong = reqwest::get(format!("http://127.0.0.1:{}/ping", port.lock().unwrap())).await;
+
+    if pong.is_err()
+    // If it errored, no server is running, we need to start it
+    {
+        HttpServer::new(move || {
+            App::new()
+                .route("/ping", web::get().to(ping))
+                .route("/bot{token}/SendMessage", web::post().to(send_message))
+                .route(
+                    "/bot{token}/EditMessageText",
+                    web::post().to(edit_message_text),
+                )
+                .route(
+                    "/bot{token}/EditMessageReplyMarkup",
+                    web::post().to(edit_message_reply_markup),
+                )
+                .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
+        })
+        .bind(format!("127.0.0.1:{}", port.lock().unwrap().to_string()))
+        .unwrap()
+        .workers(1)
+        .run()
+        .await
+        .unwrap()
+    };
 }
 
 #[cfg(test)]

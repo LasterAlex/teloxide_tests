@@ -5,11 +5,13 @@ use std::{
         Arc, Mutex,
     },
 };
-use teloxide::dptree::deps;
-use teloxide::{dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier};
+use teloxide::{
+    dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier, types::MessageId,
+};
+use teloxide::{dptree::deps, types::UpdateKind};
 
 use dataset::{IntoUpdate, MockMe};
-use telegram_test_server::{Responses, SERVER_PORT};
+use telegram_test_server::{Responses, MESSAGES};
 use teloxide::{
     dispatching::{
         dialogue::{GetChatId, InMemStorage, Storage},
@@ -36,6 +38,7 @@ pub struct MockBot {
 
 impl MockBot {
     const CURRENT_UPDATE_ID: AtomicI32 = AtomicI32::new(0); // So that every update is different
+    const PORT: Mutex<u16> = Mutex::new(6504);
 
     pub fn new<T>(
         update: T, // This 'T' is just anything that can be turned into an Update, like a
@@ -55,7 +58,7 @@ impl MockBot {
         let bot = Bot::from_env().set_api_url(
             reqwest::Url::parse(&format!(
                 "http://localhost:{}",
-                SERVER_PORT.lock().unwrap().to_string()
+                Self::PORT.lock().unwrap().to_string()
             ))
             .unwrap(),
         );
@@ -86,14 +89,25 @@ impl MockBot {
         ]); // These are nessessary for the dispatch
 
         let lock = DISPATCHING_LOCK.lock(); // Lock all the other threads out
-        let handler = tokio::spawn(telegram_test_server::main()); // This starts the server in the background
+        tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
+
+        let update_kind = self.update.clone().kind.clone();
+
+        match update_kind {
+            UpdateKind::Message(mut message) => {
+                // Add the message to the list of messages, so the bot can interact with it
+                if MESSAGES.get_message(message.id.0).is_some() {
+                    message.id = MessageId(MESSAGES.max_message_id() + 1);
+                    MESSAGES.add_message(message);
+                }
+            }
+            _ => {}
+        }
 
         let result = self.handler_tree.dispatch(deps.clone()).await; // This is the part that actually calls the handler
         *self.responses.lock().unwrap() =
             Some(telegram_test_server::RESPONSES.lock().unwrap().clone()); // Get the responses
                                                                            // while the lock is still active
-        handler.abort(); // Stop the server
-
         drop(lock); // And free the lock so that the next test can use it
 
         if let ControlFlow::Break(result) = result {

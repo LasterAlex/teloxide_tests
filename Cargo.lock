@@ -1859,6 +1859,7 @@ dependencies = [
  "dataset",
  "env_logger 0.11.3",
  "lazy_static",
+ "reqwest",
  "serde",
  "serde_json",
  "serial_test",

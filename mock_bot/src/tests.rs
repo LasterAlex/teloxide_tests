@@ -2,6 +2,7 @@ use super::*;
 use dataset::*;
 use serde::{Deserialize, Serialize};
 use teloxide::dptree::case;
+use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 use teloxide::{
     dispatching::{
         dialogue::{self, InMemStorage},
@@ -97,6 +98,8 @@ pub enum AllCommands {
     Edit,
     #[command()]
     Delete,
+    #[command()]
+    EditReplyMarkup,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -116,6 +119,13 @@ async fn handler(
         }
         AllCommands::Delete => {
             bot.delete_message(msg.chat.id, sent_message.id).await?;
+        }
+        AllCommands::EditReplyMarkup => {
+            bot.edit_message_reply_markup(msg.chat.id, sent_message.id)
+                .reply_markup(InlineKeyboardMarkup::new(vec![vec![
+                    InlineKeyboardButton::callback("test", "test"),
+                ]]))
+                .await?;
         }
     }
     Ok(())
@@ -153,6 +163,31 @@ async fn test_edit_message() {
 
     assert_eq!(last_sent_message.text(), Some("/edit"));
     assert_eq!(last_edited_response.message.text(), Some("edited"));
+}
+
+#[tokio::test]
+async fn test_edit_reply_markup() {
+    let bot = MockBot::new(MockMessageText::new("/editreplymarkup"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_edited_response = bot
+        .get_responses()
+        .edited_messages_reply_markup
+        .pop()
+        .unwrap();
+
+    assert_eq!(last_sent_message.reply_markup(), None);
+    assert_eq!(
+        last_edited_response
+            .message
+            .reply_markup()
+            .unwrap()
+            .inline_keyboard[0][0]
+            .text,
+        "test"
+    );
 }
 
 #[tokio::test]

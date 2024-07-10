@@ -21,7 +21,7 @@ pub async fn delete_message(body: web::Json<DeleteMessageBody>) -> impl Responde
             json!({
                 "ok": false,
                 "error_code": 400,
-                "result": "Message to delete not found",
+                "description": "Message to delete not found",
             })
             .to_string(),
         );
