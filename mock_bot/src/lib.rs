@@ -1,17 +1,17 @@
 use std::{
-    env,
-    fmt::Debug,
+    env, panic,
     sync::{
         atomic::{AtomicI32, Ordering},
         Arc, Mutex,
     },
 };
+use teloxide::{dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier};
 
 use dataset::{IntoUpdate, MockMe};
 use telegram_test_server::{Responses, SERVER_PORT};
 use teloxide::{
     dispatching::{
-        dialogue::{GetChatId, Storage},
+        dialogue::{GetChatId, InMemStorage, Storage},
         UpdateHandler,
     },
     prelude::*,
@@ -110,14 +110,56 @@ impl MockBot {
         }
     }
 
-    pub async fn get_state<T, S>(&self, storage: Arc<T>) -> S
+    pub async fn get_state<S>(&self) -> S
     where
-        T: Storage<S, Error: Debug>,
+        S: Send + 'static + Clone,
     {
-        storage
-            .get_dialogue(self.update.chat_id().expect("No chat id"))
-            .await
-            .expect("Error getting dialogue")
-            .expect("State is None")
+        let default_panic = panic::take_hook();
+        let in_mem_storage: Option<Arc<Arc<InMemStorage<S>>>>;
+        let erased_storage: Option<Arc<Arc<ErasedStorage<S>>>>;
+        // No trace storage cuz who uses it
+        let dependencies = Arc::new(self.dependencies.lock().unwrap().clone());
+        // Get dependencies into Arc cuz otherwise it complaints about &self being moved
+
+        panic::set_hook(Box::new(|_| {
+            // Do nothing to ignore the panic
+        }));
+        in_mem_storage = std::thread::spawn(move || {
+            // Try to convert one of dptrees fields into an InMemStorage
+            dependencies.get()
+        })
+        .join()
+        .ok();
+
+        let dependencies = Arc::new(self.dependencies.lock().unwrap().clone());
+        // Dependencies were moved to a prev. thread, so create a new one
+        erased_storage = std::thread::spawn(move || {
+            // The same for ErasedStorage
+            dependencies.get()
+        })
+        .join()
+        .ok();
+
+        panic::set_hook(default_panic); // Restore the default panic hook
+
+        if let Some(storage) = in_mem_storage {
+            // If memory storage exists
+            (*storage)
+                .clone()
+                .get_dialogue(self.update.chat_id().expect("No chat id"))
+                .await
+                .expect("Error getting dialogue")
+                .expect("State is None")
+        } else if let Some(storage) = erased_storage {
+            // If erased storage exists
+            (*storage)
+                .clone()
+                .get_dialogue(self.update.chat_id().expect("No chat id"))
+                .await
+                .expect("Error getting dialogue")
+                .expect("State is None")
+        } else {
+            panic!("No storage was getected!");
+        }
     }
 }

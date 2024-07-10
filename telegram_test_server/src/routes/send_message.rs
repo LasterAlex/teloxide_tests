@@ -9,10 +9,6 @@ use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
 use crate::{SentMessage, MESSAGES, RESPONSES};
 
-#[derive(Deserialize)]
-pub struct SendMessageParams {
-    pub token: String,
-}
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SendMessageBody {
@@ -29,7 +25,6 @@ pub struct SendMessageBody {
 }
 
 pub async fn send_message(
-    _: web::Path<SendMessageParams>,
     body: web::Json<SendMessageBody>,
 ) -> impl Responder {
     let mut message = // Creates the message, which will be mutated to fit the needed shape

@@ -81,7 +81,10 @@ pub struct MockMe {
 impl MockMe {
     pub const ID: u64 = 12345678;
     pub const IS_BOT: bool = true;
-    pub const FIRST_NAME: &'static str = "First";
+    pub const FIRST_NAME: &'static str = "Test";
+    pub const LAST_NAME: &'static str = "Bot";
+    pub const USERNAME: &'static str = "test_bot";
+    pub const LANGUAGE_CODE: &'static str = "en";
     pub const CAN_JOIN_GROUPS: bool = false;
     pub const CAN_READ_ALL_GROUP_MESSAGES: bool = false;
     pub const SUPPORTS_INLINE_QUERIES: bool = false;
@@ -91,9 +94,9 @@ impl MockMe {
             id: UserId(Self::ID),
             is_bot: Self::IS_BOT,
             first_name: Self::FIRST_NAME.to_string(),
-            last_name: None,
-            username: None,
-            language_code: None,
+            last_name: Some(Self::LAST_NAME.to_string()),
+            username: Some(Self::USERNAME.to_string()),
+            language_code: Some(Self::LANGUAGE_CODE.to_string()),
             can_join_groups: Self::CAN_JOIN_GROUPS,
             can_read_all_group_messages: Self::CAN_READ_ALL_GROUP_MESSAGES,
             supports_inline_queries: Self::SUPPORTS_INLINE_QUERIES,

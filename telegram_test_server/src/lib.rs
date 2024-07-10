@@ -1,7 +1,10 @@
 pub mod routes;
 use actix_web::{web, App, HttpServer};
 use lazy_static::lazy_static;
-use routes::send_message::{send_message, SendMessageBody};
+use routes::{
+    edit_message_text::{edit_message_text, EditMessageTextBody},
+    send_message::{send_message, SendMessageBody},
+};
 use std::sync::{
     atomic::{AtomicI32, Ordering},
     Mutex,
@@ -16,17 +19,23 @@ pub struct SentMessage {
 }
 
 #[derive(Clone, Debug)]
+pub struct EditedMessageText {
+    // For better syntax, this is a struct, not a tuple
+    pub message: Message,
+    pub request: EditMessageTextBody,
+}
+
+#[derive(Clone, Debug)]
 pub struct Responses {
     pub sent_messages: Vec<SentMessage>,
-    // pub edited_messages: Vec<EditedMessage>,
-    // pub deleted_messages: Vec<DeletedMessage>,
-    // ...
+    pub edited_messages_text: Vec<EditedMessageText>,
 }
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);  // Messages storage, just in case
     pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses {  // This is what is needed from this server
         sent_messages: vec![],
+        edited_messages_text: vec![],
     });
     pub static ref LAST_MESSAGE_ID: AtomicI32 = AtomicI32::new(0);
 }
@@ -79,11 +88,13 @@ pub async fn main() {
 
     // MESSAGES don't care if they are cleaned or not
     RESPONSES.lock().unwrap().sent_messages.clear();
+    RESPONSES.lock().unwrap().edited_messages_text.clear();
 
     HttpServer::new(move || {
         App::new()
             // .wrap(Logger::default())
             .route("/bot{token}/SendMessage", web::post().to(send_message))
+            .route("/bot{token}/EditMessageText", web::post().to(edit_message_text))
     })
     .bind(format!(
         "127.0.0.1:{}",
