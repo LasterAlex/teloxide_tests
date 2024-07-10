@@ -4,7 +4,6 @@ use actix_web::{
 };
 use serde::Deserialize;
 use serde_json::json;
-use teloxide::types::ReplyMarkup;
 
 use crate::{DeletedMessage, MESSAGES, RESPONSES};
 
@@ -12,7 +11,6 @@ use crate::{DeletedMessage, MESSAGES, RESPONSES};
 pub struct DeleteMessageBody {
     pub chat_id: i64,
     pub message_id: i32,
-    pub reply_markup: Option<ReplyMarkup>,
 }
 
 pub async fn delete_message(body: web::Json<DeleteMessageBody>) -> impl Responder {

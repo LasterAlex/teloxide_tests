@@ -29,8 +29,8 @@ static DISPATCHING_LOCK: Mutex<()> = Mutex::new(());
 
 pub struct MockBot {
     bot: Bot, // The bot with a fake server url
-    update: Update,
     handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>, // The thing that dptree::entry() returns
+    update: Mutex<Update>,
     me: Mutex<Me>, // Mutex is here to not worry about mut references, its easier for the user without them
     dependencies: Mutex<DependencyMap>, // If you have something like a state, you should add the storage here
     responses: Mutex<Option<Responses>>, // Caught responses from the server
@@ -65,7 +65,7 @@ impl MockBot {
         Self {
             bot,
             me: Mutex::new(MockMe::new().build()),
-            update: update.into_update(update_id),
+            update: Mutex::new(update.into_update(update_id)),
             handler_tree,
             responses: Mutex::new(None),
             dependencies: Mutex::new(DependencyMap::new()),
@@ -80,18 +80,23 @@ impl MockBot {
         *self.me.lock().unwrap() = me.build();
     }
 
+    pub fn update<T: IntoUpdate>(&self, update: T) {
+        *self.update.lock().unwrap() =
+            update.into_update(Self::CURRENT_UPDATE_ID.fetch_add(1, Ordering::Relaxed));
+    }
+
     pub async fn dispatch(&self) {
         let mut deps = self.dependencies.lock().unwrap();
         deps.insert_container(deps![
             self.bot.clone(),
             self.me.lock().unwrap().clone(),
-            self.update.clone() // This actually makes an update go through the dptree
+            self.update.lock().unwrap().clone() // This actually makes an update go through the dptree
         ]); // These are nessessary for the dispatch
 
         let lock = DISPATCHING_LOCK.lock(); // Lock all the other threads out
         tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
 
-        let update_kind = self.update.clone().kind.clone();
+        let update_kind = self.update.lock().unwrap().clone().kind.clone();
 
         match update_kind {
             UpdateKind::Message(mut message) => {
@@ -175,14 +180,20 @@ impl MockBot {
             // If memory storage exists
             (*storage)
                 .clone()
-                .update_dialogue(self.update.chat_id().expect("No chat id"), state)
+                .update_dialogue(
+                    self.update.lock().unwrap().chat_id().expect("No chat id"),
+                    state,
+                )
                 .await
                 .expect("Failed to update dialogue");
         } else if let Some(storage) = erased_storage {
             // If erased storage exists
             (*storage)
                 .clone()
-                .update_dialogue(self.update.chat_id().expect("No chat id"), state)
+                .update_dialogue(
+                    self.update.lock().unwrap().chat_id().expect("No chat id"),
+                    state,
+                )
                 .await
                 .expect("Failed to update dialogue");
         } else {
@@ -199,7 +210,7 @@ impl MockBot {
             // If memory storage exists
             (*storage)
                 .clone()
-                .get_dialogue(self.update.chat_id().expect("No chat id"))
+                .get_dialogue(self.update.lock().unwrap().chat_id().expect("No chat id"))
                 .await
                 .expect("Error getting dialogue")
                 .expect("State is None")
@@ -207,7 +218,7 @@ impl MockBot {
             // If erased storage exists
             (*storage)
                 .clone()
-                .get_dialogue(self.update.chat_id().expect("No chat id"))
+                .get_dialogue(self.update.lock().unwrap().chat_id().expect("No chat id"))
                 .await
                 .expect("Error getting dialogue")
                 .expect("State is None")

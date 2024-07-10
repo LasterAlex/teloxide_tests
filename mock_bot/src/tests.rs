@@ -131,6 +131,16 @@ async fn handler(
     Ok(())
 }
 
+async fn callback_handler(
+    bot: Bot,
+    call: CallbackQuery,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    bot.answer_callback_query(call.id)
+        .text(call.data.unwrap())
+        .await?;
+    Ok(())
+}
+
 fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     dptree::entry()
         .branch(
@@ -139,6 +149,7 @@ fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
                 .endpoint(handler),
         )
         .branch(Update::filter_message().endpoint(handler))
+        .branch(Update::filter_callback_query().endpoint(callback_handler))
 }
 
 #[tokio::test]
@@ -201,4 +212,15 @@ async fn test_delete_message() {
 
     assert_eq!(last_sent_message.text(), Some("/delete"));
     assert_eq!(last_deleted_response.message.id, last_sent_message.id);
+}
+
+#[tokio::test]
+async fn test_answer_callback_query() {
+    let bot = MockBot::new(MockCallbackQuery::new().data("test"), get_schema());
+
+    bot.dispatch().await;
+
+    let answered_callback = bot.get_responses().answered_callback_queries.pop().unwrap();
+
+    assert_eq!(answered_callback.text, Some("test".to_string()));
 }

@@ -2,7 +2,8 @@ pub mod routes;
 use actix_web::{web, App, HttpServer, Responder};
 use lazy_static::lazy_static;
 use routes::{
-    delete_message::*, edit_message_reply_markup::*, edit_message_text::*, send_message::*,
+    answer_callback_query::*, delete_message::*, edit_message_reply_markup::*,
+    edit_message_text::*, send_message::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -43,6 +44,7 @@ pub struct Responses {
     pub edited_messages_text: Vec<EditedMessageText>,
     pub edited_messages_reply_markup: Vec<EditedMessageReplyMarkup>,
     pub deleted_messages: Vec<DeletedMessage>,
+    pub answered_callback_queries: Vec<AnswerCallbackQueryBody>,
 }
 
 lazy_static! {
@@ -120,6 +122,10 @@ pub async fn main(port: Mutex<u16>) {
                     web::post().to(edit_message_reply_markup),
                 )
                 .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
+                .route(
+                    "/bot{token}/AnswerCallbackQuery",
+                    web::post().to(answer_callback_query),
+                )
         })
         .bind(format!("127.0.0.1:{}", port.lock().unwrap().to_string()))
         .unwrap()
