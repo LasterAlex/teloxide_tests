@@ -1,6 +1,5 @@
 use super::*;
 use dataset::*;
-use dptree::case;
 use serde::{Deserialize, Serialize};
 use teloxide::{
     dispatching::{
@@ -11,31 +10,15 @@ use teloxide::{
     macros::BotCommands,
 };
 
+//
+//
+//
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, Default, Debug)]
 enum State {
     #[default]
     Start,
     NotStart,
-}
-
-#[derive(BotCommands, Clone)]
-#[command(rename_rule = "lowercase")]
-pub enum AllCommands {
-    #[command()]
-    Edit,
-    #[command()]
-    Delete,
-}
-
-type MyDialogue = Dialogue<State, InMemStorage<State>>;
-
-async fn handler(
-    bot: Bot,
-    msg: Message,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-    let sent_message = bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
-    assert!(msg.text().unwrap() == sent_message.text().unwrap()); // The message actually made it through!
-    Ok(())
 }
 
 async fn handler_with_state(
@@ -49,51 +32,9 @@ async fn handler_with_state(
     Ok(())
 }
 
-async fn edit_handler(
-    bot: Bot,
-    msg: Message,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-    let sent_message = bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
-    bot.edit_message_text(msg.chat.id, sent_message.id, "edited")
-        .await?;
-    Ok(())
-}
-
-async fn delete_handler(
-    bot: Bot,
-    msg: Message,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-    let sent_message = bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
-    bot.delete_message(sent_message.chat.id, sent_message.id)
-        .await?;
-    Ok(())
-}
-
-fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
-    dptree::entry()
-        .branch(
-            Update::filter_message()
-                .filter_command::<AllCommands>()
-                .branch(case![AllCommands::Edit].endpoint(edit_handler))
-                .branch(case![AllCommands::Delete].endpoint(delete_handler)),
-        )
-        .branch(Update::filter_message().endpoint(handler))
-}
-
 fn get_dialogue_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     dialogue::enter::<Update, InMemStorage<State>, State, _>()
         .branch(Update::filter_message().endpoint(handler_with_state))
-}
-
-#[tokio::test]
-async fn test_echo() {
-    let bot = MockBot::new(MockMessageText::new("hello"), get_schema());
-
-    bot.dispatch().await;
-
-    let last_response = bot.get_responses().sent_messages.pop().unwrap();
-
-    assert_eq!(last_response.text(), Some("hello"));
 }
 
 #[tokio::test]
@@ -109,6 +50,64 @@ async fn test_echo_with_state() {
     assert_eq!(state, State::NotStart);
 
     assert_eq!(last_response.text(), Some("test"));
+}
+
+//
+//
+//
+
+#[derive(BotCommands, Clone)]
+#[command(rename_rule = "lowercase")]
+pub enum AllCommands {
+    #[command()]
+    Echo,
+    #[command()]
+    Edit,
+    #[command()]
+    Delete,
+}
+
+type MyDialogue = Dialogue<State, InMemStorage<State>>;
+
+async fn handler(
+    bot: Bot,
+    msg: Message,
+    cmd: AllCommands,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let sent_message = bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
+    assert!(msg.text().unwrap() == sent_message.text().unwrap()); // The message actually made it through!
+    match cmd {
+        AllCommands::Echo => {}
+        AllCommands::Edit => {
+            bot.edit_message_text(msg.chat.id, sent_message.id, "edited")
+                .await?;
+        }
+        AllCommands::Delete => {
+            bot.delete_message(msg.chat.id, sent_message.id).await?;
+        }
+    }
+    Ok(())
+}
+
+fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+    dptree::entry()
+        .branch(
+            Update::filter_message()
+                .filter_command::<AllCommands>()
+                .endpoint(handler),
+        )
+        .branch(Update::filter_message().endpoint(handler))
+}
+
+#[tokio::test]
+async fn test_echo() {
+    let bot = MockBot::new(MockMessageText::new("/echo echo"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_response = bot.get_responses().sent_messages.pop().unwrap();
+
+    assert_eq!(last_response.text(), Some("/echo echo"));
 }
 
 #[tokio::test]

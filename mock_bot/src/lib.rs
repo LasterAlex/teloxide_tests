@@ -5,6 +5,7 @@ use std::{
         Arc, Mutex,
     },
 };
+use teloxide::dptree::deps;
 use teloxide::{dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier};
 
 use dataset::{IntoUpdate, MockMe};
@@ -78,9 +79,11 @@ impl MockBot {
 
     pub async fn dispatch(&self) {
         let mut deps = self.dependencies.lock().unwrap();
-        deps.insert(self.bot.clone()); // Insert the nessesary for dispatchment dependencies
-        deps.insert(self.me.lock().unwrap().clone());
-        deps.insert(self.update.clone());
+        deps.insert_container(deps![
+            self.bot.clone(),
+            self.me.lock().unwrap().clone(),
+            self.update.clone() // This actually makes an update go through the dptree
+        ]); // These are nessessary for the dispatch
 
         let lock = DISPATCHING_LOCK.lock(); // Lock all the other threads out
         let handler = tokio::spawn(telegram_test_server::main()); // This starts the server in the background
