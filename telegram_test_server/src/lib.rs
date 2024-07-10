@@ -1,10 +1,11 @@
 pub mod routes;
-use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpServer};
 use lazy_static::lazy_static;
 use routes::send_message::{send_message, SendMessageBody};
 use std::sync::Mutex;
 use teloxide::types::Message;
 
+#[derive(Clone, Debug)]
 pub struct Responses {
     pub sent_messages: Vec<(Message, SendMessageBody)>,
 }
@@ -12,7 +13,7 @@ pub struct Responses {
 lazy_static! {
     pub static ref MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);
     pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses {
-        sent_messages: vec![]
+        sent_messages: vec![],
     });
 }
 
@@ -57,22 +58,22 @@ impl MESSAGES {
     }
 }
 
-pub async fn test(url: web::Path<String>) -> impl Responder {
-    println!("{}", url);
-    HttpResponse::Ok()
-}
+pub async fn main() {
+    // env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    MESSAGES.lock().unwrap().clear();
+    RESPONSES.lock().unwrap().sent_messages.clear();
 
-#[actix_web::main]
-pub async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
-            .wrap(Logger::default())
+            // .wrap(Logger::default())
             .route("/bot{token}/SendMessage", web::post().to(send_message))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("127.0.0.1:8080")
+    .unwrap()
+    .workers(1)
     .run()
     .await
+    .unwrap();
 }
 
 #[cfg(test)]

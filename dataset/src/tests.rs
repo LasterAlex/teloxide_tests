@@ -1,7 +1,7 @@
-use crate::{chat::*, message_common::*, *};
+use crate::*;
 use proc_macros::Changeable;
 use queries::MockCallbackQuery;
-use teloxide::types::{ChatId, MessageEntity, MessageId, True, UserId};
+use teloxide::{dispatching::dialogue::GetChatId, types::{ChatId, MessageEntity, MessageId, True, UserId}};
 
 #[derive(Changeable)]
 struct Test {
@@ -141,6 +141,16 @@ fn test_message_common_text() {
         message_object.entities(),
         Some(vec![MessageEntity::bold(0, 3)]).as_deref()
     );
+}
+
+#[test]
+fn test_into_update() {
+    let message = MockMessageText::new("text");
+
+    let update = message.into_update(1);
+
+    assert_eq!(update.id, 1);
+    assert_eq!(update.chat_id(), Some(ChatId(MockUser::ID as i64)));
 }
 
 #[test]

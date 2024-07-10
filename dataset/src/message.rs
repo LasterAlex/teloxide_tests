@@ -34,6 +34,15 @@ macro_rules! Message {
                 }
             }
         }
+
+        impl crate::IntoUpdate for $name {
+            fn into_update(self, id: i32) -> Update {
+                Update {
+                    id,
+                    kind: UpdateKind::Message(self.build()),
+                }
+            }
+        }
     }
 }
 

@@ -1,13 +1,20 @@
 use mime::Mime;
 use proc_macros::Changeable;
-use teloxide::types::{ChatPhoto, FileMeta, Location, PhotoSize, User, UserId, Video};
+use teloxide::types::{ChatPhoto, FileMeta, Location, PhotoSize, Update, User, UserId, Video};
 pub mod chat;
 
 pub mod message_common;
 pub mod message;
 pub mod queries;
+pub use message_common::*;
+pub use chat::*;
+pub use queries::*;
 #[cfg(test)]
 mod tests;
+
+pub trait IntoUpdate {
+    fn into_update(self, id: i32) -> Update;
+}
 
 //
 //

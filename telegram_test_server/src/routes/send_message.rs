@@ -14,7 +14,7 @@ pub struct SendMessageParams {
     pub token: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct SendMessageBody {
     pub chat_id: i64,
     pub text: String,
@@ -27,6 +27,8 @@ pub struct SendMessageBody {
     pub allow_sending_without_reply: Option<bool>,
     pub reply_markup: Option<ReplyMarkup>,
 }
+
+// This should return send_message function
 
 pub async fn send_message(
     _: web::Path<SendMessageParams>,

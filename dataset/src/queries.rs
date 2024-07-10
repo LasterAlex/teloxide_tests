@@ -42,4 +42,13 @@ impl MockCallbackQuery {
     }
 }
 
+impl crate::IntoUpdate for MockCallbackQuery {
+    fn into_update(self, id: i32) -> Update {
+        Update {
+            id,
+            kind: UpdateKind::CallbackQuery(self.build()),
+        }
+    }
+}
+
 // Add more queries here like ShippingQuery, PreCheckoutQuery etc.
