@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_json::json;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::{MESSAGES, RESPONSES};
+use crate::{SentMessage, MESSAGES, RESPONSES};
 
 #[derive(Deserialize)]
 pub struct SendMessageParams {
@@ -28,20 +28,26 @@ pub struct SendMessageBody {
     pub reply_markup: Option<ReplyMarkup>,
 }
 
-// This should return send_message function
-
 pub async fn send_message(
     _: web::Path<SendMessageParams>,
     body: web::Json<SendMessageBody>,
 ) -> impl Responder {
-    let mut message =
+    let mut message = // Creates the message, which will be mutated to fit the needed shape
         MockMessageText::new(&body.text).chat(MockPrivateChat::new().id(body.chat_id).build());
+
     message.entities = body.entities.clone().unwrap_or(vec![]);
     match body.reply_to_message_id {
-        Some(id) => message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap())),
+        Some(id) => {
+            message.reply_to_message = Some(Box::new(
+                MESSAGES
+                    .get_message(id)
+                    .expect("Message to reply to was not found"),
+            ))
+        }
         None => {}
     }
     match body.reply_markup.clone() {
+        // Only the inline keyboard can be inside of a message
         Some(ReplyMarkup::InlineKeyboard(markup)) => message.reply_markup = Some(markup),
         _ => {}
     }
@@ -49,14 +55,13 @@ pub async fn send_message(
     let last_id = MESSAGES.max_message_id();
     let message = message.id(last_id + 1).build();
     MESSAGES.add_message(message.clone());
-    RESPONSES
-        .lock()
-        .unwrap()
-        .sent_messages
-        .push((message.clone(), body.into_inner()));
+    RESPONSES.lock().unwrap().sent_messages.push(SentMessage {
+        message: message.clone(),
+        request: body.into_inner(),
+    });
 
     HttpResponse::Ok().body(
-        json!({
+        json!({ // This is how telegram returns the message
             "ok": true,
             "result": message,
         })

@@ -19,7 +19,7 @@ macro_rules! Chat {
             $($fpub $field : $type,)*
         }
         impl $name {
-            pub const ID: i64 = -12345678;
+            pub const ID: i64 = -12345678;  // Make them into a constant cuz why not
             pub const HAS_HIDDEN_MEMBERS: bool = false;
             pub const AGGRESSIVE_ANTI_SPAM_ENABLED: bool = false;
 
@@ -50,7 +50,7 @@ macro_rules! Chat {
     }
 }
 
-macro_rules! PublicChat {
+macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat myself
     (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
         Chat! {
             #[derive($($derive),*)]

@@ -17,7 +17,7 @@ pub trait IntoUpdate {
 }
 
 //
-//
+//  Structs below are just misc mocked structs
 //
 
 #[derive(Changeable)]

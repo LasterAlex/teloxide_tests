@@ -10,6 +10,28 @@ I am going right now by the following steps:
 2) Make it beautiful for the user
 3) Make it beautiful on the inside
 
+## Structure
+
+- ./dataset has different mocked structs, that are easy to implement and use
+- ./proc_macros has proc macros, cuz for some reason it has to be a separate crate
+- ./telegram_test_server has a server that mimicks the real one
+- ./mock_bot has a mocked version of a bot, that sends requests to the fake server
+
+## Where are the examples of a mocked bot?
+
+`./mock_bot/src/tests.rs`
+
+## How to implement it?
+
+Hopefully it is as easy as doing what happens in `./mock_bot/src/tests.rs`
+
+1) Import the dataset
+2) Create a mocked bot with something that can be turned into an update, like MockMessageText or MockMessagePhoto
+3) Add dependencies and/or a different bot using .dependencies(deps![]) and .me(MockedMe::new().build())
+4) Dispatch it with .dispatch().await
+5) Get the responces with .get_responces()
+6) Do the testing with the gotten responces
+
 ## Todo
 
 - [x] Add dataset
