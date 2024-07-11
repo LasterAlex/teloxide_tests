@@ -10,6 +10,15 @@ I am going right now by the following steps:
 2) Make it beautiful for the user
 3) Make it beautiful on the inside
 
+What is needed until release:
+
+- Add most common endpoints (SendMessage, SendPhoto, SendDocument, SendVideo, EditMessageText, EditMessageCaption, EditMessageReplyMarkup, DeleteMessage, AnswerCallbackQuery, GetFile)
+- Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
+- Clean up the test server code and make it easily extendable
+- Add a lot of different examples for referencing
+- Try to make a real bot with these tests, to see, where it lacks in the real usecases
+- Some feedback for a sanity check
+
 ## Structure
 
 - ./dataset has different mocked structs, that are easy to implement and use
@@ -43,6 +52,7 @@ Hopefully it is as easy as doing what happens in `./mock_bot/src/tests.rs`
 - [x] Add fake server
     - [ ] Add most common endpoints
     - [ ] Add all common messages (low priority)
+    - [ ] Add inline queries (low priority)
     - [ ] Add all queries (low priority)
     - [ ] Add all messages (super low priority)
     - [ ] Add everything else (may never be done)

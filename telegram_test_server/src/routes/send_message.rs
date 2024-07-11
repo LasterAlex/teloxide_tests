@@ -9,9 +9,11 @@ use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
 use crate::{SentMessageText, MESSAGES, RESPONSES};
 
+use super::BodyChatId;
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct SendMessageTextBody {
-    pub chat_id: i64,
+    pub chat_id: BodyChatId,
     pub text: String,
     pub message_thread_id: Option<i64>,
     pub parse_mode: Option<ParseMode>,
@@ -25,10 +27,12 @@ pub struct SendMessageTextBody {
 }
 
 pub async fn send_message(body: web::Json<SendMessageTextBody>) -> impl Responder {
-    let chat = if body.chat_id < 0 {
-        MockSupergroupChat::new().id(body.chat_id).build()
+    let chat_id: i64 = body.chat_id.id();
+
+    let chat = if chat_id < 0 {
+        MockSupergroupChat::new().id(chat_id).build()
     } else {
-        MockPrivateChat::new().id(body.chat_id).build()
+        MockPrivateChat::new().id(chat_id).build()
     };
 
     let mut message = // Creates the message, which will be mutated to fit the needed shape

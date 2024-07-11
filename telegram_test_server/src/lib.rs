@@ -2,8 +2,8 @@ pub mod routes;
 use actix_web::{web, App, HttpServer, Responder};
 use lazy_static::lazy_static;
 use routes::{
-    answer_callback_query::*, delete_message::*, edit_message_reply_markup::*,
-    edit_message_text::*, send_message::*,
+    answer_callback_query::*, delete_message::*, edit_message_caption::*,
+    edit_message_reply_markup::*, edit_message_text::*, send_message::*, send_photo::*, SendMessageCaptionMediaBody,
 };
 use serde::Serialize;
 use std::sync::{
@@ -20,9 +20,21 @@ pub struct SentMessageText {
 }
 
 #[derive(Clone, Debug)]
+pub struct SentMessagePhoto {
+    pub message: Message,
+    pub bot_request: SendMessageCaptionMediaBody,
+}
+
+#[derive(Clone, Debug)]
 pub struct EditedMessageText {
     pub message: Message,
     pub bot_request: EditMessageTextBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct EditedMessageCaption {
+    pub message: Message,
+    pub bot_request: EditMessageCaptionBody,
 }
 
 #[derive(Clone, Debug)]
@@ -41,7 +53,9 @@ pub struct EditedMessageReplyMarkup {
 pub struct Responses {
     pub sent_messages: Vec<Message>, // Just for convenience for simple tasks
     pub sent_messages_text: Vec<SentMessageText>,
+    pub sent_messages_photo: Vec<SentMessagePhoto>,
     pub edited_messages_text: Vec<EditedMessageText>,
+    pub edited_messages_caption: Vec<EditedMessageCaption>,
     pub edited_messages_reply_markup: Vec<EditedMessageReplyMarkup>,
     pub deleted_messages: Vec<DeletedMessage>,
     pub answered_callback_queries: Vec<AnswerCallbackQueryBody>,
@@ -113,9 +127,14 @@ pub async fn main(port: Mutex<u16>) {
             App::new()
                 .route("/ping", web::get().to(ping))
                 .route("/bot{token}/SendMessage", web::post().to(send_message))
+                .route("/bot{token}/SendPhoto", web::post().to(send_photo))
                 .route(
                     "/bot{token}/EditMessageText",
                     web::post().to(edit_message_text),
+                )
+                .route(
+                    "/bot{token}/EditMessageCaption",
+                    web::post().to(edit_message_caption),
                 )
                 .route(
                     "/bot{token}/EditMessageReplyMarkup",

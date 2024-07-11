@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+gag = "1.0.0"
 dotenv = "0.15.0"
 log = "0.4"
 pretty_env_logger = "0.5"

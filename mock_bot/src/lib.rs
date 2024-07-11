@@ -5,6 +5,7 @@ use std::{
         Arc, Mutex,
     },
 };
+use gag::Gag;
 use teloxide::{
     dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier, types::MessageId,
 };
@@ -25,6 +26,7 @@ use teloxide::{
 mod tests;
 
 static DISPATCHING_LOCK: Mutex<()> = Mutex::new(());
+static GET_POTENTIAL_STORAGE_LOCK: Mutex<()> = Mutex::new(());
 // Otherwise the fake server will error because of a taken port
 
 pub struct MockBot {
@@ -86,34 +88,37 @@ impl MockBot {
     }
 
     pub async fn dispatch(&self) {
-        let mut deps = self.dependencies.lock().unwrap();
-        deps.insert_container(deps![
-            self.bot.clone(),
-            self.me.lock().unwrap().clone(),
-            self.update.lock().unwrap().clone() // This actually makes an update go through the dptree
-        ]); // These are nessessary for the dispatch
-
         let lock = DISPATCHING_LOCK.lock(); // Lock all the other threads out
-        tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
+        
+        let mut deps = self.dependencies.lock().unwrap();
 
-        let update_kind = self.update.lock().unwrap().clone().kind.clone();
+        let mut update_lock = self.update.lock().unwrap();
 
-        match update_kind {
+        match update_lock.kind.clone() {
             UpdateKind::Message(mut message) => {
                 // Add the message to the list of messages, so the bot can interact with it
-                if MESSAGES.get_message(message.id.0).is_some() {
-                    message.id = MessageId(MESSAGES.max_message_id() + 1);
-                    MESSAGES.add_message(message);
+                let max_id = MESSAGES.max_message_id();
+                if message.id.0 <= max_id || MESSAGES.get_message(message.id.0).is_some() {
+                    message.id = MessageId(max_id + 1);
+                    update_lock.kind = UpdateKind::Message(message.clone());
+                    MESSAGES.add_message(message.clone());
                 }
             }
             _ => {}
         }
 
+        deps.insert_container(deps![
+            self.bot.clone(),
+            self.me.lock().unwrap().clone(),
+            update_lock.clone() // This actually makes an update go through the dptree
+        ]); // These are nessessary for the dispatch
+
+        tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
+
         let result = self.handler_tree.dispatch(deps.clone()).await; // This is the part that actually calls the handler
         *self.responses.lock().unwrap() =
             Some(telegram_test_server::RESPONSES.lock().unwrap().clone()); // Get the responses
                                                                            // while the lock is still active
-        drop(lock); // And free the lock so that the next test can use it
 
         if let ControlFlow::Break(result) = result {
             // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
@@ -122,6 +127,7 @@ impl MockBot {
         } else {
             panic!("Unhandled update!");
         }
+        drop(lock); // And free the lock so that the next test can use it
     }
 
     pub fn get_responses(&self) -> telegram_test_server::Responses {
@@ -141,6 +147,8 @@ impl MockBot {
     where
         S: Send + 'static + Clone,
     {
+        let get_potential_storage_lock = GET_POTENTIAL_STORAGE_LOCK.lock();
+        // If not this lock, some panic messages will make it to stderr, even with gag
         let default_panic = panic::take_hook();
         let in_mem_storage: Option<Arc<Arc<InMemStorage<S>>>>;
         let erased_storage: Option<Arc<Arc<ErasedStorage<S>>>>;
@@ -151,6 +159,7 @@ impl MockBot {
         panic::set_hook(Box::new(|_| {
             // Do nothing to ignore the panic
         }));
+        let print_gag = Gag::stderr().unwrap();  // Otherwise the panic will be printed
         in_mem_storage = std::thread::spawn(move || {
             // Try to convert one of dptrees fields into an InMemStorage
             dependencies.get()
@@ -167,7 +176,10 @@ impl MockBot {
         .join()
         .ok();
 
+
         panic::set_hook(default_panic); // Restore the default panic hook
+        drop(print_gag);
+        drop(get_potential_storage_lock);
         (in_mem_storage, erased_storage)
     }
 

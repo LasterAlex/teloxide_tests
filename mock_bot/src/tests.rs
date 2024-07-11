@@ -2,7 +2,8 @@ use super::*;
 use dataset::*;
 use serde::{Deserialize, Serialize};
 use teloxide::dptree::case;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use teloxide::payloads::SendPhotoSetters;
+use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, InputFile, MessageEntity};
 use teloxide::{
     dispatching::{
         dialogue::{self, InMemStorage},
@@ -100,6 +101,10 @@ pub enum AllCommands {
     Delete,
     #[command()]
     EditReplyMarkup,
+    #[command()]
+    Photo,
+    #[command()]
+    EditCaption,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -125,6 +130,21 @@ async fn handler(
                 .reply_markup(InlineKeyboardMarkup::new(vec![vec![
                     InlineKeyboardButton::callback("test", "test"),
                 ]]))
+                .await?;
+        }
+        AllCommands::Photo => {
+            let photo = InputFile::memory("somedata".to_string()).file_name("test.txt");
+            bot.send_photo(msg.chat.id, photo)
+                .caption("test")
+                .caption_entities(vec![MessageEntity::bold(0, 3)])
+                .reply_to_message_id(msg.id)
+                .await?;
+        }
+        AllCommands::EditCaption => {
+            let photo = InputFile::memory("somedata".to_string());
+            let photo_message = bot.send_photo(msg.chat.id, photo).await?;
+            bot.edit_message_caption(msg.chat.id, photo_message.id)
+                .caption("edited")
                 .await?;
         }
     }
@@ -164,6 +184,24 @@ async fn test_echo() {
 }
 
 #[tokio::test]
+async fn test_send_photo() {
+    let bot = MockBot::new(MockMessageText::new("/photo"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_sent_photo = bot.get_responses().sent_messages_photo.pop().unwrap();
+    assert_eq!(last_sent_message.caption(), Some("test"));
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/photo")
+    );
+    assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
+    assert_eq!(last_sent_photo.bot_request.file_name, "test.txt");
+    assert_eq!(last_sent_photo.bot_request.file_data, "somedata");
+}
+
+#[tokio::test]
 async fn test_edit_message() {
     let bot = MockBot::new(MockMessageText::new("/edit"), get_schema());
 
@@ -174,6 +212,19 @@ async fn test_edit_message() {
 
     assert_eq!(last_sent_message.text(), Some("/edit"));
     assert_eq!(last_edited_response.message.text(), Some("edited"));
+}
+
+#[tokio::test]
+async fn test_edit_caption() {
+    let bot = MockBot::new(MockMessageText::new("/editcaption"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_edited_response = bot.get_responses().edited_messages_caption.pop().unwrap();
+
+    assert_eq!(last_sent_message.caption(), None);
+    assert_eq!(last_edited_response.message.caption(), Some("edited"));
 }
 
 #[tokio::test]

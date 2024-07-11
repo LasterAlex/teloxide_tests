@@ -7,9 +7,11 @@ use serde_json::json;
 
 use crate::{DeletedMessage, MESSAGES, RESPONSES};
 
+use super::BodyChatId;
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct DeleteMessageBody {
-    pub chat_id: i64,
+    pub chat_id: BodyChatId,
     pub message_id: i32,
 }
 

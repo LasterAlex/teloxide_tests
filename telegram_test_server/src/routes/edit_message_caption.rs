@@ -6,32 +6,31 @@ use serde::Deserialize;
 use serde_json::json;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::{EditedMessageText, MESSAGES, RESPONSES};
+use crate::{EditedMessageCaption, MESSAGES, RESPONSES};
 
 use super::BodyChatId;
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct EditMessageTextBody {
+pub struct EditMessageCaptionBody {
     pub chat_id: Option<BodyChatId>,
     pub message_id: Option<i32>,
     pub inline_message_id: Option<String>,
-    pub text: String,
+    pub caption: String,
     pub parse_mode: Option<ParseMode>,
-    pub entities: Option<Vec<MessageEntity>>,
-    pub disable_web_page_preview: Option<bool>,
+    pub caption_entities: Option<Vec<MessageEntity>>,
+    pub show_caption_above_media: Option<bool>,
     pub reply_markup: Option<ReplyMarkup>,
 }
 
-pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Responder {
+pub async fn edit_message_caption(body: web::Json<EditMessageCaptionBody>) -> impl Responder {
     match (
         body.chat_id.clone(),
         body.message_id,
         body.inline_message_id.clone(),
     ) {
         (Some(_), Some(message_id), None) => {
-            // This is a regular message, edit it
             if MESSAGES
-                .edit_message(message_id, "text", body.text.clone())
+                .edit_message(message_id, "caption", body.caption.clone())
                 .is_none()
             {
                 return HttpResponse::BadRequest().body(
@@ -45,8 +44,8 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
             };
             MESSAGES.edit_message(
                 message_id,
-                "entities",
-                body.entities.clone().unwrap_or(vec![]),
+                "caption_entities",
+                body.caption_entities.clone().unwrap_or(vec![]),
             );
 
             match body.reply_markup.clone() {
@@ -61,8 +60,8 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
             RESPONSES
                 .lock()
                 .unwrap()
-                .edited_messages_text
-                .push(EditedMessageText {
+                .edited_messages_caption
+                .push(EditedMessageCaption {
                     message: message.clone(),
                     bot_request: body.into_inner(),
                 });

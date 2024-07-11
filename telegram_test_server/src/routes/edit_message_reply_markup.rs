@@ -8,19 +8,21 @@ use teloxide::types::ReplyMarkup;
 
 use crate::{EditedMessageReplyMarkup, MESSAGES, RESPONSES};
 
+use super::BodyChatId;
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct EditMessageReplyMarkupBody {
-    chat_id: Option<i64>,
-    message_id: Option<i32>,
-    inline_message_id: Option<String>,
-    reply_markup: Option<ReplyMarkup>,
+    pub chat_id: Option<BodyChatId>,
+    pub message_id: Option<i32>,
+    pub inline_message_id: Option<String>,
+    pub reply_markup: Option<ReplyMarkup>,
 }
 
 pub async fn edit_message_reply_markup(
     body: web::Json<EditMessageReplyMarkupBody>,
 ) -> impl Responder {
     match (
-        body.chat_id,
+        body.chat_id.clone(),
         body.message_id,
         body.inline_message_id.clone(),
     ) {
