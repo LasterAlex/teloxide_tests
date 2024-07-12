@@ -12,12 +12,13 @@ I am going right now by the following steps:
 
 What is needed until release:
 
-- Add most common endpoints (SendMessage, SendPhoto, SendDocument, SendVideo, EditMessageText, EditMessageCaption, EditMessageReplyMarkup, DeleteMessage, AnswerCallbackQuery, GetFile)
-- Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
-- Clean up the test server code and make it easily extendable
-- Add a lot of different examples for referencing
-- Try to make a real bot with these tests, to see, where it lacks in the real usecases
-- Some feedback for a sanity check
+- [x] Add most common endpoints (SendMessage, SendPhoto, SendDocument, SendVideo, EditMessageText, EditMessageCaption, EditMessageReplyMarkup, DeleteMessage, AnswerCallbackQuery, GetFile)
+- [x] Clean up the test server code and make it easily extendable
+- [ ] Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
+- [ ] Export publicly only what is needed
+- [ ] Add a lot of different examples for referencing
+- [ ] Try to make a real bot with these tests, to see, where it lacks in the real usecases
+- [ ] Some feedback for a sanity check
 
 ## Structure
 
@@ -50,7 +51,7 @@ Hopefully it is as easy as doing what happens in `./mock_bot/src/tests.rs`
     - [ ] Add dataset of messages (low priority)
     - [ ] Add structs without a category (low priority)
 - [x] Add fake server
-    - [ ] Add most common endpoints
+    - [x] Add most common endpoints
     - [ ] Add all common messages (low priority)
     - [ ] Add inline queries (low priority)
     - [ ] Add all queries (low priority)
