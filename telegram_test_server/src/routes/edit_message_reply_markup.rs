@@ -1,9 +1,7 @@
-use actix_web::{
-    web::{self},
-    HttpResponse, Responder,
-};
+use crate::routes::{check_if_message_exists, make_telegram_result};
+use actix_web::error::ErrorBadRequest;
+use actix_web::{web, Responder};
 use serde::Deserialize;
-use serde_json::json;
 use teloxide::types::ReplyMarkup;
 
 use crate::{EditedMessageReplyMarkup, MESSAGES, RESPONSES};
@@ -27,54 +25,28 @@ pub async fn edit_message_reply_markup(
         body.inline_message_id.clone(),
     ) {
         (Some(_), Some(message_id), None) => {
+            check_if_message_exists!(message_id);
+
             let message = match body.reply_markup.clone() {
-                Some(reply_markup) => {
-                    MESSAGES.edit_message(message_id, "reply_markup", reply_markup)
-                }
-                None => MESSAGES.edit_message(message_id, "reply_markup", None::<()>),
-            };
-            let Some(message) = message else {
-                return HttpResponse::BadRequest().body(
-                    json!({
-                        "ok": false,
-                        "error_code": 400,
-                        "description": "Message not found",
-                    })
-                    .to_string(),
-                );
+                Some(reply_markup) => MESSAGES
+                    .edit_message(message_id, "reply_markup", reply_markup)
+                    .unwrap(),
+                None => MESSAGES
+                    .edit_message(message_id, "reply_markup", None::<()>)
+                    .unwrap(),
             };
 
-            RESPONSES
-                .lock()
-                .unwrap()
+            let mut response_lock = RESPONSES.lock().unwrap();
+            response_lock
                 .edited_messages_reply_markup
                 .push(EditedMessageReplyMarkup {
                     message: message.clone(),
                     bot_request: body.into_inner(),
                 });
 
-            HttpResponse::Ok().body(
-                json!({
-                    "ok": true,
-                    "result": message,
-                })
-                .to_string(),
-            )
+            make_telegram_result(message)
         }
-        (None, None, Some(_)) => HttpResponse::Ok().body(
-            json!({
-                "ok": true,
-                "result": true,
-            })
-            .to_string(),
-        ),
-        _ => HttpResponse::BadRequest().body(
-            json!({
-                "ok": false,
-                "error_code": 400,
-                "description": "Missing chat_id, message_id or inline_message_id",
-            })
-            .to_string(),
-        ),
+        (None, None, Some(_)) => make_telegram_result(true),
+        _ => ErrorBadRequest("No message_id or inline_message_id were provided").into(),
     }
 }

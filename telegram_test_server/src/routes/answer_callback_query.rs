@@ -1,11 +1,9 @@
-use actix_web::{
-    web::{self},
-    HttpResponse, Responder,
-};
+use actix_web::{web, Responder};
 use serde::Deserialize;
-use serde_json::json;
 
 use crate::RESPONSES;
+
+use super::make_telegram_result;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AnswerCallbackQueryBody {
@@ -17,16 +15,9 @@ pub struct AnswerCallbackQueryBody {
 }
 
 pub async fn answer_callback_query(body: web::Json<AnswerCallbackQueryBody>) -> impl Responder {
-    RESPONSES
-        .lock()
-        .unwrap()
+    let mut responses_lock = RESPONSES.lock().unwrap();
+    responses_lock
         .answered_callback_queries
         .push(body.into_inner());
-    HttpResponse::Ok().body(
-        json!({
-            "ok": true,  // Who cares about checking the output, just check the request
-            "result": true,
-        })
-        .to_string(),
-    )
+    make_telegram_result(true)
 }

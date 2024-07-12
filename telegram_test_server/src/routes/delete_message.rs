@@ -1,13 +1,11 @@
-use actix_web::{
-    web::{self},
-    HttpResponse, Responder,
-};
+use actix_web::error::ErrorBadRequest;
+use actix_web::{web, Responder};
 use serde::Deserialize;
-use serde_json::json;
 
+use crate::routes::make_telegram_result;
 use crate::{DeletedMessage, MESSAGES, RESPONSES};
 
-use super::BodyChatId;
+use super::{check_if_message_exists, BodyChatId};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct DeleteMessageBody {
@@ -16,30 +14,13 @@ pub struct DeleteMessageBody {
 }
 
 pub async fn delete_message(body: web::Json<DeleteMessageBody>) -> impl Responder {
-    let Some(deleted_message) = MESSAGES.delete_message(body.message_id) else {
-        return HttpResponse::BadRequest().body(
-            json!({
-                "ok": false,
-                "error_code": 400,
-                "description": "Message to delete not found",
-            })
-            .to_string(),
-        );
-    };
-    RESPONSES
-        .lock()
-        .unwrap()
-        .deleted_messages
-        .push(DeletedMessage {
-            message: deleted_message.clone(),
-            bot_request: body.into_inner(),
-        });
+    check_if_message_exists!(body.message_id);
+    let deleted_message = MESSAGES.delete_message(body.message_id).unwrap();
+    let mut responses_lock = RESPONSES.lock().unwrap();
+    responses_lock.deleted_messages.push(DeletedMessage {
+        message: deleted_message.clone(),
+        bot_request: body.into_inner(),
+    });
 
-    HttpResponse::Ok().body(
-        json!({ // This is how telegram returns the message
-            "ok": true,
-            "result": true,
-        })
-        .to_string(),
-    )
+    make_telegram_result(true)
 }

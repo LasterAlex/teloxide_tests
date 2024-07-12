@@ -133,7 +133,7 @@ async fn handler(
                 .await?;
         }
         AllCommands::Photo => {
-            let photo = InputFile::memory("somedata".to_string()).file_name("test.txt");
+            let photo = InputFile::memory("somedata".to_string()).file_name("test.jpg");
             bot.send_photo(msg.chat.id, photo)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
@@ -141,7 +141,7 @@ async fn handler(
                 .await?;
         }
         AllCommands::EditCaption => {
-            let photo = InputFile::memory("somedata".to_string());
+            let photo = InputFile::file_id("fileid".to_string());
             let photo_message = bot.send_photo(msg.chat.id, photo).await?;
             bot.edit_message_caption(msg.chat.id, photo_message.id)
                 .caption("edited")
@@ -197,7 +197,7 @@ async fn test_send_photo() {
         Some("/photo")
     );
     assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
-    assert_eq!(last_sent_photo.bot_request.file_name, "test.txt");
+    assert_eq!(last_sent_photo.bot_request.file_name, "test.jpg");
     assert_eq!(last_sent_photo.bot_request.file_data, "somedata");
 }
 

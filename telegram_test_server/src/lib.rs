@@ -3,14 +3,15 @@ use actix_web::{web, App, HttpServer, Responder};
 use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, delete_message::*, edit_message_caption::*,
-    edit_message_reply_markup::*, edit_message_text::*, send_message::*, send_photo::*, SendMessageCaptionMediaBody,
+    edit_message_reply_markup::*, edit_message_text::*, send_message::*, send_photo::*,
+    SendMessageCaptionMediaBody,
 };
 use serde::Serialize;
 use std::sync::{
     atomic::{AtomicI32, Ordering},
     Mutex,
 };
-use teloxide::types::Message;
+use teloxide::types::{File, Message, ReplyMarkup};
 
 #[derive(Clone, Debug)]
 pub struct SentMessageText {
@@ -63,6 +64,7 @@ pub struct Responses {
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);  // Messages storage, just in case
+    pub static ref FILES: Mutex<Vec<File>> = Mutex::new(vec![]);  // Messages storage, just in case
     pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses::default());  //
     pub static ref LAST_MESSAGE_ID: AtomicI32 = AtomicI32::new(0);
 }
@@ -89,9 +91,24 @@ impl MESSAGES {
         Some(new_message) // Profit!
     }
 
-    pub fn add_message(&self, message: Message) {
-        self.lock().unwrap().push(message);
+    pub fn edit_message_reply_markup(
+        &self,
+        message_id: i32,
+        reply_markup: Option<ReplyMarkup>,
+    ) -> Option<Message> {
+        match reply_markup {
+            // Only the inline keyboard can be inside of a message
+            Some(ReplyMarkup::InlineKeyboard(reply_markup)) => {
+                MESSAGES.edit_message(message_id, "reply_markup", reply_markup)
+            }
+            _ => MESSAGES.get_message(message_id),
+        }
+    }
+
+    pub fn add_message(&self, message: Message) -> Message {
+        self.lock().unwrap().push(message.clone());
         LAST_MESSAGE_ID.fetch_add(1, Ordering::Relaxed);
+        message
     }
 
     pub fn get_message(&self, message_id: i32) -> Option<Message> {
@@ -160,6 +177,7 @@ mod tests {
     use super::*;
     use dataset::*;
     use serial_test::serial;
+    use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 
     #[test]
     #[serial]
@@ -196,5 +214,28 @@ mod tests {
         MESSAGES.add_message(message_common::MockMessageText::new("123").id(1).build());
         MESSAGES.delete_message(1);
         assert_eq!(MESSAGES.get_message(1), None);
+    }
+
+    #[test]
+    #[serial]
+    fn test_edit_message_reply_markup() {
+        MESSAGES.lock().unwrap().clear();
+        MESSAGES.add_message(message_common::MockMessageText::new("123").id(1).build());
+        MESSAGES.edit_message_reply_markup(
+            1,
+            Some(ReplyMarkup::InlineKeyboard(InlineKeyboardMarkup::new(
+                vec![vec![InlineKeyboardButton::callback("123", "123")]],
+            ))),
+        );
+        assert_eq!(
+            MESSAGES
+                .get_message(1)
+                .unwrap()
+                .reply_markup()
+                .unwrap()
+                .inline_keyboard[0][0]
+                .text,
+            "123"
+        );
     }
 }

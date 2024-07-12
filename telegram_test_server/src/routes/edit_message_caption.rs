@@ -1,14 +1,12 @@
-use actix_web::{
-    web::{self},
-    HttpResponse, Responder,
-};
+use actix_web::error::ErrorBadRequest;
+use actix_web::{web, Responder};
 use serde::Deserialize;
-use serde_json::json;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
+use crate::routes::make_telegram_result;
 use crate::{EditedMessageCaption, MESSAGES, RESPONSES};
 
-use super::BodyChatId;
+use super::{check_if_message_exists, BodyChatId};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct EditMessageCaptionBody {
@@ -29,66 +27,29 @@ pub async fn edit_message_caption(body: web::Json<EditMessageCaptionBody>) -> im
         body.inline_message_id.clone(),
     ) {
         (Some(_), Some(message_id), None) => {
-            if MESSAGES
-                .edit_message(message_id, "caption", body.caption.clone())
-                .is_none()
-            {
-                return HttpResponse::BadRequest().body(
-                    json!({ // This is how telegram returns the message
-                        "ok": false,
-                        "error_code": 400,
-                        "description": "Message not found",
-                    })
-                    .to_string(),
-                );
-            };
+            check_if_message_exists!(message_id);
+            MESSAGES.edit_message(message_id, "caption", body.caption.clone());
             MESSAGES.edit_message(
                 message_id,
                 "caption_entities",
-                body.caption_entities.clone().unwrap_or(vec![]),
+                body.caption_entities.clone().unwrap_or_default(),
             );
 
-            match body.reply_markup.clone() {
-                // Only the inline keyboard can be inside of a message
-                Some(ReplyMarkup::InlineKeyboard(reply_markup)) => {
-                    MESSAGES.edit_message(message_id, "reply_markup", reply_markup);
-                }
-                _ => {}
-            }
+            let message = MESSAGES
+                .edit_message_reply_markup(message_id, body.reply_markup.clone())
+                .unwrap();
 
-            let message = MESSAGES.get_message(message_id).unwrap();
-            RESPONSES
-                .lock()
-                .unwrap()
+            let mut responses_lock = RESPONSES.lock().unwrap();
+            responses_lock
                 .edited_messages_caption
                 .push(EditedMessageCaption {
                     message: message.clone(),
                     bot_request: body.into_inner(),
                 });
 
-            HttpResponse::Ok().body(
-                json!({ // This is how telegram returns the message
-                    "ok": true,
-                    "result": message,
-                })
-                .to_string(),
-            )
+            make_telegram_result(message)
         }
-        (None, None, Some(_)) => HttpResponse::Ok().body(
-            // No implementation for inline messages yet, so just return success
-            json!({
-                "ok": true,
-                "result": true,
-            })
-            .to_string(),
-        ),
-        _ => HttpResponse::BadRequest().body(
-            json!({
-                "ok": false,
-                "error_code": 400,
-                "description": "No message_id or inline_message_id were provided",
-            })
-            .to_string(),
-        ),
+        (None, None, Some(_)) => make_telegram_result(true),
+        _ => ErrorBadRequest("No message_id or inline_message_id were provided").into(),
     }
 }

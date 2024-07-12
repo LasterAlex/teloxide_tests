@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 use std::str::from_utf8;
 
+use actix_web::HttpResponse;
+use dataset::{MockPrivateChat, MockSupergroupChat};
 use futures_util::stream::StreamExt as _;
 use futures_util::TryStreamExt;
-use serde::Deserialize;
-use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use teloxide::types::{Chat, MessageEntity, ParseMode, ReplyMarkup};
 
 pub mod answer_callback_query;
 pub mod delete_message;
@@ -28,7 +31,37 @@ impl BodyChatId {
             BodyChatId::Id(id) => *id,
         }
     }
+
+    pub fn chat(&self) -> Chat {
+        let chat_id: i64 = self.id();
+        if chat_id < 0 {
+            MockSupergroupChat::new().id(chat_id).build()
+        } else {
+            MockPrivateChat::new().id(chat_id).build()
+        }
+    }
 }
+
+#[derive(Debug, Clone)]
+pub enum FileType {
+    Photo,
+    Video,
+    Audio,
+    Document,
+    Sticker,
+    Voice,
+    VideoNote,
+}
+
+macro_rules! check_if_message_exists {
+    ($msg_id:expr) => {
+        if MESSAGES.get_message($msg_id).is_none() {
+            return ErrorBadRequest("Message not found").into();
+        }
+    };
+}
+
+pub(crate) use check_if_message_exists;
 
 pub async fn get_raw_multipart_fields(
     payload: &mut actix_multipart::Multipart,
@@ -73,25 +106,60 @@ pub async fn get_raw_multipart_fields(
     (fields, attachments)
 }
 
-fn serialize_raw_fields(fields: HashMap<String, String>, attachments: HashMap<String, String>) -> Option<SendMessageCaptionMediaBody> {
-    let attachment = attachments.keys().last()?;
-    let (file_name, file_data) = attachments.get_key_value(attachment)?;
-    Some(SendMessageCaptionMediaBody  {
+fn serialize_raw_fields(
+    fields: HashMap<String, String>,
+    attachments: HashMap<String, String>,
+    file_type: FileType,
+) -> Option<SendMessageCaptionMediaBody> {
+    let attachment = attachments.keys().last();
+    let (file_name, file_data) = match attachment {
+        Some(attachment) => attachments.get_key_value(attachment)?,
+        None => match file_type {
+            FileType::Photo => (&"no_name.jpg".to_string(), fields.get("photo")?),
+            FileType::Video => (&"no_name.mp4".to_string(), fields.get("video")?),
+            FileType::Audio => (&"no_name.mp3".to_string(), fields.get("audio")?),
+            FileType::Document => (&"no_name.txt".to_string(), fields.get("document")?),
+            FileType::Sticker => (&"no_name.png".to_string(), fields.get("sticker")?),
+            FileType::Voice => (&"no_name.mp3".to_string(), fields.get("voice")?),
+            FileType::VideoNote => (&"no_name.mp4".to_string(), fields.get("video_note")?),
+        },
+    };
+    Some(SendMessageCaptionMediaBody {
         chat_id: serde_json::from_str(&fields.get("chat_id")?).ok()?,
         file_name: file_name.to_string(),
         file_data: file_data.to_string(),
         caption: fields.get("caption").cloned(),
-        message_thread_id: serde_json::from_str(&fields.get("message_thread_id").unwrap_or(&String::new())).ok(),
+        message_thread_id: serde_json::from_str(
+            &fields.get("message_thread_id").unwrap_or(&String::new()),
+        )
+        .ok(),
         parse_mode: serde_json::from_str(&fields.get("parse_mode").unwrap_or(&String::new())).ok(),
-        caption_entities: serde_json::from_str(&fields.get("caption_entities").unwrap_or(&String::new())).ok(),
-        disable_web_page_preview: serde_json::from_str(&fields.get("disable_web_page_preview").unwrap_or(&String::new())).ok(),
-        disable_notification: serde_json::from_str(&fields.get("disable_notification").unwrap_or(&String::new())).ok(),
-        protect_content: serde_json::from_str(&fields.get("protect_content").unwrap_or(&String::new())).ok(),
+        caption_entities: serde_json::from_str(
+            &fields.get("caption_entities").unwrap_or(&String::new()),
+        )
+        .ok(),
+        disable_web_page_preview: serde_json::from_str(
+            &fields
+                .get("disable_web_page_preview")
+                .unwrap_or(&String::new()),
+        )
+        .ok(),
+        disable_notification: serde_json::from_str(
+            &fields.get("disable_notification").unwrap_or(&String::new()),
+        )
+        .ok(),
+        protect_content: serde_json::from_str(
+            &fields.get("protect_content").unwrap_or(&String::new()),
+        )
+        .ok(),
         message_effect_id: fields.get("message_effect_id").cloned(),
-        reply_markup: serde_json::from_str(&fields.get("reply_markup").unwrap_or(&String::new())).ok(),
-        reply_to_message_id: serde_json::from_str(&fields.get("reply_to_message_id").unwrap_or(&String::new())).ok(),
+        reply_markup: serde_json::from_str(&fields.get("reply_markup").unwrap_or(&String::new()))
+            .ok(),
+        reply_to_message_id: serde_json::from_str(
+            &fields.get("reply_to_message_id").unwrap_or(&String::new()),
+        )
+        .ok(),
     })
-    
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -109,4 +177,17 @@ pub struct SendMessageCaptionMediaBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_to_message_id: Option<i32>,
+}
+
+pub fn make_telegram_result<T>(result: T) -> HttpResponse
+where
+    T: Serialize,
+{
+    HttpResponse::Ok().body(
+        json!({
+            "ok": true,
+            "result": result,
+        })
+        .to_string(),
+    )
 }
