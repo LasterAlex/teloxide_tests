@@ -2,7 +2,7 @@
 
 I am trying to make tests for teloxide using fake server and a bot with an url to that server.
 
-Basic dataset is done, now of concern is a fake server.
+Server is done, now only finshing touches will be needed.
 
 I am going right now by the following steps:
 
@@ -14,7 +14,7 @@ What is needed until release:
 
 - [x] Add most common endpoints (SendMessage, SendPhoto, SendDocument, SendVideo, EditMessageText, EditMessageCaption, EditMessageReplyMarkup, DeleteMessage, AnswerCallbackQuery, GetFile)
 - [x] Clean up the test server code and make it easily extendable
-- [ ] Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
+- [x] Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
 - [ ] Export publicly only what is needed
 - [ ] Add a lot of different examples for referencing
 - [ ] Try to make a real bot with these tests, to see, where it lacks in the real usecases

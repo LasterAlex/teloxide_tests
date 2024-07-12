@@ -1,7 +1,9 @@
 use gag::Gag;
 use serde_json::Value;
 use std::{
-    env, panic,
+    env,
+    mem::discriminant,
+    panic,
     sync::{
         atomic::{AtomicI32, Ordering},
         Arc, Mutex,
@@ -135,7 +137,7 @@ impl MockBot {
                 if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
                     let file = File {
                         meta: file_meta,
-                        path: "some_path.txt".to_string(),  // This doesn't really matter
+                        path: "some_path.txt".to_string(), // This doesn't really matter
                     };
                     FILES.lock().unwrap().push(file);
                 }
@@ -273,5 +275,98 @@ impl MockBot {
         } else {
             panic!("No storage was getected!");
         }
+    }
+
+    //
+    // Syntactic sugar
+    //
+
+    pub async fn dispatch_and_check_last_text(&self, text_or_caption: &str) {
+        self.dispatch().await;
+        let responses = self.get_responses();
+        let message = responses
+            .sent_messages
+            .last()
+            .expect("No sent messages were detected!");
+        if let Some(text) = message.text() {
+            assert_eq!(text, text_or_caption, "Texts are not equal!");
+        } else if let Some(caption) = message.caption() {
+            assert_eq!(caption, text_or_caption, "Captions are not equal!");
+        } else if !text_or_caption.is_empty() {
+            panic!("Message has no text or caption!");
+        }
+    }
+
+    pub async fn dispatch_and_check_last_text_and_state<S>(&self, text_or_caption: &str, state: S)
+    where
+        S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
+    {
+        self.dispatch().await;
+        let responses = self.get_responses();
+        let message = responses
+            .sent_messages
+            .last()
+            .expect("No sent messages were detected!");
+        if let Some(text) = message.text() {
+            assert_eq!(text, text_or_caption, "Texts are not equal!");
+        } else if let Some(caption) = message.caption() {
+            assert_eq!(caption, text_or_caption, "Captions are not equal!");
+        } else if !text_or_caption.is_empty() {
+            panic!("Message has no text or caption!");
+        }
+
+        let got_state: S = self.get_state().await;
+        assert_eq!(got_state, state, "States are not equal!");
+    }
+
+    pub async fn dispatch_and_check_last_text_and_state_discriminant<S>(
+        &self,
+        text_or_caption: &str,
+        state: S,
+    ) where
+        S: Send + 'static + Clone,
+    {
+        self.dispatch().await;
+        let responses = self.get_responses();
+        let message = responses
+            .sent_messages
+            .last()
+            .expect("No sent messages were detected!");
+        if let Some(text) = message.text() {
+            assert_eq!(text, text_or_caption, "Texts are not equal!");
+        } else if let Some(caption) = message.caption() {
+            assert_eq!(caption, text_or_caption, "Captions are not equal!");
+        } else if !text_or_caption.is_empty() {
+            panic!("Message has no text or caption!");
+        }
+
+        let got_state: S = self.get_state().await;
+        assert_eq!(
+            discriminant(&got_state),
+            discriminant(&state),
+            "State variants are not equal!"
+        );
+    }
+
+    pub async fn dispatch_and_check_state<S>(&self, state: S)
+    where
+        S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
+    {
+        self.dispatch().await;
+        let got_state: S = self.get_state().await;
+        assert_eq!(got_state, state, "States are not equal!");
+    }
+
+    pub async fn dispatch_and_check_state_discriminant<S>(&self, state: S)
+    where
+        S: Send + 'static + Clone,
+    {
+        self.dispatch().await;
+        let got_state: S = self.get_state().await;
+        assert_eq!(
+            discriminant(&got_state),
+            discriminant(&state),
+            "State variants are not equal!"
+        );
     }
 }

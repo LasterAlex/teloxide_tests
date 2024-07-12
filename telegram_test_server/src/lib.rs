@@ -1,8 +1,10 @@
 pub mod routes;
-use actix_web::{middleware::Logger, web, App, HttpServer, Responder};
+use actix_web::{web, App, HttpServer, Responder};
 use lazy_static::lazy_static;
 use routes::{
-    answer_callback_query::*, delete_message::*, download_file::download_file, edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*, get_file::*, send_document::*, send_message::*, send_photo::*, send_video::*
+    answer_callback_query::*, delete_message::*, download_file::download_file,
+    edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*, get_file::*,
+    send_document::*, send_message::*, send_photo::*, send_video::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -159,7 +161,7 @@ pub async fn main(port: Mutex<u16>) {
             .init();
         HttpServer::new(move || {
             App::new()
-                .wrap(Logger::default())
+                // .wrap(Logger::default())
                 .route("/ping", web::get().to(ping))
                 .route("/bot{token}/GetFile", web::post().to(get_file))
                 .route("/bot{token}/SendMessage", web::post().to(send_message))
