@@ -43,6 +43,27 @@ impl BodyChatId {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum FileType {
+    Photo,
+    Video,
+    Audio,
+    Document,
+    Sticker,
+    Voice,
+    VideoNote,
+}
+
+pub trait SerializeRawFields {
+    fn serialize_raw_fields(
+        fields: &HashMap<String, String>,
+        attachments: &HashMap<String, String>,
+        file_type: FileType,
+    ) -> Option<Self>
+    where
+        Self: Sized;
+}
+
 macro_rules! check_if_message_exists {
     ($msg_id:expr) => {
         if MESSAGES.get_message($msg_id).is_none() {

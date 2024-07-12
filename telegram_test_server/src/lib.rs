@@ -147,6 +147,11 @@ pub async fn main(port: Mutex<u16>) {
     if pong.is_err()
     // If it errored, no server is running, we need to start it
     {
+        env_logger::builder()
+            .filter_level(log::LevelFilter::Warn)
+            .format_target(false)
+            .format_timestamp(None)
+            .init();
         HttpServer::new(move || {
             App::new()
                 .route("/ping", web::get().to(ping))

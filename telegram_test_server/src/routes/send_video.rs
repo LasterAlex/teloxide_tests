@@ -1,3 +1,4 @@
+use crate::routes::{FileType, SerializeRawFields};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -6,6 +7,7 @@ use actix_web::error::ErrorBadRequest;
 use actix_web::{dev::ResourcePath, Responder};
 use dataset::{MockMessageVideo, MockVideo};
 use mime::Mime;
+use proc_macros::SerializeRawFields;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
@@ -16,7 +18,8 @@ use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
 pub async fn send_video(mut payload: Multipart) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
-    let body = serialize_raw_fields(fields, attachments).unwrap();
+    let body =
+        SendMessageVideoBody::serialize_raw_fields(&fields, &attachments, FileType::Video).unwrap();
     let chat = body.chat_id.chat();
 
     let mut message = MockMessageVideo::new().chat(chat.clone());
@@ -62,63 +65,7 @@ pub async fn send_video(mut payload: Multipart) -> impl Responder {
     make_telegram_result(message)
 }
 
-fn serialize_raw_fields(
-    fields: HashMap<String, String>,
-    attachments: HashMap<String, String>,
-) -> Option<SendMessageVideoBody> {
-    let attachment = attachments.keys().last();
-    let (file_name, file_data) = match attachment {
-        Some(attachment) => attachments.get_key_value(attachment)?,
-        None => (&"no_name.mp4".to_string(), fields.get("video")?),
-    };
-    Some(SendMessageVideoBody {
-        chat_id: serde_json::from_str(&fields.get("chat_id")?).ok()?,
-        file_name: file_name.to_string(),
-        file_data: file_data.to_string(),
-        caption: fields.get("caption").cloned(),
-        message_thread_id: serde_json::from_str(
-            &fields.get("message_thread_id").unwrap_or(&String::new()),
-        )
-        .ok(),
-        parse_mode: serde_json::from_str(&fields.get("parse_mode").unwrap_or(&String::new())).ok(),
-        caption_entities: serde_json::from_str(
-            &fields.get("caption_entities").unwrap_or(&String::new()),
-        )
-        .ok(),
-        duration: serde_json::from_str(&fields.get("duration").unwrap_or(&String::new())).ok(),
-        width: serde_json::from_str(&fields.get("width").unwrap_or(&String::new())).ok(),
-        height: serde_json::from_str(&fields.get("height").unwrap_or(&String::new())).ok(),
-        has_spoiler: serde_json::from_str(&fields.get("has_spoiler").unwrap_or(&String::new()))
-            .ok(),
-        show_caption_above_media: serde_json::from_str(
-            &fields
-                .get("show_caption_above_media")
-                .unwrap_or(&String::new()),
-        )
-        .ok(),
-        supports_streaming: serde_json::from_str(
-            &fields.get("supports_streaming").unwrap_or(&String::new()),
-        )
-        .ok(),
-        disable_notification: serde_json::from_str(
-            &fields.get("disable_notification").unwrap_or(&String::new()),
-        )
-        .ok(),
-        protect_content: serde_json::from_str(
-            &fields.get("protect_content").unwrap_or(&String::new()),
-        )
-        .ok(),
-        message_effect_id: fields.get("message_effect_id").cloned(),
-        reply_markup: serde_json::from_str(&fields.get("reply_markup").unwrap_or(&String::new()))
-            .ok(),
-        reply_to_message_id: serde_json::from_str(
-            &fields.get("reply_to_message_id").unwrap_or(&String::new()),
-        )
-        .ok(),
-    })
-}
-
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, SerializeRawFields)]
 pub struct SendMessageVideoBody {
     pub chat_id: BodyChatId,
     pub message_thread_id: Option<i64>,

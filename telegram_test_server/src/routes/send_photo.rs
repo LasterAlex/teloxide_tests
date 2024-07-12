@@ -1,9 +1,11 @@
+use crate::routes::{FileType, SerializeRawFields};
 use std::collections::HashMap;
 
 use actix_multipart::Multipart;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{dev::ResourcePath, Responder};
 use dataset::{MockMessagePhoto, MockPhotoSize};
+use proc_macros::SerializeRawFields;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
@@ -14,7 +16,8 @@ use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
 pub async fn send_photo(mut payload: Multipart) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
-    let body = serialize_raw_fields(fields, attachments).unwrap();
+    let body =
+        SendMessagePhotoBody::serialize_raw_fields(&fields, &attachments, FileType::Photo).unwrap();
     let chat = body.chat_id.chat();
 
     let mut message = // Creates the message, which will be mutated to fit the needed shape
@@ -56,54 +59,7 @@ pub async fn send_photo(mut payload: Multipart) -> impl Responder {
     make_telegram_result(message)
 }
 
-fn serialize_raw_fields(
-    fields: HashMap<String, String>,
-    attachments: HashMap<String, String>,
-) -> Option<SendMessagePhotoBody> {
-    let attachment = attachments.keys().last();
-    let (file_name, file_data) = match attachment {
-        Some(attachment) => attachments.get_key_value(attachment)?,
-        None => (&"no_name.jpg".to_string(), fields.get("photo")?),
-    };
-    Some(SendMessagePhotoBody {
-        chat_id: serde_json::from_str(&fields.get("chat_id")?).ok()?,
-        file_name: file_name.to_string(),
-        file_data: file_data.to_string(),
-        caption: fields.get("caption").cloned(),
-        message_thread_id: serde_json::from_str(
-            &fields.get("message_thread_id").unwrap_or(&String::new()),
-        )
-        .ok(),
-        parse_mode: serde_json::from_str(&fields.get("parse_mode").unwrap_or(&String::new())).ok(),
-        caption_entities: serde_json::from_str(
-            &fields.get("caption_entities").unwrap_or(&String::new()),
-        )
-        .ok(),
-        disable_web_page_preview: serde_json::from_str(
-            &fields
-                .get("disable_web_page_preview")
-                .unwrap_or(&String::new()),
-        )
-        .ok(),
-        disable_notification: serde_json::from_str(
-            &fields.get("disable_notification").unwrap_or(&String::new()),
-        )
-        .ok(),
-        protect_content: serde_json::from_str(
-            &fields.get("protect_content").unwrap_or(&String::new()),
-        )
-        .ok(),
-        message_effect_id: fields.get("message_effect_id").cloned(),
-        reply_markup: serde_json::from_str(&fields.get("reply_markup").unwrap_or(&String::new()))
-            .ok(),
-        reply_to_message_id: serde_json::from_str(
-            &fields.get("reply_to_message_id").unwrap_or(&String::new()),
-        )
-        .ok(),
-    })
-}
-
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, SerializeRawFields)]
 pub struct SendMessagePhotoBody {
     pub chat_id: BodyChatId,
     pub file_name: String,

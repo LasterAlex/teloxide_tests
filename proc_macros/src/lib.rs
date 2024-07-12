@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Fields, TypeGroup};
+use syn::{parse_macro_input, Data, DeriveInput, Fields, PathArguments, Type, TypeGroup};
 
 #[proc_macro_derive(Changeable)]
 pub fn changeable_derive(input: TokenStream) -> TokenStream {
@@ -113,5 +113,95 @@ pub fn changeable_derive(input: TokenStream) -> TokenStream {
     };
 
     // Hand the output tokens back to the compiler
+    TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(SerializeRawFields)]
+pub fn serialize_raw_fields_derive(input: TokenStream) -> TokenStream {
+    // This proc macro just creates a body struct out of the raw request fields
+    let input = parse_macro_input!(input as DeriveInput);
+
+    let name = input.ident;
+
+    let fields = if let Data::Struct(data_struct) = input.data {
+        data_struct.fields
+    } else {
+        unimplemented!();
+    };
+
+    let field_serializers = fields.iter().filter(|field| field.ident.as_ref().unwrap() != "file_name" && field.ident.as_ref().unwrap() != "file_data").map(|field| {
+        let field_name = field.ident.as_ref().unwrap();
+        let field_type = &field.ty;
+
+        // Check if the field type is Option<T>
+        let is_option = if let Type::Path(type_path) = field_type {
+            if let Some(segment) = type_path.path.segments.last() {
+                if segment.ident == "Option" {
+                    if let PathArguments::AngleBracketed(args) = &segment.arguments {
+                        args.args.len() == 1
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        let key = field_name.to_string();
+
+        if field_type == &syn::parse_str::<syn::Type>("Option<String>").unwrap() {
+            quote! {
+                #field_name: fields.get(#key).cloned(),
+            }
+        } else if field_type == &syn::parse_str::<syn::Type>("String").unwrap() {
+            quote! {
+                #field_name: fields.get(#key)?.to_string(),
+            }
+        } else if !is_option {
+            quote! {
+                #field_name: serde_json::from_str(&fields.get(#key).unwrap_or(&String::new())).ok()?,
+            }
+        } else {
+            quote! {
+                #field_name: serde_json::from_str(&fields.get(#key).unwrap_or(&String::new())).ok(),
+            }
+        }
+    });
+
+    let expanded = quote! {
+        impl SerializeRawFields for #name {
+            fn serialize_raw_fields(
+                fields: &HashMap<String, String>,
+                attachments: &HashMap<String, String>,
+                file_type: FileType,
+            ) -> Option<Self> {
+                let attachment = attachments.keys().last();
+                let (file_name, file_data) = match attachment {
+                    Some(attachment) => attachments.get_key_value(attachment)?,
+                    None => match file_type {
+                        FileType::Photo => (&"no_name.jpg".to_string(), fields.get("photo")?),
+                        FileType::Video => (&"no_name.mp4".to_string(), fields.get("video")?),
+                        FileType::Audio => (&"no_name.mp3".to_string(), fields.get("audio")?),
+                        FileType::Document => (&"no_name.txt".to_string(), fields.get("document")?),
+                        FileType::Sticker => (&"no_name.png".to_string(), fields.get("sticker")?),
+                        FileType::Voice => (&"no_name.mp3".to_string(), fields.get("voice")?),
+                        FileType::VideoNote => (&"no_name.mp4".to_string(), fields.get("video_note")?),
+                    },
+                };
+
+                Some(#name {
+                    file_name: file_name.to_string(),
+                    file_data: file_data.to_string(),
+                    #(#field_serializers)*
+                })
+            }
+        }
+    };
+
     TokenStream::from(expanded)
 }
