@@ -2,6 +2,7 @@ use super::*;
 use dataset::*;
 use serde::{Deserialize, Serialize};
 use teloxide::dptree::case;
+use teloxide::net::Download;
 use teloxide::payloads::SendPhotoSetters;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, InputFile, MessageEntity};
 use teloxide::{
@@ -160,7 +161,7 @@ async fn handler(
                 .await?;
         }
         AllCommands::Document => {
-            let document = InputFile::memory("somedata".to_string()).file_name("test.pdf");
+            let document = InputFile::file("/home/laster/http_requests.txt".to_string()).file_name("test.txt");
             let document_message = bot
                 .send_document(msg.chat.id, document)
                 .caption("test")
@@ -174,6 +175,11 @@ async fn handler(
                 gotten_document.meta.unique_id
                     == document_message.document().unwrap().file.unique_id
             );
+            let mut dest = tokio::fs::File::create("test.txt").await?;
+
+            bot.download_file(&gotten_document.path, &mut dest).await?;
+            assert!(tokio::fs::read_to_string("test.txt").await.is_ok());
+            tokio::fs::remove_file("test.txt").await?;
         }
     }
     Ok(())
@@ -261,8 +267,7 @@ async fn test_send_document() {
         Some("/document")
     );
     assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
-    assert_eq!(last_sent_photo.bot_request.file_name, "test.pdf");
-    assert_eq!(last_sent_photo.bot_request.file_data, "somedata");
+    assert_eq!(last_sent_photo.bot_request.file_name, "test.txt");
 }
 
 #[tokio::test]

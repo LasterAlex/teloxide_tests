@@ -1,3 +1,5 @@
+use gag::Gag;
+use serde_json::Value;
 use std::{
     env, panic,
     sync::{
@@ -5,14 +7,15 @@ use std::{
         Arc, Mutex,
     },
 };
-use gag::Gag;
 use teloxide::{
-    dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier, types::MessageId,
+    dispatching::dialogue::ErasedStorage,
+    dptree::di::DependencySupplier,
+    types::{File, FileMeta, MessageId},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
 
 use dataset::{IntoUpdate, MockMe};
-use telegram_test_server::{Responses, MESSAGES};
+use telegram_test_server::{Responses, FILES, MESSAGES};
 use teloxide::{
     dispatching::{
         dialogue::{GetChatId, InMemStorage, Storage},
@@ -28,6 +31,33 @@ mod tests;
 static DISPATCHING_LOCK: Mutex<()> = Mutex::new(());
 static GET_POTENTIAL_STORAGE_LOCK: Mutex<()> = Mutex::new(());
 // Otherwise the fake server will error because of a taken port
+
+fn find_file(value: Value) -> Option<FileMeta> {
+    let mut file_id = None;
+    let mut file_unique_id = None;
+    let mut file_size = None;
+    if let Value::Object(map) = value {
+        for (k, v) in map {
+            if k == "file_id" {
+                file_id = Some(v.as_str().unwrap().to_string());
+            } else if k == "file_unique_id" {
+                file_unique_id = Some(v.as_str().unwrap().to_string());
+            } else if k == "file_size" {
+                file_size = Some(v.as_u64().unwrap() as u32);
+            } else if let Some(found) = find_file(v) {
+                return Some(found);
+            }
+        }
+    }
+    if file_id.is_some() && file_unique_id.is_some() {
+        return Some(FileMeta {
+            id: file_id.unwrap(),
+            unique_id: file_unique_id.unwrap(),
+            size: file_size.unwrap_or(0),
+        });
+    }
+    None
+}
 
 pub struct MockBot {
     bot: Bot, // The bot with a fake server url
@@ -89,7 +119,7 @@ impl MockBot {
 
     pub async fn dispatch(&self) {
         let lock = DISPATCHING_LOCK.lock(); // Lock all the other threads out
-        
+
         let mut deps = self.dependencies.lock().unwrap();
 
         let mut update_lock = self.update.lock().unwrap();
@@ -101,8 +131,15 @@ impl MockBot {
                 if message.id.0 <= max_id || MESSAGES.get_message(message.id.0).is_some() {
                     message.id = MessageId(max_id + 1);
                     update_lock.kind = UpdateKind::Message(message.clone());
-                    MESSAGES.add_message(message.clone());
                 }
+                if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
+                    let file = File {
+                        meta: file_meta,
+                        path: "some_path.txt".to_string(),  // This doesn't really matter
+                    };
+                    FILES.lock().unwrap().push(file);
+                }
+                MESSAGES.add_message(message.clone());
             }
             _ => {}
         }
@@ -159,7 +196,7 @@ impl MockBot {
         panic::set_hook(Box::new(|_| {
             // Do nothing to ignore the panic
         }));
-        let print_gag = Gag::stderr().unwrap();  // Otherwise the panic will be printed
+        let print_gag = Gag::stderr().unwrap(); // Otherwise the panic will be printed
         in_mem_storage = std::thread::spawn(move || {
             // Try to convert one of dptrees fields into an InMemStorage
             dependencies.get()
@@ -175,7 +212,6 @@ impl MockBot {
         })
         .join()
         .ok();
-
 
         panic::set_hook(default_panic); // Restore the default panic hook
         drop(print_gag);

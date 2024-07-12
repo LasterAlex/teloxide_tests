@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 use actix_multipart::Multipart;
 use actix_web::error::ErrorBadRequest;
-use actix_web::{dev::ResourcePath, Responder};
+use actix_web::Responder;
 use dataset::{MockMessageVideo, MockVideo};
 use mime::Mime;
 use proc_macros::SerializeRawFields;
@@ -53,7 +53,7 @@ pub async fn send_video(mut payload: Multipart) -> impl Responder {
 
     FILES.lock().unwrap().push(teloxide::types::File {
         meta: message.video().unwrap().file.clone(),
-        path: body.file_data.path().to_owned(),
+        path: body.file_name.to_owned(),
     });
     let mut responses_lock = RESPONSES.lock().unwrap();
     responses_lock.sent_messages.push(message.clone());

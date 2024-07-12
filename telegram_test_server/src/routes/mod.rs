@@ -19,6 +19,7 @@ pub mod send_document;
 pub mod send_message;
 pub mod send_photo;
 pub mod send_video;
+pub mod download_file;
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]

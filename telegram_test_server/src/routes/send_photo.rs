@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use actix_multipart::Multipart;
 use actix_web::error::ErrorBadRequest;
-use actix_web::{dev::ResourcePath, Responder};
+use actix_web::Responder;
 use dataset::{MockMessagePhoto, MockPhotoSize};
 use proc_macros::SerializeRawFields;
 use rand::distributions::{Alphanumeric, DistString};
@@ -47,7 +47,7 @@ pub async fn send_photo(mut payload: Multipart) -> impl Responder {
 
     FILES.lock().unwrap().push(teloxide::types::File {
         meta: message.photo().unwrap()[0].file.clone(),
-        path: body.file_data.path().to_owned(),
+        path: body.file_name.to_owned(),
     });
     let mut responses_lock = RESPONSES.lock().unwrap();
     responses_lock.sent_messages.push(message.clone());
