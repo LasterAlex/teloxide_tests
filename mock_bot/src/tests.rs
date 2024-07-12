@@ -106,6 +106,8 @@ pub enum AllCommands {
     #[command()]
     Video,
     #[command()]
+    Document,
+    #[command()]
     EditCaption,
 }
 
@@ -156,6 +158,22 @@ async fn handler(
             bot.edit_message_caption(msg.chat.id, photo_message.id)
                 .caption("edited")
                 .await?;
+        }
+        AllCommands::Document => {
+            let document = InputFile::memory("somedata".to_string()).file_name("test.pdf");
+            let document_message = bot
+                .send_document(msg.chat.id, document)
+                .caption("test")
+                .caption_entities(vec![MessageEntity::bold(0, 3)])
+                .reply_to_message_id(msg.id)
+                .await?;
+            let gotten_document = bot
+                .get_file(document_message.document().unwrap().file.id.clone())
+                .await?;
+            assert!(
+                gotten_document.meta.unique_id
+                    == document_message.document().unwrap().file.unique_id
+            );
         }
     }
     Ok(())
@@ -226,6 +244,24 @@ async fn test_send_video() {
     );
     assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
     assert_eq!(last_sent_photo.bot_request.file_name, "test.mp4");
+    assert_eq!(last_sent_photo.bot_request.file_data, "somedata");
+}
+
+#[tokio::test]
+async fn test_send_document() {
+    let bot = MockBot::new(MockMessageText::new("/document"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_sent_photo = bot.get_responses().sent_messages_document.pop().unwrap();
+    assert_eq!(last_sent_message.caption(), Some("test"));
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/document")
+    );
+    assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
+    assert_eq!(last_sent_photo.bot_request.file_name, "test.pdf");
     assert_eq!(last_sent_photo.bot_request.file_data, "somedata");
 }
 

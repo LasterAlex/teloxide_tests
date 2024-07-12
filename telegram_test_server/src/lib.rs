@@ -3,8 +3,8 @@ use actix_web::{web, App, HttpServer, Responder};
 use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, delete_message::*, edit_message_caption::*,
-    edit_message_reply_markup::*, edit_message_text::*, send_message::*, send_photo::*,
-    send_video::*,
+    edit_message_reply_markup::*, edit_message_text::*, get_file::*, send_document::*,
+    send_message::*, send_photo::*, send_video::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -30,6 +30,12 @@ pub struct SentMessagePhoto {
 pub struct SentMessageVideo {
     pub message: Message,
     pub bot_request: SendMessageVideoBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessageDocument {
+    pub message: Message,
+    pub bot_request: SendMessageDocumentBody,
 }
 
 #[derive(Clone, Debug)]
@@ -62,6 +68,7 @@ pub struct Responses {
     pub sent_messages_text: Vec<SentMessageText>,
     pub sent_messages_photo: Vec<SentMessagePhoto>,
     pub sent_messages_video: Vec<SentMessageVideo>,
+    pub sent_messages_document: Vec<SentMessageDocument>,
     pub edited_messages_text: Vec<EditedMessageText>,
     pub edited_messages_caption: Vec<EditedMessageCaption>,
     pub edited_messages_reply_markup: Vec<EditedMessageReplyMarkup>,
@@ -148,16 +155,18 @@ pub async fn main(port: Mutex<u16>) {
     // If it errored, no server is running, we need to start it
     {
         env_logger::builder()
-            .filter_level(log::LevelFilter::Warn)
+            .filter_level(log::LevelFilter::Info)
             .format_target(false)
             .format_timestamp(None)
             .init();
         HttpServer::new(move || {
             App::new()
                 .route("/ping", web::get().to(ping))
+                .route("/bot{token}/GetFile", web::post().to(get_file))
                 .route("/bot{token}/SendMessage", web::post().to(send_message))
                 .route("/bot{token}/SendPhoto", web::post().to(send_photo))
                 .route("/bot{token}/SendVideo", web::post().to(send_video))
+                .route("/bot{token}/SendDocument", web::post().to(send_document))
                 .route(
                     "/bot{token}/EditMessageText",
                     web::post().to(edit_message_text),

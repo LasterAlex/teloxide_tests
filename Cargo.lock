@@ -1980,6 +1980,7 @@ dependencies = [
  "lazy_static",
  "log",
  "mime",
+ "mime_guess",
  "proc_macros",
  "rand",
  "reqwest",

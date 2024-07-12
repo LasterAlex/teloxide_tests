@@ -14,6 +14,8 @@ pub mod delete_message;
 pub mod edit_message_caption;
 pub mod edit_message_reply_markup;
 pub mod edit_message_text;
+pub mod get_file;
+pub mod send_document;
 pub mod send_message;
 pub mod send_photo;
 pub mod send_video;
