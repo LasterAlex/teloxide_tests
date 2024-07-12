@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, delete_message::*, edit_message_caption::*,
     edit_message_reply_markup::*, edit_message_text::*, send_message::*, send_photo::*,
-    SendMessageCaptionMediaBody,
+    send_video::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -23,7 +23,13 @@ pub struct SentMessageText {
 #[derive(Clone, Debug)]
 pub struct SentMessagePhoto {
     pub message: Message,
-    pub bot_request: SendMessageCaptionMediaBody,
+    pub bot_request: SendMessagePhotoBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessageVideo {
+    pub message: Message,
+    pub bot_request: SendMessageVideoBody,
 }
 
 #[derive(Clone, Debug)]
@@ -55,6 +61,7 @@ pub struct Responses {
     pub sent_messages: Vec<Message>, // Just for convenience for simple tasks
     pub sent_messages_text: Vec<SentMessageText>,
     pub sent_messages_photo: Vec<SentMessagePhoto>,
+    pub sent_messages_video: Vec<SentMessageVideo>,
     pub edited_messages_text: Vec<EditedMessageText>,
     pub edited_messages_caption: Vec<EditedMessageCaption>,
     pub edited_messages_reply_markup: Vec<EditedMessageReplyMarkup>,
@@ -145,6 +152,7 @@ pub async fn main(port: Mutex<u16>) {
                 .route("/ping", web::get().to(ping))
                 .route("/bot{token}/SendMessage", web::post().to(send_message))
                 .route("/bot{token}/SendPhoto", web::post().to(send_photo))
+                .route("/bot{token}/SendVideo", web::post().to(send_video))
                 .route(
                     "/bot{token}/EditMessageText",
                     web::post().to(edit_message_text),

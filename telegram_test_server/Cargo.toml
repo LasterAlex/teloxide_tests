@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+mime = "0.3.17"
+chrono = "0.4.38"
 rand = "0.8.5"
 actix-multipart = "0.7.2"
 lazy_static = "1.5.0"

@@ -20,7 +20,7 @@ pub trait IntoUpdate {
 //  Structs below are just misc mocked structs
 //
 
-#[derive(Changeable)]
+#[derive(Changeable, Clone)]
 pub struct MockUser {
     pub id: UserId,
     pub is_bot: bool,
@@ -66,6 +66,7 @@ impl MockUser {
     }
 }
 
+#[derive(Changeable, Clone)]
 pub struct MockMe {
     pub id: UserId,
     pub is_bot: bool,
@@ -126,7 +127,7 @@ impl MockMe {
 //
 //
 
-#[derive(Changeable)]
+#[derive(Changeable, Clone)]
 pub struct MockChatPhoto {
     pub small_file_id: String,
     pub small_file_unique_id: String,
@@ -236,6 +237,7 @@ impl MockPhotoSize {
     }
 }
 
+#[derive(Changeable, Clone)]
 pub struct MockVideo {
     pub width: u32,
     pub height: u32,
