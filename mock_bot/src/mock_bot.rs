@@ -58,19 +58,69 @@ fn find_file(value: Value) -> Option<FileMeta> {
     None
 }
 
+/// A mocked bot that sends requests to the fake server
+/// Please check the `new` function docs and github examples for more information.
+/// The github examples will have more information than this doc.
 pub struct MockBot {
-    pub bot: Bot, // The bot with a fake server url
-    pub handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>, // The thing that dptree::entry() returns
+    /// The bot with a fake server url
+    pub bot: Bot,
+    /// The thing that dptree::entry() returns
+    pub handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>,
+    /// Mutex is here to not worry about mut references, its easier for the user without them
     pub update: Mutex<Update>,
-    pub me: Mutex<Me>, // Mutex is here to not worry about mut references, its easier for the user without them
-    pub dependencies: Mutex<DependencyMap>, // If you have something like a state, you should add the storage here
-    pub responses: Mutex<Option<Responses>>, // Caught responses from the server
+    /// Bot parameters are here
+    pub me: Mutex<Me>,
+    /// If you have something like a state, you should add the storage here using .dependencies()
+    pub dependencies: Mutex<DependencyMap>,
+    /// Caught responses from the server
+    pub responses: Mutex<Option<Responses>>,
 }
 
 impl MockBot {
     const CURRENT_UPDATE_ID: AtomicI32 = AtomicI32::new(0); // So that every update is different
     const PORT: Mutex<u16> = Mutex::new(6504);
 
+    /// Creates a new MockBot, using something that can be turned into an Update, and a handler tree.
+    ///
+    /// The `update` is just any Mock type, like `MockMessageText` or `MockCallbackQuery`.
+    /// The `handler_tree` is the same as in `dptree::entry()`, you will need to make your handler
+    /// tree into a separate function, like this:
+    /// ```
+    /// use teloxide::dispatching::UpdateHandler;
+    /// fn handler_tree() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+    ///     teloxide::dptree::entry() /* your handlers go here */
+    /// }
+    /// ```
+    ///
+    /// # Full example
+    ///
+    /// ```
+    /// use teloxide::dispatching::UpdateHandler;
+    /// use teloxide::types::Update;
+    /// use teloxide_tests::{MockBot, MockMessageText};
+    /// use teloxide::dispatching::dialogue::GetChatId;
+    /// use teloxide::prelude::*;
+    ///
+    /// fn handler_tree() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+    ///     teloxide::dptree::entry().endpoint(|update: Update, bot: Bot| async move {
+    ///         bot.send_message(update.chat_id().unwrap(), "Hello!").await?;
+    ///         Ok(())
+    ///     })
+    /// }
+    ///
+    /// #[tokio::main]  // Change for tokio::test in your implementation
+    /// async fn main() {
+    ///     let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+    ///     bot.dispatch().await;
+    ///     let responses = bot.get_responses();
+    ///     let message = responses
+    ///         .sent_messages
+    ///         .last()
+    ///         .expect("No sent messages were detected!");
+    ///     assert_eq!(message.text(), Some("Hello!"));
+    /// }
+    /// ```
+    ///
     pub fn new<T>(
         update: T, // This 'T' is just anything that can be turned into an Update, like a
         // MockMessageText or MockCallbackQuery
@@ -85,11 +135,12 @@ impl MockBot {
             "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
         );
         let update_id = Self::CURRENT_UPDATE_ID.fetch_add(1, Ordering::Relaxed);
+        // let port = Self::get_free_port().await;
 
         let bot = Bot::from_env().set_api_url(
             reqwest::Url::parse(&format!(
                 "http://localhost:{}",
-                Self::PORT.lock().unwrap().to_string()
+                Self::PORT.lock().unwrap().clone()
             ))
             .unwrap(),
         );
@@ -103,19 +154,29 @@ impl MockBot {
         }
     }
 
+    /// Sets the dependencies of the dptree. The same as deps![] in bot dispatching.
+    /// Just like in this teloxide example: <https://github.com/teloxide/teloxide/blob/master/crates/teloxide/examples/dialogue.rs>
+    /// You can use it to add dependencies to your handler tree.
+    /// For more examples - look into `get_state` method documentation
     pub fn dependencies(&self, deps: DependencyMap) {
         *self.dependencies.lock().unwrap() = deps;
     }
 
+    /// Sets the bot parameters, like supports_inline_queries, first_name, etc.
     pub fn me(&self, me: MockMe) {
         *self.me.lock().unwrap() = me.build();
     }
 
+    /// Sets the update. Useful for reusing the same mocked bot instance in different tests
     pub fn update<T: IntoUpdate>(&self, update: T) {
         *self.update.lock().unwrap() =
             update.into_update(Self::CURRENT_UPDATE_ID.fetch_add(1, Ordering::Relaxed));
     }
 
+    /// Actually dispatches the bot, calling the update through the handler tree.
+    /// All the requests made through the bot will be stored in `responses`, and can be retrieved
+    /// with `get_responses`. All the responces are unique to that dispatch, and will be erased for
+    /// every new dispatch.
     pub async fn dispatch(&self) {
         let lock = DISPATCHING_LOCK.lock(); // Lock all the other threads out
 
@@ -149,7 +210,39 @@ impl MockBot {
             update_lock.clone() // This actually makes an update go through the dptree
         ]); // These are nessessary for the dispatch
 
-        tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
+        // In the future, this will need to be redone nicely, but right now it works.
+        // It prevents a race condition for different bot instances to try to use the same server
+        // (like in docstrings)
+        while reqwest::get(format!(
+            "http://127.0.0.1:{}/ping",
+            Self::PORT.lock().unwrap().clone()
+        ))
+        .await
+        .is_ok()
+        {
+            tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+        }
+
+        let server = tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
+
+        // This, too, will need to be redone in the ideal world, but it just waits until the server is up
+        let mut left_tries = 50;
+        while reqwest::get(format!(
+            "http://127.0.0.1:{}/ping",
+            Self::PORT.lock().unwrap().clone()
+        ))
+        .await
+        .is_err()
+        {
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            left_tries -= 1;
+            if left_tries == 0 {
+                panic!(
+                    "Failed to get the server on the port {}!",
+                    Self::PORT.lock().unwrap().clone()
+                );
+            }
+        }
 
         let result = self.handler_tree.dispatch(deps.clone()).await; // This is the part that actually calls the handler
         *self.responses.lock().unwrap() =
@@ -163,9 +256,22 @@ impl MockBot {
         } else {
             panic!("Unhandled update!");
         }
+        let client = reqwest::Client::new();
+        client
+            .post(format!(
+                "http://127.0.0.1:{}/stop/false",
+                Self::PORT.lock().unwrap().clone()
+            ))
+            .send()
+            .await
+            .unwrap();
+        server.await.unwrap();
+
         drop(lock); // And free the lock so that the next test can use it
     }
 
+    /// Returns the responses stored in `responses`
+    /// Panics if no dispatching was done.
     pub fn get_responses(&self) -> telegram_test_server::Responses {
         let responses = self.responses.lock().unwrap().clone();
         match responses {
@@ -218,6 +324,64 @@ impl MockBot {
         (in_mem_storage, erased_storage)
     }
 
+    /// Sets the state of the dialogue, if the storage exists in dependencies
+    /// Panics if no storage was found
+    ///
+    /// # Example
+    /// ```
+    /// use teloxide::dispatching::UpdateHandler;
+    /// use teloxide::types::Update;
+    /// use teloxide_tests::{MockBot, MockMessageText};
+    /// use teloxide::dispatching::dialogue::GetChatId;
+    /// use teloxide::prelude::*;
+    /// use teloxide::{
+    ///     dispatching::{
+    ///         dialogue::{self, InMemStorage},
+    ///         UpdateFilterExt,
+    ///     }
+    /// };
+    /// use dptree::deps;
+    /// use serde::{Deserialize, Serialize};
+    ///
+    /// #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+    /// enum State {
+    ///     #[default]
+    ///     Start,
+    ///     NotStart
+    /// }
+    ///
+    /// type MyDialogue = Dialogue<State, InMemStorage<State>>;
+    ///
+    /// fn handler_tree() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+    ///     dialogue::enter::<Update, InMemStorage<State>, State, _>().endpoint(|update: Update, bot: Bot, dialogue: MyDialogue| async move {
+    ///         let message = bot.send_message(update.chat_id().unwrap(), "Hello!").await?;
+    ///         dialogue.update(State::NotStart).await?;
+    ///         Ok(())
+    ///     })
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+    ///     bot.dependencies(deps![InMemStorage::<State>::new()]);
+    ///     bot.set_state(State::Start).await;
+    ///     // Yes, Start is the default state, but this just shows how it works
+    ///
+    ///     bot.dispatch().await;
+    ///
+    ///     let state: State = bot.get_state().await;
+    ///     // The `: State` type annotation is nessessary! Otherwise the compiler wont't know, what to return
+    ///     assert_eq!(state, State::NotStart);
+    ///
+    ///     let responses = bot.get_responses();
+    ///     let message = responses
+    ///         .sent_messages
+    ///         .last()
+    ///         .expect("No sent messages were detected!");
+    ///     assert_eq!(message.text(), Some("Hello!"));
+    /// }
+    /// ```
+    ///
     pub async fn set_state<S>(&self, state: S)
     where
         S: Send + 'static + Clone,
@@ -248,6 +412,10 @@ impl MockBot {
         }
     }
 
+    /// Gets the state of the dialogue, if the storage exists in dependencies
+    /// Panics if no storage was found
+    /// You need to use type annotation to get the state, please refer to the `set_state`
+    /// documentation example
     pub async fn get_state<S>(&self) -> S
     where
         S: Send + 'static + Clone,
@@ -278,6 +446,8 @@ impl MockBot {
     // Syntactic sugar
     //
 
+    /// Dispatches and checks the last sent message text or caption. Pass in an empty string if you
+    /// want the text or caption to be None
     pub async fn dispatch_and_check_last_text(&self, text_or_caption: &str) {
         self.dispatch().await;
         let responses = self.get_responses();
@@ -294,6 +464,8 @@ impl MockBot {
         }
     }
 
+    /// Same as `dispatch_and_check_last_text`, but also checks the state. You need to derive
+    /// PartialEq, Clone and Debug for the state like in `set_state` example
     pub async fn dispatch_and_check_last_text_and_state<S>(&self, text_or_caption: &str, state: S)
     where
         S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
@@ -316,6 +488,9 @@ impl MockBot {
         assert_eq!(got_state, state, "States are not equal!");
     }
 
+    /// Same as `dispatch_and_check_last_text`, but also checks, if the variants of the state are the same
+    ///
+    /// For example, `State::Start { some_field: "value" }` and `State::Start { some_field: "other value" }` are the same in this function
     pub async fn dispatch_and_check_last_text_and_state_discriminant<S>(
         &self,
         text_or_caption: &str,
@@ -345,6 +520,7 @@ impl MockBot {
         );
     }
 
+    /// Just checks the state after dispathing the update, like `dispatch_and_check_last_text_and_state`
     pub async fn dispatch_and_check_state<S>(&self, state: S)
     where
         S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
@@ -354,6 +530,7 @@ impl MockBot {
         assert_eq!(got_state, state, "States are not equal!");
     }
 
+    /// Just checks the state discriminant after dispathing the update, like `dispatch_and_check_last_text_and_state_discriminant`
     pub async fn dispatch_and_check_state_discriminant<S>(&self, state: S)
     where
         S: Send + 'static + Clone,

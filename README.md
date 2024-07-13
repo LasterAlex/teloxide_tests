@@ -20,14 +20,14 @@ What is needed until release:
 - [ ] Try to make a real bot with these tests, to see, where it lacks in the real usecases
 - [ ] Some feedback for a sanity check
 
-The main crate is mock_bot.
+The main crate is mock_bot, everything is split up for simplicity.
 
 ## Structure
 
 - ./dataset has different mocked structs, that are easy to implement and use
 - ./proc_macros has proc macros, cuz for some reason it has to be a separate crate
 - ./telegram_test_server has a server that mimicks the real one
-- ./mock_bot has a mocked version of a bot, that sends requests to the fake server
+- ./mock_bot has a mocked version of a bot, that sends requests to the fake server. It is also the main crate.
 
 ## Where are the examples of a mocked bot?
 

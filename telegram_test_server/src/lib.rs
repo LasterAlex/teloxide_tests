@@ -1,5 +1,6 @@
 pub mod routes;
-use actix_web::{web, App, HttpServer, Responder};
+use actix_web::{dev::ServerHandle, web, App, HttpResponse, HttpServer, Responder};
+use actix_web_lab::extract::Path;
 use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, delete_message::*, download_file::download_file,
@@ -64,15 +65,44 @@ pub struct EditedMessageReplyMarkup {
 
 #[derive(Clone, Debug, Default)]
 pub struct Responses {
-    pub sent_messages: Vec<Message>, // Just for convenience for simple tasks
+    /// All of the sent messages, including text, photo, audio, etc.
+    /// Be warned, editing or deleting messages do not affect this list!
+    pub sent_messages: Vec<Message>,
+    /// This has only messages that are text messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// has the request that was sent to the fake server
     pub sent_messages_text: Vec<SentMessageText>,
+    /// This has only messages that are photo messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// has the request that was sent to the fake server
     pub sent_messages_photo: Vec<SentMessagePhoto>,
+    /// This has only messages that are video messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// has the request that was sent to the fake server
     pub sent_messages_video: Vec<SentMessageVideo>,
+    /// This has only messages that are document messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// has the request that was sent to the fake server
     pub sent_messages_document: Vec<SentMessageDocument>,
+    /// This has only edited by the bot text messages.
+    /// The `.message` field has the new edited message, and `.bot_request` 
+    /// has the request that was sent to the fake server
     pub edited_messages_text: Vec<EditedMessageText>,
+    /// This has only edited by the bot caption messages.
+    /// The `.message` field has the new edited message, and `.bot_request` 
+    /// has the request that was sent to the fake server
     pub edited_messages_caption: Vec<EditedMessageCaption>,
+    /// This has only messages whos reply markup was edited by the bot.
+    /// The `.message` field has the new edited message, and `.bot_request` 
+    /// has the request that was sent to the fake server
     pub edited_messages_reply_markup: Vec<EditedMessageReplyMarkup>,
+    /// This has only messages whos reply markup was deleted by the bot.
+    /// The `.message` field has the deleted message, and `.bot_request`
+    /// has the request that was sent to the fake server
     pub deleted_messages: Vec<DeletedMessage>,
+    /// This has only the requests that were sent to the fake server to answer callback queries.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
     pub answered_callback_queries: Vec<AnswerCallbackQueryBody>,
 }
 
@@ -145,6 +175,29 @@ pub async fn ping() -> impl Responder {
     "pong"
 }
 
+#[derive(Default)]
+struct StopHandle {
+    inner: parking_lot::Mutex<Option<ServerHandle>>,
+}
+
+impl StopHandle {
+    /// Sets the server handle to stop.
+    pub(crate) fn register(&self, handle: ServerHandle) {
+        *self.inner.lock() = Some(handle);
+    }
+
+    /// Sends stop signal through contained server handle.
+    pub(crate) fn stop(&self, graceful: bool) {
+        #[allow(clippy::let_underscore_future)]
+        let _ = self.inner.lock().as_ref().unwrap().stop(graceful);
+    }
+}
+
+async fn stop(Path(graceful): Path<bool>, stop_handle: web::Data<StopHandle>) -> HttpResponse {
+    stop_handle.stop(graceful);
+    HttpResponse::NoContent().finish()
+}
+
 pub async fn main(port: Mutex<u16>) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
@@ -154,45 +207,54 @@ pub async fn main(port: Mutex<u16>) {
     if pong.is_err()
     // If it errored, no server is running, we need to start it
     {
-        env_logger::builder()
-            .filter_level(log::LevelFilter::Info)
-            .format_target(false)
-            .format_timestamp(None)
-            .init();
-        HttpServer::new(move || {
-            App::new()
-                // .wrap(Logger::default())
-                .route("/ping", web::get().to(ping))
-                .route("/bot{token}/GetFile", web::post().to(get_file))
-                .route("/bot{token}/SendMessage", web::post().to(send_message))
-                .route("/bot{token}/SendPhoto", web::post().to(send_photo))
-                .route("/bot{token}/SendVideo", web::post().to(send_video))
-                .route("/bot{token}/SendDocument", web::post().to(send_document))
-                .route(
-                    "/bot{token}/EditMessageText",
-                    web::post().to(edit_message_text),
-                )
-                .route(
-                    "/bot{token}/EditMessageCaption",
-                    web::post().to(edit_message_caption),
-                )
-                .route(
-                    "/bot{token}/EditMessageReplyMarkup",
-                    web::post().to(edit_message_reply_markup),
-                )
-                .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
-                .route(
-                    "/bot{token}/AnswerCallbackQuery",
-                    web::post().to(answer_callback_query),
-                )
-                .route("/file/bot{token}/{file_name}", web::get().to(download_file))
+        let stop_handle = web::Data::new(StopHandle::default());
+        // let _ = env_logger::builder()
+        //     .filter_level(log::LevelFilter::Info)
+        //     .format_target(false)
+        //     .format_timestamp(None)
+        //     .try_init();
+        let server = HttpServer::new({
+            let stop_handle = stop_handle.clone();
+
+            move || {
+                App::new()
+                    // .wrap(Logger::default())
+                    .app_data(stop_handle.clone())
+                    .route("/ping", web::get().to(ping))
+                    .route("/stop/{graceful}", web::post().to(stop))
+                    .route("/bot{token}/GetFile", web::post().to(get_file))
+                    .route("/bot{token}/SendMessage", web::post().to(send_message))
+                    .route("/bot{token}/SendPhoto", web::post().to(send_photo))
+                    .route("/bot{token}/SendVideo", web::post().to(send_video))
+                    .route("/bot{token}/SendDocument", web::post().to(send_document))
+                    .route(
+                        "/bot{token}/EditMessageText",
+                        web::post().to(edit_message_text),
+                    )
+                    .route(
+                        "/bot{token}/EditMessageCaption",
+                        web::post().to(edit_message_caption),
+                    )
+                    .route(
+                        "/bot{token}/EditMessageReplyMarkup",
+                        web::post().to(edit_message_reply_markup),
+                    )
+                    .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
+                    .route(
+                        "/bot{token}/AnswerCallbackQuery",
+                        web::post().to(answer_callback_query),
+                    )
+                    .route("/file/bot{token}/{file_name}", web::get().to(download_file))
+            }
         })
         .bind(format!("127.0.0.1:{}", port.lock().unwrap().to_string()))
         .unwrap()
         .workers(1)
-        .run()
-        .await
-        .unwrap()
+        .run();
+
+        stop_handle.register(server.handle());
+
+        server.await.unwrap();
     };
 }
 
@@ -208,9 +270,24 @@ mod tests {
     fn test_add_messages() {
         MESSAGES.lock().unwrap().clear();
         LAST_MESSAGE_ID.store(0, Ordering::Relaxed);
-        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
-        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(2).build());
-        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(3).build());
+        MESSAGES.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(1)
+                .build(),
+        );
+        MESSAGES.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(2)
+                .build(),
+        );
+        MESSAGES.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(3)
+                .build(),
+        );
         assert_eq!(MESSAGES.max_message_id(), 3);
     }
 
@@ -218,7 +295,12 @@ mod tests {
     #[serial]
     fn test_edit_messages() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
+        MESSAGES.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(1)
+                .build(),
+        );
         MESSAGES.edit_message(1, "text", "1234");
         assert_eq!(MESSAGES.get_message(1).unwrap().text().unwrap(), "1234");
     }
@@ -227,7 +309,12 @@ mod tests {
     #[serial]
     fn test_get_messages() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
+        MESSAGES.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(1)
+                .build(),
+        );
         assert_eq!(MESSAGES.get_message(1).unwrap().text().unwrap(), "123");
     }
 
@@ -235,7 +322,12 @@ mod tests {
     #[serial]
     fn test_delete_messages() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
+        MESSAGES.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(1)
+                .build(),
+        );
         MESSAGES.delete_message(1);
         assert_eq!(MESSAGES.get_message(1), None);
     }
@@ -244,7 +336,12 @@ mod tests {
     #[serial]
     fn test_edit_message_reply_markup() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
+        MESSAGES.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(1)
+                .build(),
+        );
         MESSAGES.edit_message_reply_markup(
             1,
             Some(ReplyMarkup::InlineKeyboard(InlineKeyboardMarkup::new(
