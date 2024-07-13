@@ -13,6 +13,7 @@ pub use queries::*;
 mod tests;
 
 pub trait IntoUpdate {
+    /// Converts the mocked struct into an update
     fn into_update(self, id: i32) -> Update;
 }
 
@@ -39,6 +40,16 @@ impl MockUser {
     pub const ADDED_TO_ATTACHMENT_MENU: bool = false;
     pub const IS_PREMIUM: bool = false;
 
+    /// Creates a new easily changable user builder
+    ///
+    /// # Examples
+    /// ```
+    /// let user = dataset::MockUser::new()
+    ///     .id(12345678)
+    ///     .build();
+    /// assert_eq!(user.id.0, 12345678);
+    /// ```
+    ///
     pub fn new() -> Self {
         Self {
             id: UserId(Self::ID),
@@ -52,6 +63,15 @@ impl MockUser {
         }
     }
 
+    /// Builds the user
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_user = dataset::MockUser::new();
+    /// let user = mock_user.build();
+    /// assert_eq!(user.id.0 as u64, dataset::MockUser::ID);  // ID is a default value
+    /// ```
+    ///
     pub fn build(self) -> User {
         User {
             id: self.id,
@@ -90,6 +110,16 @@ impl MockMe {
     pub const CAN_READ_ALL_GROUP_MESSAGES: bool = false;
     pub const SUPPORTS_INLINE_QUERIES: bool = false;
 
+    /// Creates a new easily changable me builder
+    ///
+    /// # Examples
+    /// ```
+    /// let me = dataset::MockMe::new()
+    ///     .first_name("Test")
+    ///     .build();
+    /// assert_eq!(me.first_name, "Test");
+    /// ```
+    ///
     pub fn new() -> Self {
         Self {
             id: UserId(Self::ID),
@@ -104,6 +134,15 @@ impl MockMe {
         }
     }
 
+    /// Builds the me
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_me = dataset::MockMe::new();
+    /// let me = mock_me.build();
+    /// assert_eq!(me.id.0 as u64, dataset::MockMe::ID);  // ID is a default value
+    /// ```
+    ///
     pub fn build(self) -> Me {
         let mut user = MockUser::new();
 
@@ -141,6 +180,16 @@ impl MockChatPhoto {
     pub const BIG_FILE_ID: &'static str = "big_file_id";
     pub const BIG_FILE_UNIQUE_ID: &'static str = "big_file_unique_id";
 
+    /// Creates a new easily changable chat photo builder
+    ///
+    /// # Examples
+    /// ```
+    /// let chat_photo = dataset::MockChatPhoto::new()
+    ///     .small_file_id("small_file_id")
+    ///     .build();
+    /// assert_eq!(chat_photo.small_file_id, "small_file_id");
+    /// ```
+    ///
     pub fn new() -> Self {
         Self {
             small_file_id: Self::SMALL_FILE_ID.to_string(),
@@ -150,6 +199,15 @@ impl MockChatPhoto {
         }
     }
 
+    /// Builds the chat photo
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_chat_photo = dataset::MockChatPhoto::new();
+    /// let chat_photo = mock_chat_photo.build();
+    /// assert_eq!(chat_photo.small_file_id, dataset::MockChatPhoto::SMALL_FILE_ID);  // SMALL_FILE_ID is a default value
+    /// ```
+    ///
     pub fn build(self) -> ChatPhoto {
         ChatPhoto {
             small_file_id: self.small_file_id,
@@ -174,6 +232,16 @@ impl MockLocation {
     pub const LATITUDE: f64 = 50.693416;
     pub const LONGITUDE: f64 = 30.624605;
 
+    /// Creates a new easily changable location builder
+    ///
+    /// # Examples
+    /// ```
+    /// let location = dataset::MockLocation::new()
+    ///     .latitude(50.693416)
+    ///     .build();
+    /// assert_eq!(location.latitude, 50.693416);
+    /// ```
+    ///
     pub fn new() -> Self {
         Self {
             latitude: Self::LATITUDE,
@@ -185,6 +253,15 @@ impl MockLocation {
         }
     }
 
+    /// Builds the location
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_location = dataset::MockLocation::new();
+    /// let location = mock_location.build();
+    /// assert_eq!(location.latitude, dataset::MockLocation::LATITUDE); // LATITUDE is a default value
+    /// ```
+    ///
     pub fn build(self) -> Location {
         Location {
             longitude: self.longitude,
@@ -214,6 +291,16 @@ impl MockPhotoSize {
     pub const UNIQUE_FILE_ID: &'static str = "file_unique_id";
     pub const FILE_SIZE: u32 = 1101;
 
+    /// Creates a new easily changable photo size builder
+    ///
+    /// # Examples
+    /// ```
+    /// let photo_size = dataset::MockPhotoSize::new()
+    ///     .width(90)
+    ///     .build();
+    /// assert_eq!(photo_size.width, 90);
+    /// ```
+    ///
     pub fn new() -> Self {
         Self {
             width: Self::WIDTH,
@@ -224,6 +311,15 @@ impl MockPhotoSize {
         }
     }
 
+    /// Builds the photo size
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_photo_size = dataset::MockPhotoSize::new();
+    /// let photo_size = mock_photo_size.build();
+    /// assert_eq!(photo_size.width, dataset::MockPhotoSize::WIDTH); // WIDTH is a default value
+    /// ```
+    ///
     pub fn build(self) -> PhotoSize {
         PhotoSize {
             file: FileMeta {
@@ -259,6 +355,16 @@ impl MockVideo {
     pub const UNIQUE_FILE_ID: &'static str = "unique_file_id";
     pub const FILE_SIZE: u32 = 10099782;
 
+    /// Creates a new easily changable video builder
+    ///
+    /// # Examples
+    /// ```
+    /// let video = dataset::MockVideo::new()
+    ///     .width(640)
+    ///     .build();
+    /// assert_eq!(video.width, 640);
+    /// ```
+    ///
     pub fn new() -> Self {
         Self {
             width: Self::WIDTH,
@@ -273,6 +379,15 @@ impl MockVideo {
         }
     }
 
+    /// Builds the video
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_video = dataset::MockVideo::new();
+    /// let video = mock_video.build();
+    /// assert_eq!(video.width, dataset::MockVideo::WIDTH); // WIDTH is a default value
+    /// ```
+    ///
     pub fn build(self) -> Video {
         Video {
             width: self.width,

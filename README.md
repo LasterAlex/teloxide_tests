@@ -15,10 +15,12 @@ What is needed until release:
 - [x] Add most common endpoints (SendMessage, SendPhoto, SendDocument, SendVideo, EditMessageText, EditMessageCaption, EditMessageReplyMarkup, DeleteMessage, AnswerCallbackQuery, GetFile)
 - [x] Clean up the test server code and make it easily extendable
 - [x] Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
-- [ ] Export publicly only what is needed
+- [x] Export publicly only what is needed
 - [ ] Add a lot of different examples for referencing
 - [ ] Try to make a real bot with these tests, to see, where it lacks in the real usecases
 - [ ] Some feedback for a sanity check
+
+The main crate is mock_bot.
 
 ## Structure
 

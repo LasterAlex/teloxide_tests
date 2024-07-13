@@ -1,6 +1,11 @@
-#[macro_export]
+// #[macro_export]
 macro_rules! Message {
-    (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
+    (
+        #[derive($($derive:meta),*)] 
+        $pub:vis struct $name:ident { 
+            $($fpub:vis $field:ident : $type:ty,)* 
+        }
+    ) => {
         #[derive($($derive),*)]
         $pub struct $name {  // This is basically a template
             pub id: MessageId,
@@ -12,7 +17,7 @@ macro_rules! Message {
         }
         impl $name {
             pub const ID: i32 = 1;
-            $pub fn new_message($($field:$type,)*) -> Self{
+            pub(crate) fn new_message($($field:$type,)*) -> Self{
                 Self {  // To not repeat this over and over again
                     id: MessageId($name::ID),
                     thread_id: None,
@@ -23,7 +28,7 @@ macro_rules! Message {
                 }
             }
 
-            $pub fn build_message(self, message_kind: MessageKind) -> Message {
+            pub(crate) fn build_message(self, message_kind: MessageKind) -> Message {
                 Message {
                     id: self.id,
                     thread_id: self.thread_id,
@@ -36,6 +41,19 @@ macro_rules! Message {
         }
 
         impl crate::IntoUpdate for $name {
+            /// Converts the MockCallbackQuery into an update
+            ///
+            /// # Example
+            /// ```
+            /// use dataset::IntoUpdate;
+            /// let mock_message = dataset::MockMessageText::new();
+            /// let update = mock_message.clone().into_update(1);
+            /// assert_eq!(update.id, 1);
+            /// assert_eq!(update.kind, teloxide::types::UpdateKind::Message(
+            ///     mock_message.build())
+            /// );
+            /// ```
+            ///
             fn into_update(self, id: i32) -> Update {
                 Update {
                     id,
@@ -45,5 +63,7 @@ macro_rules! Message {
         }
     }
 }
+
+pub(crate) use Message;
 
 // More messages like Webapp data is needed

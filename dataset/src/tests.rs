@@ -1,7 +1,10 @@
 use crate::*;
 use proc_macros::Changeable;
 use queries::MockCallbackQuery;
-use teloxide::{dispatching::dialogue::GetChatId, types::{ChatId, MessageEntity, MessageId, True, UserId}};
+use teloxide::{
+    dispatching::dialogue::GetChatId,
+    types::{ChatId, MessageEntity, MessageId, True, UserId},
+};
 
 #[derive(Changeable)]
 struct Test {
@@ -112,7 +115,7 @@ fn test_private_group_chat() {
 
 #[test]
 fn test_message_common_text() {
-    let simple_message = MockMessageText::new("simple");
+    let simple_message = MockMessageText::new().text("simple");
     let simple_message_object = simple_message.build(); // This is now teloxide::types::Message
 
     assert_eq!(simple_message_object.text(), Some("simple"));
@@ -123,7 +126,8 @@ fn test_message_common_text() {
     assert_eq!(simple_message_object.chat.id, ChatId(MockUser::ID as i64)); // Some sane default values
                                                                             // User id because it is a private chat
 
-    let message = MockMessageText::new("text")
+    let message = MockMessageText::new()
+        .text("text")
         .id(123) // If you want - you can change everything by just calling it as a method
         .from(MockUser::new().first_name("Test").build()) // Sub categories need to be built in separately
         .chat(MockGroupChat::new().id(-123).build())
@@ -145,7 +149,7 @@ fn test_message_common_text() {
 
 #[test]
 fn test_into_update() {
-    let message = MockMessageText::new("text");
+    let message = MockMessageText::new().text("text");
 
     let update = message.into_update(1);
 

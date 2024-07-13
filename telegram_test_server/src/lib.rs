@@ -208,9 +208,9 @@ mod tests {
     fn test_add_messages() {
         MESSAGES.lock().unwrap().clear();
         LAST_MESSAGE_ID.store(0, Ordering::Relaxed);
-        MESSAGES.add_message(message_common::MockMessageText::new("123").id(1).build());
-        MESSAGES.add_message(message_common::MockMessageText::new("123").id(2).build());
-        MESSAGES.add_message(message_common::MockMessageText::new("123").id(3).build());
+        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
+        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(2).build());
+        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(3).build());
         assert_eq!(MESSAGES.max_message_id(), 3);
     }
 
@@ -218,7 +218,7 @@ mod tests {
     #[serial]
     fn test_edit_messages() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new("123").id(1).build());
+        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
         MESSAGES.edit_message(1, "text", "1234");
         assert_eq!(MESSAGES.get_message(1).unwrap().text().unwrap(), "1234");
     }
@@ -227,7 +227,7 @@ mod tests {
     #[serial]
     fn test_get_messages() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new("123").id(1).build());
+        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
         assert_eq!(MESSAGES.get_message(1).unwrap().text().unwrap(), "123");
     }
 
@@ -235,7 +235,7 @@ mod tests {
     #[serial]
     fn test_delete_messages() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new("123").id(1).build());
+        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
         MESSAGES.delete_message(1);
         assert_eq!(MESSAGES.get_message(1), None);
     }
@@ -244,7 +244,7 @@ mod tests {
     #[serial]
     fn test_edit_message_reply_markup() {
         MESSAGES.lock().unwrap().clear();
-        MESSAGES.add_message(message_common::MockMessageText::new("123").id(1).build());
+        MESSAGES.add_message(message_common::MockMessageText::new().text("123").id(1).build());
         MESSAGES.edit_message_reply_markup(
             1,
             Some(ReplyMarkup::InlineKeyboard(InlineKeyboardMarkup::new(

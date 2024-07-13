@@ -1,10 +1,11 @@
 use super::*;
 use dataset::*;
 use serde::{Deserialize, Serialize};
+use teloxide::dispatching::{UpdateHandler, HandlerExt};
 use teloxide::dptree::case;
 use teloxide::net::Download;
-use teloxide::payloads::SendPhotoSetters;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, InputFile, MessageEntity};
+use teloxide::requests::Requester;
+use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, MessageEntity, Update};
 use teloxide::{
     dispatching::{
         dialogue::{self, InMemStorage},
@@ -12,6 +13,7 @@ use teloxide::{
     },
     dptree::deps,
     macros::BotCommands,
+    prelude::*,
 };
 
 //
@@ -57,7 +59,7 @@ fn get_dialogue_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Syn
 
 #[tokio::test]
 async fn test_echo_with_start_state() {
-    let bot = MockBot::new(MockMessageText::new("test"), get_dialogue_schema());
+    let bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
     let storage = InMemStorage::<State>::new();
     bot.dependencies(deps![storage]);
     bot.set_state(State::Start).await;
@@ -73,7 +75,7 @@ async fn test_echo_with_start_state() {
 
 #[tokio::test]
 async fn test_echo_with_not_start_test() {
-    let bot = MockBot::new(MockMessageText::new("test"), get_dialogue_schema());
+    let bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
     let storage = InMemStorage::<State>::new();
     bot.dependencies(deps![storage]);
     bot.set_state(State::NotStart).await;
@@ -208,7 +210,7 @@ fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
 
 #[tokio::test]
 async fn test_echo() {
-    let bot = MockBot::new(MockMessageText::new("/echo echo"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/echo echo"), get_schema());
 
     bot.dispatch().await;
 
@@ -219,7 +221,7 @@ async fn test_echo() {
 
 #[tokio::test]
 async fn test_send_photo() {
-    let bot = MockBot::new(MockMessageText::new("/photo"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/photo"), get_schema());
 
     bot.dispatch().await;
 
@@ -237,7 +239,7 @@ async fn test_send_photo() {
 
 #[tokio::test]
 async fn test_send_video() {
-    let bot = MockBot::new(MockMessageText::new("/video"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/video"), get_schema());
 
     bot.dispatch().await;
 
@@ -255,7 +257,7 @@ async fn test_send_video() {
 
 #[tokio::test]
 async fn test_send_document() {
-    let bot = MockBot::new(MockMessageText::new("/document"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/document"), get_schema());
 
     bot.dispatch().await;
 
@@ -272,7 +274,7 @@ async fn test_send_document() {
 
 #[tokio::test]
 async fn test_edit_message() {
-    let bot = MockBot::new(MockMessageText::new("/edit"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/edit"), get_schema());
 
     bot.dispatch().await;
 
@@ -285,7 +287,7 @@ async fn test_edit_message() {
 
 #[tokio::test]
 async fn test_edit_caption() {
-    let bot = MockBot::new(MockMessageText::new("/editcaption"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/editcaption"), get_schema());
 
     bot.dispatch().await;
 
@@ -298,7 +300,7 @@ async fn test_edit_caption() {
 
 #[tokio::test]
 async fn test_edit_reply_markup() {
-    let bot = MockBot::new(MockMessageText::new("/editreplymarkup"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/editreplymarkup"), get_schema());
 
     bot.dispatch().await;
 
@@ -323,7 +325,7 @@ async fn test_edit_reply_markup() {
 
 #[tokio::test]
 async fn test_delete_message() {
-    let bot = MockBot::new(MockMessageText::new("/delete"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/delete"), get_schema());
 
     bot.dispatch().await;
 

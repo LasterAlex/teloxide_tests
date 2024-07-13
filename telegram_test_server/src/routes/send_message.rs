@@ -26,7 +26,7 @@ pub struct SendMessageTextBody {
 pub async fn send_message(body: web::Json<SendMessageTextBody>) -> impl Responder {
     let chat = body.chat_id.chat();
     let mut message = // Creates the message, which will be mutated to fit the needed shape
-        MockMessageText::new(&body.text).chat(chat);
+        MockMessageText::new().text(&body.text).chat(chat);
 
     message.entities = body.entities.clone().unwrap_or_default();
     if let Some(id) = body.reply_to_message_id {

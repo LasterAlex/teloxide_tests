@@ -52,9 +52,9 @@ pub fn changeable_derive(input: TokenStream) -> TokenStream {
                             panic!("Unsupported Option field type")
                         };
 
+                        let doc_comment = format!("Sets the {field_name} value of the {struct_name} to value, converting it to needed Option type.", struct_name = name.to_string(), field_name = field_name.clone().unwrap().to_string());
                         quote! {
-                            // Takes care of the string conversion for free
-                            // (and everything else that can Into for that matter)
+                            #[doc = #doc_comment]
                             pub fn #field_name<T: Into<#inner_type>>(mut self, value: T) -> Self {
                                 self.#field_name = Some(value.into());
                                 self
@@ -62,35 +62,73 @@ pub fn changeable_derive(input: TokenStream) -> TokenStream {
                         }
                     // Next is just a bunch of useful conversions, like &str to String, i64 to ChatId etc.
                     } else if last_segment.ident == "String" {
+                        let doc_comment = format!("Sets the {field_name} value of the {struct_name} to value, converting it to String.
+
+# Example
+```
+let builder = dataset::{struct_name}::new().{field_name}(\"test\");
+assert_eq!(builder.{field_name}, \"test\".to_string());
+```
+", struct_name = name.to_string(), field_name = field_name.clone().unwrap().to_string());
                         quote! {
+                            #[doc = #doc_comment]
                             pub fn #field_name<T: Into<String>>(mut self, value: T) -> Self {
                                 self.#field_name = value.into();
                                 self
                             }
                         }
                     } else if last_segment.ident == "ChatId" {
+                        let doc_comment = format!("Sets the {field_name} value of the {struct_name} to value, converting it to ChatId.
+
+# Example
+```
+let builder = dataset::{struct_name}::new().{field_name}(1234);
+assert_eq!(builder.{field_name}, teloxide::types::ChatId(1234));
+```
+", field_name = field_name.clone().unwrap().to_string(), struct_name = name.to_string());
                         quote! {
+                            #[doc = #doc_comment]
                             pub fn #field_name(mut self, value: i64) -> Self {
                                 self.#field_name = ChatId(value);
                                 self
                             }
                         }
                     } else if last_segment.ident == "UserId" {
+                        let doc_comment = format!("Sets the {field_name} value of the {struct_name} to value, converting it to UserId.
+
+# Example
+```
+let builder = dataset::{struct_name}::new().{field_name}(1234);
+assert_eq!(builder.{field_name}, teloxide::types::UserId(1234));
+```
+", field_name = field_name.clone().unwrap().to_string(), struct_name = name.to_string());
                         quote! {
+                            #[doc = #doc_comment]
                             pub fn #field_name(mut self, value: u64) -> Self {
                                 self.#field_name = UserId(value);
                                 self
                             }
                         }
                     } else if last_segment.ident == "MessageId" {
+                        let doc_comment = format!("Sets the {field_name} value of the {struct_name} to value, converting it to MessageId.
+
+# Example
+```
+let builder = dataset::{struct_name}::new().{field_name}(1234);
+assert_eq!(builder.{field_name}, teloxide::types::MessageId(1234));
+```
+", field_name = field_name.clone().unwrap().to_string(), struct_name = name.to_string());
                         quote! {
+                            #[doc = #doc_comment]
                             pub fn #field_name(mut self, value: i32) -> Self {
                                 self.#field_name = MessageId(value);
                                 self
                             }
                         }
                     } else {
+                        let doc_comment = format!("Sets the {field_name} value of the {struct_name} to value.", struct_name = name.to_string(), field_name = field_name.clone().unwrap().to_string());
                         quote! {
+                            #[doc = #doc_comment]
                             pub fn #field_name(mut self, value: #field_type) -> Self {
                                 self.#field_name = value;
                                 self

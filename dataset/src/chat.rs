@@ -7,7 +7,12 @@ use teloxide::types::{
 use super::MockUser;
 
 macro_rules! Chat {
-    (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
+    (
+        #[derive($($derive:meta),*)] 
+        $pub:vis struct $name:ident { 
+            $($fpub:vis $field:ident : $type:ty,)* 
+        }
+    ) => {
         #[derive($($derive),*)]
         $pub struct $name {  // This is basically a template
             pub id: ChatId,
@@ -23,7 +28,7 @@ macro_rules! Chat {
             pub const HAS_HIDDEN_MEMBERS: bool = false;
             pub const AGGRESSIVE_ANTI_SPAM_ENABLED: bool = false;
 
-            $pub fn new_chat($($field:$type,)*) -> Self{
+            pub(crate) fn new_chat($($field:$type,)*) -> Self{
                 Self {  // To not repeat this over and over again
                     id: ChatId(Self::ID),
                     photo: None,
@@ -35,7 +40,7 @@ macro_rules! Chat {
                 }
             }
 
-            $pub fn build_chat(self, chat_kind: ChatKind) -> Chat {
+            pub(crate) fn build_chat(self, chat_kind: ChatKind) -> Chat {
                 Chat {
                     id: self.id,
                     kind: chat_kind,
@@ -51,7 +56,12 @@ macro_rules! Chat {
 }
 
 macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat myself
-    (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
+    (
+        #[derive($($derive:meta),*)] 
+        $pub:vis struct $name:ident { 
+            $($fpub:vis $field:ident : $type:ty,)* 
+        }
+    ) => {
         Chat! {
             #[derive($($derive),*)]
             $pub struct $name {
@@ -63,7 +73,7 @@ macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat my
             }
         }
         impl $name {
-            $pub fn new_public_chat($($field:$type,)*) -> Self {
+            pub(crate) fn new_public_chat($($field:$type,)*) -> Self {
                  $name::new_chat(
                      None,
                      None,
@@ -73,7 +83,7 @@ macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat my
                  )
             }
 
-            $pub fn build_public_chat(self, public_chat_kind: PublicChatKind) -> Chat {
+            pub(crate) fn build_public_chat(self, public_chat_kind: PublicChatKind) -> Chat {
                 self.clone().build_chat(ChatKind::Public(ChatPublic {
                     title: self.title,
                     kind: public_chat_kind,
@@ -94,10 +104,29 @@ PublicChat! {
 }
 
 impl MockGroupChat {
+    /// Creates a new easily changable group chat builder
+    ///
+    /// Example:
+    /// ```
+    /// let chat = dataset::MockGroupChat::new()
+    ///     .id(-1234)
+    ///     .build();
+    /// assert_eq!(chat.id.0, -1234);
+    /// ```
+    ///
     pub fn new() -> Self {
         Self::new_public_chat(None)
     }
 
+    /// Builds the group chat
+    ///
+    /// Example:
+    /// ```
+    /// let mock_chat = dataset::MockGroupChat::new();
+    /// let chat = mock_chat.build();
+    /// assert_eq!(chat.id.0, dataset::MockGroupChat::ID);  // ID is a default value
+    /// ```
+    ///
     pub fn build(self) -> Chat {
         self.clone()
             .build_public_chat(PublicChatKind::Group(PublicChatGroup {
@@ -115,10 +144,32 @@ PublicChat! {
 }
 
 impl MockChannelChat {
+    /// Creates a new easily changable channel chat builder
+    ///
+    /// Example:
+    /// ```
+    /// let chat = dataset::MockChannelChat::new()
+    ///     .id(-1234)
+    ///     .username("test_channel")
+    ///     .build();
+    /// assert_eq!(chat.id.0, -1234);
+    /// assert_eq!(chat.username(), Some("test_channel"));
+    /// ```
+    ///
     pub fn new() -> Self {
         Self::new_public_chat(None, None)
     }
 
+    /// Builds the channel chat
+    ///
+    /// Example:
+    /// ```
+    /// let mock_chat = dataset::MockChannelChat::new();
+    /// let chat = mock_chat.build();
+    /// assert_eq!(chat.id.0, dataset::MockChannelChat::ID);  // ID is a default value
+    /// assert_eq!(chat.username(), None);
+    /// ```
+    ///
     pub fn build(self) -> Chat {
         self.clone()
             .build_public_chat(PublicChatKind::Channel(PublicChatChannel {
@@ -148,6 +199,16 @@ PublicChat! {
 impl MockSupergroupChat {
     pub const IS_FORUM: bool = false;
 
+    /// Creates a new easily changable supergroup chat builder
+    ///
+    /// Example:
+    /// ```
+    /// let chat = dataset::MockSupergroupChat::new()
+    ///     .id(-1234)
+    ///     .build();
+    /// assert_eq!(chat.id.0, -1234);
+    /// ```
+    ///
     pub fn new() -> Self {
         Self::new_public_chat(
             None,
@@ -164,6 +225,15 @@ impl MockSupergroupChat {
         )
     }
 
+    /// Builds the supergroup chat
+    ///
+    /// Example:
+    /// ```
+    /// let mock_chat = dataset::MockSupergroupChat::new();
+    /// let chat = mock_chat.build();
+    /// assert_eq!(chat.id.0, dataset::MockSupergroupChat::ID);  // ID is a default value
+    /// ```
+    ///
     pub fn build(self) -> Chat {
         self.clone()
             .build_public_chat(PublicChatKind::Supergroup(PublicChatSupergroup {
@@ -196,10 +266,29 @@ Chat! {
 }
 
 impl MockPrivateChat {
+    /// Creates a new easily changable private chat builder
+    ///
+    /// Example:
+    /// ```
+    /// let chat = dataset::MockPrivateChat::new()
+    ///     .id(-1234)
+    ///     .build();
+    /// assert_eq!(chat.id.0, -1234);
+    /// ```
+    ///
     pub fn new() -> Self {
         Self::new_chat(None, None, None, None, None, None, None).id(MockUser::ID as i64)
     }
 
+    /// Builds the private chat
+    ///
+    /// Example:
+    /// ```
+    /// let mock_chat = dataset::MockPrivateChat::new();
+    /// let chat = mock_chat.build();
+    /// assert_eq!(chat.id.0 as u64, dataset::MockUser::ID);  // Private chats have the id of users
+    /// ```
+    ///
     pub fn build(self) -> Chat {
         self.clone().build_chat(ChatKind::Private(ChatPrivate {
             username: self.username,

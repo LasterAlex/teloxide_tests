@@ -17,6 +17,17 @@ pub struct MockCallbackQuery {
 impl MockCallbackQuery {
     pub const ID: &'static str = "id";
     pub const CHAT_INSTANCE: &'static str = "chat_instance";
+
+    /// Creates a new easily changable callback query builder
+    ///
+    /// # Examples
+    /// ```
+    /// let callback_query = dataset::MockCallbackQuery::new()
+    ///     .id("id")
+    ///     .build();
+    /// assert_eq!(callback_query.id, "id");
+    /// ```
+    ///
     pub fn new() -> Self {
         Self {
             id: Self::ID.to_string(),
@@ -29,6 +40,15 @@ impl MockCallbackQuery {
         }
     }
 
+    /// Builds the callback query
+    ///
+    /// # Example
+    /// ```
+    /// let mock_callback_query = dataset::MockCallbackQuery::new();
+    /// let callback_query = mock_callback_query.build();
+    /// assert_eq!(callback_query.id, dataset::MockCallbackQuery::ID);  // ID is a default value
+    /// ```
+    ///
     pub fn build(self) -> CallbackQuery {
         CallbackQuery {
             id: self.id,
@@ -43,6 +63,19 @@ impl MockCallbackQuery {
 }
 
 impl crate::IntoUpdate for MockCallbackQuery {
+    /// Converts the MockCallbackQuery into an update
+    ///
+    /// # Example
+    /// ```
+    /// use dataset::IntoUpdate;
+    /// let mock_callback_query = dataset::MockCallbackQuery::new();
+    /// let update = mock_callback_query.clone().into_update(1);
+    /// assert_eq!(update.id, 1);
+    /// assert_eq!(update.kind, teloxide::types::UpdateKind::CallbackQuery(
+    ///     mock_callback_query.build())
+    /// );
+    /// ```
+    ///
     fn into_update(self, id: i32) -> Update {
         Update {
             id,

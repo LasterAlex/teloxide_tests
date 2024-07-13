@@ -1256,24 +1256,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mock_bot"
-version = "0.1.0"
-dependencies = [
- "dataset",
- "dotenv",
- "gag",
- "log",
- "pretty_env_logger",
- "reqwest",
- "serde",
- "serde_json",
- "telegram_test_server",
- "teloxide",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "native-tls"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2058,6 +2040,24 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "teloxide_tests"
+version = "0.1.0"
+dependencies = [
+ "dataset",
+ "dotenv",
+ "gag",
+ "log",
+ "pretty_env_logger",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "telegram_test_server",
+ "teloxide",
+ "tokio",
+ "url",
 ]
 
 [[package]]

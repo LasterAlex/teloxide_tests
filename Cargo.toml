@@ -1,3 +1,9 @@
 [workspace]
 members = ["mock_bot", "dataset", "telegram_test_server", "proc_macros"]
 resolver = "2"
+
+[workspace.package]
+rust-version = "1.70"
+edition = "2021"
+
+license = "MIT"
