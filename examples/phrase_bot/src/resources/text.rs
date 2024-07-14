@@ -1,3 +1,7 @@
+use crate::db::models;
+
+pub const NO_SUCH_PHRASE: &str = "There is no such phrase!";
+
 pub const PLEASE_SEND_NUMBER: &str = "Please send a number!";
 
 pub const DELETED_PHRASE: &str = "Your phrase has been deleted!";
@@ -14,9 +18,6 @@ pub const SORRY_BOT_UPDATED: &str =
     "Sorry, bot updated and we lost where you were. Please try again.";
 pub const PLEASE_SEND_TEXT: &str = "Please send text!";
 pub const NO_MORE_CHARACTERS: &str = "Your message must not be more than 3 characters!";
-pub const PROFILE: &str = "Your nickname: 
-
-Your phrases:";
 
 pub const CHANGE_NICKNAME: &str = "Send me new nickname!
 
@@ -24,15 +25,15 @@ If you want to return, send /cancel";
 
 pub const CANCELED: &str = "Canceled.";
 
-pub const DELETE_PHRASE: &str = "These are your phrases:
+pub fn delete_phrase(all_phrases: &Vec<models::Phrase>) -> String {
+    format!("These are your phrases:
 
-1. ...
-2. ...
-3. ...
+{}
 
 Send me a number of a phrase you want to delete!
 
-If you want to return, press /cancel";
+If you want to return, press /cancel", list_all_phrases(all_phrases))
+}
 
 pub fn phrase_progress(emoji: Option<&str>, text: Option<&str>, bot_text: Option<&str>) -> String {
     format!(
@@ -87,4 +88,30 @@ pub fn added_phrase(emoji: &str, text: &str, bot_text: &str) -> String {
 
 pub fn make_link(name: String, id: u64) -> String {
     format!("<a href=\"tg://user?id={}\">{}</a>", id, name)
+}
+
+pub fn make_phrase_string(phrase: &models::Phrase) -> String {
+    format!("{} - {} | {}", phrase.text, phrase.emoji, phrase.bot_text)
+}
+
+pub fn list_all_phrases(phrases: &Vec<models::Phrase>) -> String {
+    phrases
+        .iter()
+        .map(|phrase| make_phrase_string(phrase))
+        .enumerate()
+        .map(|(i, phrase)| format!("{}. {}", i + 1, phrase))
+        .collect::<Vec<String>>()
+        .join("\n\n")
+}
+
+pub fn profile(nickname: Option<String>, phrases: &Vec<models::Phrase>) -> String {
+    format!(
+        "Your nickname📜: {}
+
+Your phrases: 
+
+{}",
+        nickname.unwrap_or("Not set🚫".to_string()),
+        list_all_phrases(phrases)
+    )
 }

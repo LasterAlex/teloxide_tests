@@ -17,7 +17,7 @@ What is needed until release:
 - [x] Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
 - [x] Export publicly only what is needed
 - [x] Add a lot of different examples for referencing
-- [ ] Try to make a real bot with these tests, to see, where it lacks in the real usecases
+- [x] Try to make a real bot with these tests, to see, where it lacks in the real usecases
 - [ ] Some feedback for a sanity check
 
 The main crate is mock_bot, everything is split up for simplicity.
@@ -34,9 +34,16 @@ To avoid it, try to do the following:
 ### Some errors associated with these race conditions:
 
 - trait `Send` is not implemented for `std::sync::MutexGuard<'static, ()>`
+
   This means you can't share the bot between any threads, as you should not in any circumstance.
+
 - PoisonError(...)
+
   You shouldn't see it, i tried to mitigate it, but if you do, it's not the problem, it just means that something else panicked and now the bot doesn't know, what to do. Just fix whatever was causing the problem, and poison errors should be gone.
+
+- Stupid bugs that change every time you run a test
+
+  Once again, either use serial tests, or try to add `drop(bot);` at the end of every test, and do everything AFTER calling `MockBot::new()`, as the bot creation makes a safe lock that prevent any race conditions.
 
 ## Structure
 

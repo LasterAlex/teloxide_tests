@@ -1,5 +1,6 @@
 use super::schema;
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = schema::users)]
@@ -16,7 +17,7 @@ pub struct NewUser {
     pub id: i64,
 }
 
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Serialize, Deserialize)]
 #[diesel(table_name = schema::phrases)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[derive(Debug, Clone, PartialEq)]

@@ -89,6 +89,17 @@
 //!
 //! And try to not use the raw bot fields unless you know what you are doing! They are public only
 //! to give more options to those who seek it.
+//! 
+//! ## **!!! IMPORTANT !!!** 
+//!
+//! If you want to use the database or
+//! something that is shared across all tests, DO IT __AFTER__ THE `MockBot::new()`!!!!!
+//! The creation of the bot creates a safe lock that prevents other tests from starting, before
+//! this bot becomes out of scope.
+//! If you encounter issues regarding this, try to manually add `drop(bot);` at the end of your
+//! tests!
+//! 
+//! Please refer to the [phrase_bot example](https://github.com/LasterAlex/teloxide_tests/tree/master/examples/phrase_bot) for more information
 //!
 pub mod mock_bot;
 #[cfg(test)]
@@ -96,3 +107,4 @@ mod tests;
 
 pub use dataset::*;
 pub use mock_bot::MockBot;
+pub use telegram_test_server::Responses;

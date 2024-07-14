@@ -77,7 +77,7 @@ pub fn handler_tree() -> UpdateHandler<Box<dyn Error + Send + Sync + 'static>> {
                 .branch(Update::filter_message().endpoint(changed_nickname)),
         )
         .branch(
-            case![State::WhatPhraseToDelete]
+            case![State::WhatPhraseToDelete { phrases }]
                 .branch(Update::filter_message().endpoint(deleted_phrase)),
         )
         .branch(

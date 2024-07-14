@@ -1,6 +1,7 @@
 pub mod handlers;
 pub mod resources;
 pub mod db;
+use db::models::Phrase;
 use resources::{handler_tree, keyboards, text};
 
 use std::error::Error;
@@ -30,7 +31,9 @@ pub enum State {
         emoji: String,
         text: String,
     },
-    WhatPhraseToDelete,
+    WhatPhraseToDelete {
+        phrases: Vec<Phrase>
+    },
 }
 
 pub async fn get_bot_storage() -> MyStorage {
