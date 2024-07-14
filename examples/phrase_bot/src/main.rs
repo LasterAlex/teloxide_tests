@@ -1,17 +1,17 @@
+pub mod db;
 pub mod handlers;
 pub mod resources;
-pub mod db;
 use db::models::Phrase;
 use resources::{handler_tree, keyboards, text};
 
 use std::error::Error;
 
 use dotenv::dotenv;
+use handler_tree::handler_tree;
+use handlers::*;
 use teloxide::dispatching::dialogue::serializer::Cbor;
 use teloxide::dispatching::dialogue::{Dialogue, ErasedStorage, RedisStorage, Storage};
 use teloxide::prelude::*;
-use handler_tree::handler_tree;
-use handlers::*;
 
 pub type MyDialogue = Dialogue<State, ErasedStorage<State>>;
 pub type HandlerResult = Result<(), Box<dyn Error + Send + Sync>>;
@@ -32,7 +32,7 @@ pub enum State {
         text: String,
     },
     WhatPhraseToDelete {
-        phrases: Vec<Phrase>
+        phrases: Vec<Phrase>,
     },
 }
 
@@ -40,7 +40,7 @@ pub async fn get_bot_storage() -> MyStorage {
     let storage: MyStorage = RedisStorage::open(dotenv::var("REDIS_URL").unwrap(), Cbor)
         // For reasons unknown to me, Binary serializer doesn't accept json-like objects,
         // so im using it. If you want to use InMemStorage, just change
-        // ErasedStorage to InMemStorage (dont forget to do it in the handler_tree.rs), 
+        // ErasedStorage to InMemStorage (dont forget to do it in the resources/handler_tree.rs),
         // and make this function return InMemStorage::<State>::new()
         .await
         .unwrap()

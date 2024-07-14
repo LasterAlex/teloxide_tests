@@ -71,6 +71,17 @@
 //!
 //! And also fake file downloading!
 //!
+//! ## Why even use unit tests?
+//!
+//! I've always found manual bot testing to be very time consuming and unreliable, especially when
+//! the bot becomes large and very complex. This crate can solve this problem!
+//!
+//! As an example, here is a bot that i did not run once before i have written all of the code:
+//! [`examples/phrase_bot`](https://github.com/LasterAlex/teloxide_tests/tree/master/examples/phrase_bot)   
+//! (dont forget to read the README.md in the examples directory!)
+//!
+//! ## Other
+//!
 //! If you see something that works in teloxide, but doesn't work in this crate, while it should
 //! (a missing endpoint doesn't qualify as a bug), please open an issue on the [GitHub repo!](https://github.com/LasterAlex/teloxide_tests)
 //! All feedback and suggestions are very welcome!

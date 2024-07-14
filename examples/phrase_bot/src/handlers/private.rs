@@ -292,7 +292,7 @@ mod tests {
             MockMessageText::new().text(keyboards::PROFILE_BUTTON),
             handler_tree(),
         );
-        let _ = db::full_user_redeletion(MockUser::ID as i64, None);
+        db::full_user_redeletion(MockUser::ID as i64, None);
 
         let user = db::get_user(MockUser::ID as i64).unwrap();
         db::create_phrase(
@@ -329,7 +329,7 @@ mod tests {
     async fn test_changed_nickname() {
         let bot = MockBot::new(MockMessageText::new().text("nickname"), handler_tree());
 
-        let _ = db::full_user_redeletion(MockUser::ID as i64, None);
+        db::full_user_redeletion(MockUser::ID as i64, None);
 
         bot.dependencies(deps![get_bot_storage().await]);
         bot.set_state(State::ChangeNickname).await;
@@ -367,7 +367,7 @@ mod tests {
         );
 
         // Create an isolated environment with db queries
-        let _ = db::full_user_redeletion(MockUser::ID as i64, None);
+        db::full_user_redeletion(MockUser::ID as i64, None);
         db::create_phrase(
             MockUser::ID as i64,
             "🤗".to_string(),
@@ -394,7 +394,7 @@ mod tests {
     async fn test_deleted_phrase() {
         let bot = MockBot::new(MockMessageText::new().text("not a number"), handler_tree());
 
-        let _ = db::full_user_redeletion(MockUser::ID as i64, None);
+        db::full_user_redeletion(MockUser::ID as i64, None);
         db::create_phrase(
             MockUser::ID as i64,
             "🤗".to_string(),
@@ -501,7 +501,7 @@ mod tests {
             MockMessageText::new().text("(me) hugged (reply)"),
             handler_tree(),
         );
-        let _ = db::full_user_redeletion(MockUser::ID as i64, None);
+        db::full_user_redeletion(MockUser::ID as i64, None);
 
         bot.dependencies(deps![get_bot_storage().await]);
         bot.set_state(State::WhatIsNewPhraseBotText {

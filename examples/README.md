@@ -19,7 +19,9 @@ Bot that tests the album sending.
 
 ### phrase_bot
 
-The biggest bot, a bot that adds reactions, similar to some other chat bots. Not particularly made to show some features, more like battle testing the crate and showing, how i will use this crate.
+The biggest bot, a bot that adds reactions, similar to some chat bots. Not particularly made to show some features, more like battle testing the crate and showing, how i will use this crate.
+
+![image](https://github.com/user-attachments/assets/87ddae85-4166-48d4-b006-909b0f37d2f9)
 
 The tests are in the same files as handlers.
 
@@ -30,3 +32,5 @@ To run it you need to set up diesel for database.
 3. Add `~/.cargo/bin` to `PATH` (or just run ~/.cargo/bin/diesel by itself)
 4. `diesel setup --database-url postgres://postgres:mvcx90XKxasd@localhost/phrase_bot` in the phrase_bot directory
 5. `cargo run` or `cargo test`!
+
+Fun fact: I did not run the bot until i've written everything! The tests really helped!

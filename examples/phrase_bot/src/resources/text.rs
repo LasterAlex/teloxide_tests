@@ -26,13 +26,16 @@ If you want to return, send /cancel";
 pub const CANCELED: &str = "Canceled.";
 
 pub fn delete_phrase(all_phrases: &Vec<models::Phrase>) -> String {
-    format!("These are your phrases:
+    format!(
+        "These are your phrases:
 
 {}
 
 Send me a number of a phrase you want to delete!
 
-If you want to return, press /cancel", list_all_phrases(all_phrases))
+If you want to return, press /cancel",
+        list_all_phrases(all_phrases)
+    )
 }
 
 pub fn phrase_progress(emoji: Option<&str>, text: Option<&str>, bot_text: Option<&str>) -> String {

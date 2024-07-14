@@ -40,7 +40,6 @@ pub fn full_user_redeletion(id: i64, nickname: Option<String>) {
         change_user_nickname(id, nickname).unwrap();
     }
 }
-    
 
 pub fn change_user_nickname(id: i64, nickname: String) -> Result<User, diesel::result::Error> {
     let conn = &mut establish_connection();
