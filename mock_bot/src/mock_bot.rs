@@ -29,6 +29,7 @@ static GET_POTENTIAL_STORAGE_LOCK: Mutex<()> = Mutex::new(());
 static BOT_LOCK: Mutex<()> = Mutex::new(());
 
 fn find_file(value: Value) -> Option<FileMeta> {
+    // Recursively searches for file meta
     let mut file_id = None;
     let mut file_unique_id = None;
     let mut file_size = None;
@@ -56,11 +57,10 @@ fn find_file(value: Value) -> Option<FileMeta> {
 }
 
 fn find_chat_id(value: Value) -> Option<i64> {
+    // Recursively searches for chat id
     if let Value::Object(map) = value {
         for (k, v) in map {
             if k == "chat" {
-                return Some(v["id"].as_i64()?);
-            } else if k == "from" {
                 return Some(v["id"].as_i64()?);
             } else if let Some(found) = find_chat_id(v) {
                 return Some(found);

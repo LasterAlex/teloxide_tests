@@ -65,12 +65,14 @@
 //! - /SendPhoto
 //! - /SendVideo
 //!
-//! (do not worry about /GetMe and /GetUpdates, they are not needed!)
+//! I will add more endpoints as time goes on!
+//!
+//! (do not worry about /GetMe and /GetUpdates, they are not needed for this bot!)
 //!
 //! And also fake file downloading!
 //!
 //! If you see something that works in teloxide, but doesn't work in this crate, while it should
-//! (a missing endpoint doesn't qualify as a bug), please open an issue on the GitHub repo!
+//! (a missing endpoint doesn't qualify as a bug), please open an issue on the [GitHub repo!](https://github.com/LasterAlex/teloxide_tests)
 //! All feedback and suggestions are very welcome!
 //! You can contact me via telegram: [@laster_alex](https://t.me/laster_alex)
 //!
@@ -78,9 +80,10 @@
 //! code comments, i would've gone insane. The crate itself is also just amazing!
 //!
 //! To start, i recommend you look at the [[`examples github`]](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) folder
+//!
 //! Or MockBot struct documentation
 //!
-//! The only thing you need to change in your existing bot is to shift your dptree to some function, because the
+//! The only thing you need to change in your existing bots is to shift your dptree to some function, because the
 //! sole reason for this crates existance is to test that tree, and we need easy access to it!
 //! Just follow the examples!
 //!
