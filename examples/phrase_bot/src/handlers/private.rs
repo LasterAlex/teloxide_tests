@@ -3,7 +3,7 @@ use teloxide::types::KeyboardRemove;
 use teloxide::{macros::BotCommands, payloads::SendMessageSetters};
 
 use crate::keyboards::menu_keyboard;
-use crate::{keyboards, text, HandlerResult, MyDialogue, State};
+use crate::{db, keyboards, text, HandlerResult, MyDialogue, State};
 
 #[derive(BotCommands, Clone)]
 #[command(rename_rule = "lowercase")]
@@ -18,6 +18,10 @@ pub enum StartCommand {
 //
 
 pub async fn start(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
+    let user = db::get_user(msg.chat.id.0);
+    if user.is_err() {
+        db::create_user(msg.chat.id.0).unwrap();
+    }
     bot.send_message(msg.chat.id, text::START)
         .reply_markup(keyboards::menu_keyboard())
         .await?;
@@ -207,10 +211,12 @@ mod tests {
     use super::*;
     use dptree::deps;
     use teloxide::types::ReplyMarkup;
-    use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText};
+    use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText, MockUser};
 
     #[tokio::test]
     async fn test_start() {
+        // This fully deletes the user to test its creation
+        let _  = db::delete_user(MockUser::ID as i64);
         let bot = MockBot::new(MockMessageText::new().text("/start"), handler_tree());
 
         bot.dependencies(deps![get_bot_storage().await]);
@@ -228,6 +234,7 @@ mod tests {
                 .reply_markup,
             Some(ReplyMarkup::Keyboard(keyboards::menu_keyboard()))
         );
+        assert_eq!(db::get_user(MockUser::ID as i64).unwrap().nickname, None);
     }
 
     #[tokio::test]

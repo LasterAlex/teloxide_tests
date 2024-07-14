@@ -511,6 +511,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
 
 [[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
+
+[[package]]
 name = "bytes"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -531,7 +537,6 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "log",
- "once_cell",
  "pretty_env_logger",
  "serde",
  "serde_json",
@@ -796,6 +801,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "diesel"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62d6dcd069e7b5fe49a302411f759d4cf1cf2c27fe798ef46fb8baefc053dd2b"
+dependencies = [
+ "bitflags 2.6.0",
+ "byteorder",
+ "diesel_derives",
+ "itoa",
+ "pq-sys",
+]
+
+[[package]]
+name = "diesel_derives"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59de76a222c2b8059f789cbe07afbfd8deb8c31dd0bc2a21f85e256c1def8259"
+dependencies = [
+ "diesel_table_macro_syntax",
+ "dsl_auto_type",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.71",
+]
+
+[[package]]
+name = "diesel_table_macro_syntax"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "209c735641a413bc68c4923a9d6ad4bcb3ca306b794edaa7eb0b3228a99ffb25"
+dependencies = [
+ "syn 2.0.71",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -818,6 +858,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d81175dab5ec79c30e0576df2ed2c244e1721720c302000bb321b107e82e265c"
 dependencies = [
  "futures",
+]
+
+[[package]]
+name = "dsl_auto_type"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0892a17df262a24294c382f0d5997571006e7a4348b4327557c4ff1cd4a8bccc"
+dependencies = [
+ "darling 0.20.10",
+ "either",
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.71",
 ]
 
 [[package]]
@@ -1126,6 +1180,12 @@ name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
+
+[[package]]
+name = "heck"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hello_world_bot"
@@ -1610,9 +1670,9 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 name = "phrase_bot"
 version = "0.1.0"
 dependencies = [
+ "diesel",
  "dotenv",
  "log",
- "once_cell",
  "pretty_env_logger",
  "serde",
  "serde_json",
@@ -1670,6 +1730,15 @@ name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
+
+[[package]]
+name = "pq-sys"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a24ff9e4cf6945c988f0db7005d87747bf72864965c3529d259ad155ac41d584"
+dependencies = [
+ "vcpkg",
+]
 
 [[package]]
 name = "pretty_env_logger"
@@ -2275,7 +2344,7 @@ version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f1d653b093dba5e44cada57a516f572167df37b8a619443e59c8c517bb6d804"
 dependencies = [
- "heck",
+ "heck 0.4.1",
  "proc-macro2",
  "quote",
  "syn 1.0.109",

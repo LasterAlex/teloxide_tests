@@ -1,7 +1,7 @@
-pub mod handler_tree;
 pub mod handlers;
-pub mod text;
-pub mod keyboards;
+pub mod resources;
+pub mod db;
+use resources::{handler_tree, keyboards, text};
 
 use std::error::Error;
 
