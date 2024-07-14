@@ -1,6 +1,7 @@
 pub mod handler_tree;
 pub mod handlers;
 pub mod text;
+pub mod keyboards;
 
 use std::error::Error;
 
@@ -19,7 +20,17 @@ pub type MyStorage = std::sync::Arc<ErasedStorage<State>>;
 pub enum State {
     #[default]
     Start,
-    WhatIsYourNickname,
+    ChangeNickname,
+    WhatToDoWithPhrases,
+    WhatIsNewPhraseEmoji,
+    WhatIsNewPhraseText {
+        emoji: String,
+    },
+    WhatIsNewPhraseBotText {
+        emoji: String,
+        text: String,
+    },
+    WhatPhraseToDelete,
 }
 
 pub async fn get_bot_storage() -> MyStorage {

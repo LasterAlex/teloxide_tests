@@ -4,7 +4,7 @@ use std::{
     env,
     mem::discriminant,
     panic,
-    sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard},
+    sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
 };
 use teloxide::{
     dispatching::dialogue::ErasedStorage,
@@ -85,6 +85,17 @@ fn add_message(message: &mut Message) {
     MESSAGES.add_message(message.clone());
 }
 
+async fn stop_server() {
+    let client = reqwest::Client::new();
+    let _ = client
+        .post(format!(
+            "http://127.0.0.1:{}/stop/false",
+            MockBot::PORT.lock().unwrap().clone()
+        ))
+        .send()
+        .await;
+}
+
 /// A mocked bot that sends requests to the fake server
 /// Please check the `new` function docs and github examples for more information.
 /// The github examples will have more information than this doc.
@@ -103,7 +114,8 @@ pub struct MockBot {
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
     pub responses: Mutex<Option<Responses>>,
-    bot_lock: MutexGuard<'static, ()>,
+    bot_lock: Mutex<Option<MutexGuard<'static, ()>>>, // Maybe in the future ill make something like an atomic
+                                                      // bool that says if the bot is locked or not, and implement a custom Drop trait
 }
 
 impl MockBot {
@@ -169,6 +181,7 @@ impl MockBot {
             "TELOXIDE_TOKEN",
             "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
         );
+        let _ = pretty_env_logger::try_init();
 
         let bot = Bot::from_env().set_api_url(
             reqwest::Url::parse(&format!(
@@ -177,6 +190,8 @@ impl MockBot {
             ))
             .unwrap(),
         );
+        let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
         Self {
             bot,
             me: Mutex::new(MockMe::new().build()),
@@ -184,9 +199,9 @@ impl MockBot {
             handler_tree,
             responses: Mutex::new(None),
             dependencies: Mutex::new(DependencyMap::new()),
-            bot_lock: BOT_LOCK.lock().unwrap(), // This makes a lock that forbids the creation of
-                                                // other bots until this one goes out of scope. That way there will be no race
-                                                // conditions!
+            bot_lock: Mutex::new(Some(lock)), // This makes a lock that forbids the creation of
+                                              // other bots until this one goes out of scope. That way there will be no race
+                                              // conditions!
         }
     }
 
@@ -246,10 +261,16 @@ impl MockBot {
                     // handler didn't error out
                     assert!(result.is_ok(), "Error in handler: {:?}", result);
                 } else {
+                    log::error!("Update didn't get handled!");
                     panic!("Unhandled update!");
                 }
             }));
         }
+    }
+
+    async fn close_bot(&self) {
+        stop_server().await;
+        *self.bot_lock.lock().unwrap() = None;
     }
 
     /// Actually dispatches the bot, calling the update through the handler tree.
@@ -260,23 +281,14 @@ impl MockBot {
         let runtime = tokio::runtime::Handle::current();
         // If the user presses ctrl-c, the server will be shut down
         let _ = ctrlc::set_handler(move || {
-            let client = reqwest::Client::new();
-            runtime
-                .block_on(
-                    client
-                        .post(format!(
-                            "http://127.0.0.1:{}/stop/false",
-                            Self::PORT.lock().unwrap().clone()
-                        ))
-                        .send(),
-                )
-                .unwrap();
+            runtime.block_on(stop_server());
             std::process::exit(1);
         });
 
         // In the future, this will need to be redone nicely, but right now it works.
         // It prevents a race condition for different bot instances to try to use the same server
         // (like in docstring)
+        stop_server().await;
         let mut left_tries = 200;
         while reqwest::get(format!(
             "http://127.0.0.1:{}/ping",
@@ -287,6 +299,7 @@ impl MockBot {
         {
             left_tries -= 1;
             if left_tries == 0 {
+                self.close_bot().await;
                 panic!(
                     "Failed to unbind the server on the port {}!",
                     Self::PORT.lock().unwrap().clone()
@@ -306,6 +319,7 @@ impl MockBot {
         {
             left_tries -= 1;
             if left_tries == 0 {
+                self.close_bot().await;
                 panic!(
                     "Failed to get the server on the port {}!",
                     Self::PORT.lock().unwrap().clone()
@@ -319,23 +333,22 @@ impl MockBot {
 
         for handle in handles {
             // Waits until every update has been sent
-            handle.await.unwrap();
+            match handle.await {
+                Ok(_) => {}
+                Err(_) => {
+                    // Something panicked, we need to free the bot lock and exit
+                    self.close_bot().await;
+                    panic!("Something went wrong and the bot panicked!");
+                }
+            };
         }
 
         *self.responses.lock().unwrap() =
             Some(telegram_test_server::RESPONSES.lock().unwrap().clone()); // Store the responses
                                                                            // before they are erased
 
-        let client = reqwest::Client::new();
-        client
-            .post(format!(
-                "http://127.0.0.1:{}/stop/false",
-                Self::PORT.lock().unwrap().clone()
-            ))
-            .send()
-            .await
-            .unwrap();
-        server.await.unwrap();
+        stop_server().await;
+        server.await.unwrap();  // Waits before the server is shut down
     }
 
     /// Returns the responses stored in `responses`
@@ -344,7 +357,10 @@ impl MockBot {
         let responses = self.responses.lock().unwrap().clone();
         match responses {
             Some(responses) => responses,
-            None => panic!("No responses received! Maybe you forgot to dispatch the mocked bot?"),
+            None => {
+                log::error!("No responses received! Maybe you forgot to dispatch the mocked bot?");
+                panic!("No responses received! Maybe you forgot to dispatch the mocked bot?")
+            }
         }
     }
 
@@ -463,6 +479,8 @@ impl MockBot {
             None => match find_chat_id(serde_json::to_value(&update_lock).unwrap()) {
                 Some(id) => ChatId(id),
                 None => {
+                    log::error!("No chat id was detected in the update! Did you send an update without a chat identifier? Like MockCallbackQuery without an attached message?");
+                    self.close_bot().await;
                     panic!("No chat id was detected!");
                 }
             },
@@ -482,6 +500,8 @@ impl MockBot {
                 .await
                 .expect("Failed to update dialogue");
         } else {
+            self.close_bot().await;
+            log::error!("No storage was getected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
             panic!("No storage was getected!");
         }
     }
@@ -502,6 +522,7 @@ impl MockBot {
             None => match find_chat_id(serde_json::to_value(&update_lock).unwrap()) {
                 Some(id) => ChatId(id),
                 None => {
+                    *self.bot_lock.lock().unwrap() = None;
                     panic!("No chat id was detected!");
                 }
             },
@@ -523,6 +544,7 @@ impl MockBot {
                 .expect("Error getting dialogue")
                 .expect("State is None")
         } else {
+            log::error!("No storage was getected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
             panic!("No storage was getected!");
         }
     }

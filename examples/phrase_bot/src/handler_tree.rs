@@ -1,6 +1,6 @@
-use crate::{get_bot_storage, private::*, public::*, text, MyDialogue};
+use crate::{get_bot_storage, keyboards, private::*, public::*, text, MyDialogue};
 use crate::{private::StartCommand, State};
-use dptree::case;
+use dptree::{case, filter};
 use std::error::Error;
 use teloxide::dispatching::dialogue::GetChatId;
 use teloxide::dispatching::UpdateFilterExt;
@@ -42,11 +42,27 @@ async fn check_if_the_state_is_ok(update: Update) -> bool {
 
 pub fn handler_tree() -> UpdateHandler<Box<dyn Error + Send + Sync + 'static>> {
     // Just a schema, nothing extraordinary
-    let normal_branch = dialogue::enter::<Update, ErasedStorage<State>, State, _>().branch(
-        Update::filter_message()
-            .filter_command::<StartCommand>()
-            .branch(case![StartCommand::Start].endpoint(start)),
-    );
+    let normal_branch = dialogue::enter::<Update, ErasedStorage<State>, State, _>()
+        .branch(
+            Update::filter_message()
+                .filter_command::<StartCommand>()
+                .branch(case![StartCommand::Start].endpoint(start)),
+        )
+        .branch(
+            case![State::Start].branch(
+                Update::filter_message()
+                    .branch(
+                        filter(|msg: Message| msg.text() == Some(keyboards::PROFILE_BUTTON))
+                            .endpoint(profile),
+                    )
+                    .branch(
+                        filter(|msg: Message| {
+                            msg.text() == Some(keyboards::CHANGE_NICKNAME_BUTTON)
+                        })
+                        .endpoint(change_nickname),
+                    ),
+            ),
+        );
 
     // If the dialogue errors out - do not go further
     let catch_updated_dialogue_branch = dptree::entry()

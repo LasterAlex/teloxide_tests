@@ -24,13 +24,19 @@ The main crate is mock_bot, everything is split up for simplicity.
 
 ## Pitfalls
 
-Race conditions. They are, to my knoledge, the only pitfall, and they are cruel.
+Race conditions. They are, to my knoledge, the most difficult.
 To avoid it, try to do the following:
-
 
 - Make a new bot for every test. Reusing the bot is ok, just try to not make one bot to rule them all.
 - If you REALLY want to make the one bot work, call bot.update(/_ some update _/); BEFORE any change to the database, state or anything else that can be shared accross tests. .update() locks the bot, and has to wait before this update gets dispatched or goes out of scope to change their own update
 - If you are tired, look at [this crate for serial testing](https://crates.io/crates/serial_test), this basically eliminates all the pain, but it doesn't look as nice
+
+### Some errors associated with these race conditions:
+
+- trait `Send` is not implemented for `std::sync::MutexGuard<'static, ()>`
+  This means you can't share the bot between any threads, as you should not in any circumstance.
+- PoisonError(...)
+  You shouldn't see it, i tried to mitigate it, but if you do, it's not the problem, it just means that something else panicked and now the bot doesn't know, what to do. Just fix whatever was causing the problem, and poison errors should be gone.
 
 ## Structure
 

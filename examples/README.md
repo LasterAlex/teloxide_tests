@@ -13,6 +13,6 @@ Bot that shows how to download files from the server.
 Bot that tests the album sending.
 
 ### phrase_bot
-The biggest bot, a bot that adds reactions, similar to some other chat bots. Not particularly made to show some features, more like battle testing the crate.
+The biggest bot, a bot that adds reactions, similar to some other chat bots. Not particularly made to show some features, more like battle testing the crate and showing, how i will use this crate.
 
 The tests are in the same files as handlers.
