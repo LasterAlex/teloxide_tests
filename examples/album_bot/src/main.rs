@@ -37,7 +37,7 @@ async fn get_album(msg: Message, album: AlbumStorage) -> Option<Vec<Message>> {
     // Record length
     let prev_length = get_album_storage_for_chat(msg.chat.id, album.clone()).len();
 
-    sleep(Duration::from_millis(200)).await; // Latency to get new albums
+    sleep(Duration::from_millis(100)).await; // Latency to get new albums
     
     // Because it is an Arc Mutex, the items are updated, and we can just get it again
     let new_len = get_album_storage_for_chat(msg.chat.id, album.clone()).len();
@@ -99,7 +99,6 @@ async fn main() {
 }
 
 async fn example_handler(bot: Bot, msg: Message, album_mutex: AlbumStorage) -> HandlerResult {
-    // log::error!("Got message: {:?}", msg);
     let album = get_album(msg.clone(), album_mutex).await;  // Get either all the messages, or
     // None, which means that it is not the last message in the album, and we chould return
     let album_messages: Vec<Message>;  // Uninitialized variable, so that scoping is correct
@@ -136,5 +135,16 @@ mod tests {
 
         bot.dependencies(deps![album_storage]);
         bot.dispatch_and_check_last_text("Detected 1 messages in album in media group No media group!").await;
+    }
+
+    #[tokio::test]
+    async fn test_get_album() {
+        // This sends all three messages consecutively, making an album simulation, because
+        // telegram would've sent them exactly the same way
+        let bot = MockBot::new(vec![MockMessagePhoto::new().media_group_id("123"); 3], handler_tree());
+        let album_storage: AlbumStorage = Arc::new(Mutex::new(HashMap::new()));
+
+        bot.dependencies(deps![album_storage]);
+        bot.dispatch_and_check_last_text("Detected 3 messages in album in media group 123!").await;
     }
 }

@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicI32, Ordering};
+
 use proc_macros::Changeable;
 use teloxide::types::*;
 
@@ -34,7 +36,11 @@ impl MockCallbackQuery {
         Self {
             id: Self::ID.to_string(),
             from: MockUser::new().build(),
-            message: Some(MockMessageText::new().text("This is the callback message").build()),
+            message: Some(
+                MockMessageText::new()
+                    .text("This is the callback message")
+                    .build(),
+            ),
             inline_message_id: None,
             chat_instance: Self::CHAT_INSTANCE.to_string(),
             data: None,
@@ -65,24 +71,24 @@ impl MockCallbackQuery {
 }
 
 impl crate::IntoUpdate for MockCallbackQuery {
-    /// Converts the MockCallbackQuery into an update
+    /// Converts the MockCallbackQuery into an updates vector
     ///
     /// # Example
     /// ```
     /// use dataset::IntoUpdate;
     /// let mock_callback_query = dataset::MockCallbackQuery::new();
-    /// let update = mock_callback_query.clone().into_update(1);
+    /// let update = mock_callback_query.clone().into_update(1.into())[0].clone();
     /// assert_eq!(update.id, 1);
     /// assert_eq!(update.kind, teloxide::types::UpdateKind::CallbackQuery(
     ///     mock_callback_query.build())
     /// );
     /// ```
     ///
-    fn into_update(self, id: i32) -> Update {
-        Update {
-            id,
+    fn into_update(self, id: AtomicI32) -> Vec<Update> {
+        vec![Update {
+            id: id.fetch_add(1, Ordering::Relaxed).into(),
             kind: UpdateKind::CallbackQuery(self.build()),
-        }
+        }]
     }
 }
 

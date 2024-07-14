@@ -4,10 +4,7 @@ use std::{
     env,
     mem::discriminant,
     panic,
-    sync::{
-        atomic::{AtomicI32, Ordering},
-        Arc, Mutex, MutexGuard,
-    },
+    sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard},
 };
 use teloxide::{
     dispatching::dialogue::ErasedStorage,
@@ -15,6 +12,7 @@ use teloxide::{
     types::{File, FileMeta, MessageId},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
+use tokio::task::JoinHandle;
 
 use dataset::{IntoUpdate, MockMe};
 use telegram_test_server::{Responses, FILES, MESSAGES};
@@ -29,7 +27,6 @@ use teloxide::{
 
 static GET_POTENTIAL_STORAGE_LOCK: Mutex<()> = Mutex::new(());
 static BOT_LOCK: Mutex<()> = Mutex::new(());
-static UPDATE_LOCK: Mutex<()> = Mutex::new(());
 
 fn find_file(value: Value) -> Option<FileMeta> {
     let mut file_id = None;
@@ -97,8 +94,9 @@ pub struct MockBot {
     pub bot: Bot,
     /// The thing that dptree::entry() returns
     pub handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>,
-    /// Mutex is here to not worry about mut references, its easier for the user without them
-    pub update: Mutex<Update>,
+    // Mutexes is here to not worry about mut references, its easier for the user without them
+    /// Updates to send as user
+    pub updates: Mutex<Vec<Update>>,
     /// Bot parameters are here
     pub me: Mutex<Me>,
     /// If you have something like a state, you should add the storage here using .dependencies()
@@ -106,20 +104,20 @@ pub struct MockBot {
     /// Caught responses from the server
     pub responses: Mutex<Option<Responses>>,
     bot_lock: MutexGuard<'static, ()>,
-    update_lock: Mutex<Option<MutexGuard<'static, ()>>>, // I am sorry.
 }
 
 impl MockBot {
     const CURRENT_UPDATE_ID: AtomicI32 = AtomicI32::new(0); // So that every update is different
     const PORT: Mutex<u16> = Mutex::new(6504);
 
-    /// Creates a new MockBot, using something that can be turned into an Update, and a handler tree.
+    /// Creates a new MockBot, using something that can be turned into Updates, and a handler tree.
     /// You can't create a new bot while you have another bot in scope. Otherwise you will have a
     /// lot of race conditions. If you still somehow manage to create two bots at the same time
     /// (idk how),
     /// please look into [this crate for serial testing](https://crates.io/crates/serial_test)
     ///
-    /// The `update` is just any Mock type, like `MockMessageText` or `MockCallbackQuery`.
+    /// The `update` is just any Mock type, like `MockMessageText` or `MockCallbackQuery` or
+    /// `vec![MockMessagePhoto]` if you want! All updates will be sent consecutively and asynchronously.
     /// The `handler_tree` is the same as in `dptree::entry()`, you will need to make your handler
     /// tree into a separate function, like this:
     /// ```
@@ -160,7 +158,7 @@ impl MockBot {
     ///
     pub fn new<T>(
         update: T, // This 'T' is just anything that can be turned into an Update, like a
-        // MockMessageText or MockCallbackQuery
+        // MockMessageText or MockCallbackQuery, or a vec[MockMessagePhoto] if you want!
         handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>,
     ) -> Self
     where
@@ -171,7 +169,6 @@ impl MockBot {
             "TELOXIDE_TOKEN",
             "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
         );
-        let update_id = Self::CURRENT_UPDATE_ID.fetch_add(1, Ordering::Relaxed);
 
         let bot = Bot::from_env().set_api_url(
             reqwest::Url::parse(&format!(
@@ -183,14 +180,13 @@ impl MockBot {
         Self {
             bot,
             me: Mutex::new(MockMe::new().build()),
-            update: Mutex::new(update.into_update(update_id)),
+            updates: Mutex::new(update.into_update(Self::CURRENT_UPDATE_ID)),
             handler_tree,
             responses: Mutex::new(None),
             dependencies: Mutex::new(DependencyMap::new()),
             bot_lock: BOT_LOCK.lock().unwrap(), // This makes a lock that forbids the creation of
-            // other bots until this one goes out of scope. That way there will be no race
-            // conditions!
-            update_lock: Mutex::new(Some(UPDATE_LOCK.lock().unwrap())),
+                                                // other bots until this one goes out of scope. That way there will be no race
+                                                // conditions!
         }
     }
 
@@ -207,12 +203,53 @@ impl MockBot {
         *self.me.lock().unwrap() = me.build();
     }
 
-    /// Sets the update. Useful for reusing the same mocked bot instance in different tests
-    /// Also, you can't set an update if it wasn't dispatched yet, this is to aviod a race condition
+    /// Sets the updates. Useful for reusing the same mocked bot instance in different tests
+    /// Reminder: You can pass in vec![MockMessagePhoto] or something else!
     pub fn update<T: IntoUpdate>(&self, update: T) {
-        *self.update_lock.lock().unwrap() = Some(UPDATE_LOCK.lock().unwrap());
-        *self.update.lock().unwrap() =
-            update.into_update(Self::CURRENT_UPDATE_ID.fetch_add(1, Ordering::Relaxed));
+        *self.updates.lock().unwrap() = update.into_update(Self::CURRENT_UPDATE_ID);
+    }
+
+    fn collect_handles(&self, handles: &mut Vec<JoinHandle<()>>) {
+        let updates_lock = self.updates.lock().unwrap().clone();
+        let self_deps = self.dependencies.lock().unwrap().clone();
+        for mut update_lock in updates_lock {
+            match update_lock.kind.clone() {
+                UpdateKind::Message(mut message) => {
+                    // Add the message to the list of messages, so the bot can interact with it
+                    add_message(&mut message);
+                    update_lock.kind = UpdateKind::Message(message.clone());
+                }
+                UpdateKind::CallbackQuery(mut callback) => {
+                    if let Some(ref mut message) = callback.message {
+                        add_message(message);
+                    }
+                    update_lock.kind = UpdateKind::CallbackQuery(callback.clone());
+                }
+                _ => {}
+            }
+
+            let mut deps = deps![
+                self.bot.clone(),
+                self.me.lock().unwrap().clone(),
+                update_lock.clone() // This actually makes an update go through the dptree
+            ];
+
+            deps.insert_container(self_deps.clone()); // These are nessessary for the dispatch
+
+            // This, too, will need to be redone in the ideal world, but it just waits until the server is up
+            let handler_tree = self.handler_tree.clone();
+
+            handles.push(tokio::spawn(async move {
+                let result = handler_tree.dispatch(deps.clone()).await;
+                if let ControlFlow::Break(result) = result {
+                    // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
+                    // handler didn't error out
+                    assert!(result.is_ok(), "Error in handler: {:?}", result);
+                } else {
+                    panic!("Unhandled update!");
+                }
+            }));
+        }
     }
 
     /// Actually dispatches the bot, calling the update through the handler tree.
@@ -220,9 +257,6 @@ impl MockBot {
     /// with `get_responses`. All the responces are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&self) {
-        let mut update_lock = self.update.lock().unwrap().clone();
-        let self_deps = self.dependencies.lock().unwrap().clone();
-
         let runtime = tokio::runtime::Handle::current();
         // If the user presses ctrl-c, the server will be shut down
         let _ = ctrlc::set_handler(move || {
@@ -239,29 +273,6 @@ impl MockBot {
                 .unwrap();
             std::process::exit(1);
         });
-
-        match update_lock.kind.clone() {
-            UpdateKind::Message(mut message) => {
-                // Add the message to the list of messages, so the bot can interact with it
-                add_message(&mut message);
-                update_lock.kind = UpdateKind::Message(message.clone());
-            }
-            UpdateKind::CallbackQuery(mut callback) => {
-                if let Some(ref mut message) = callback.message {
-                    add_message(message);
-                }
-                update_lock.kind = UpdateKind::CallbackQuery(callback.clone());
-            }
-            _ => {}
-        }
-
-        let mut deps = deps![
-            self.bot.clone(),
-            self.me.lock().unwrap().clone(),
-            update_lock.clone() // This actually makes an update go through the dptree
-        ];
-
-        deps.insert_container(self_deps); // These are nessessary for the dispatch
 
         // In the future, this will need to be redone nicely, but right now it works.
         // It prevents a race condition for different bot instances to try to use the same server
@@ -285,7 +296,6 @@ impl MockBot {
 
         let server = tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
 
-        // This, too, will need to be redone in the ideal world, but it just waits until the server is up
         let mut left_tries = 200;
         while reqwest::get(format!(
             "http://127.0.0.1:{}/ping",
@@ -303,18 +313,19 @@ impl MockBot {
             }
         }
 
-        let result = self.handler_tree.dispatch(deps.clone()).await; // This is the part that actually calls the handler
-        *self.responses.lock().unwrap() =
-            Some(telegram_test_server::RESPONSES.lock().unwrap().clone()); // Get the responses
-                                                                           // while the lock is still active
+        // Gets all of the updates to send
+        let mut handles = vec![];
+        self.collect_handles(&mut handles);
 
-        if let ControlFlow::Break(result) = result {
-            // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
-            // handler didn't error out
-            assert!(result.is_ok(), "Error in handler: {:?}", result);
-        } else {
-            panic!("Unhandled update!");
+        for handle in handles {
+            // Waits until every update has been sent
+            handle.await.unwrap();
         }
+
+        *self.responses.lock().unwrap() =
+            Some(telegram_test_server::RESPONSES.lock().unwrap().clone()); // Store the responses
+                                                                           // before they are erased
+
         let client = reqwest::Client::new();
         client
             .post(format!(
@@ -325,8 +336,6 @@ impl MockBot {
             .await
             .unwrap();
         server.await.unwrap();
-
-        *self.update_lock.lock().unwrap() = None;
     }
 
     /// Returns the responses stored in `responses`
@@ -447,7 +456,8 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
-        let update_lock = self.update.lock().unwrap().clone();
+        let updates = self.updates.lock().unwrap().clone();
+        let update_lock = updates.first().expect("No updates were detected!");
         let chat_id = match update_lock.chat_id() {
             Some(chat_id) => chat_id,
             None => match find_chat_id(serde_json::to_value(&update_lock).unwrap()) {
@@ -485,7 +495,8 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
-        let update_lock = self.update.lock().unwrap().clone();
+        let updates = self.updates.lock().unwrap().clone();
+        let update_lock = updates.first().expect("No updates were detected!");
         let chat_id = match update_lock.chat_id() {
             Some(chat_id) => chat_id,
             None => match find_chat_id(serde_json::to_value(&update_lock).unwrap()) {

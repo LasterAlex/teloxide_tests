@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicI32, Ordering};
+
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{ChatPhoto, FileMeta, Location, Me, PhotoSize, Update, User, UserId, Video};
@@ -13,10 +15,21 @@ pub use queries::*;
 mod tests;
 
 pub trait IntoUpdate {
-    /// Converts the mocked struct into an update
-    fn into_update(self, id: i32) -> Update;
+    /// Converts the mocked struct into an update vector, incrementing the id by 1
+    fn into_update(self, id: AtomicI32) -> Vec<Update>;
 }
 
+impl<T> IntoUpdate for Vec<T>
+where
+    T: IntoUpdate,
+{
+    fn into_update(self, id: AtomicI32) -> Vec<Update> {
+        self.into_iter()
+            .map(|u| u.into_update(id.fetch_add(1, Ordering::Relaxed).into()))
+            .flatten()
+            .collect()
+    }
+}
 
 //
 //  Structs below are just misc mocked structs

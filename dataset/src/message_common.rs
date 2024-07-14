@@ -1,3 +1,4 @@
+use core::sync::atomic::{AtomicI32, Ordering};
 use super::{MockLocation, MockPhotoSize, MockVideo};
 use crate::message::Message;
 use crate::{chat::MockPrivateChat, MockUser};

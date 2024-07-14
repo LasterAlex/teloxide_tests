@@ -151,7 +151,7 @@ fn test_message_common_text() {
 fn test_into_update() {
     let message = MockMessageText::new().text("text");
 
-    let update = message.into_update(1);
+    let update = message.into_update(1.into())[0].clone();
 
     assert_eq!(update.id, 1);
     assert_eq!(update.chat_id(), Some(ChatId(MockUser::ID as i64)));

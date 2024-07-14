@@ -38,6 +38,8 @@ mod tests {
         // This is a message builder. You can check the docs for more info about mocked types
         let mock_message = MockMessageText::new().text("Hi!");
         // This creates a fake bot that will send the mock_message after we dispatch it as if it was sent by the user
+        // If you wanted, you could've made vec![MockMessageText::new().text("Hi!"), MockMessageText::new().text("Hello!")],
+        // and both updates would've been sent one after the other
         let bot = MockBot::new(mock_message, handler_tree());
         // This will dispatch the update
         bot.dispatch().await;

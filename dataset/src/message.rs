@@ -41,24 +41,24 @@ macro_rules! Message {
         }
 
         impl crate::IntoUpdate for $name {
-            /// Converts the MockCallbackQuery into an update
+            /// Converts the MockCallbackQuery into an updates vector
             ///
             /// # Example
             /// ```
             /// use dataset::IntoUpdate;
             /// let mock_message = dataset::MockMessageText::new();
-            /// let update = mock_message.clone().into_update(1);
+            /// let update = mock_message.clone().into_update(1.into())[0].clone();
             /// assert_eq!(update.id, 1);
             /// assert_eq!(update.kind, teloxide::types::UpdateKind::Message(
             ///     mock_message.build())
             /// );
             /// ```
             ///
-            fn into_update(self, id: i32) -> Update {
-                Update {
-                    id,
+            fn into_update(self, id: AtomicI32) -> Vec<Update> {
+                vec![Update {
+                    id: id.fetch_add(1, Ordering::Relaxed).into(),
                     kind: UpdateKind::Message(self.build()),
-                }
+                }]
             }
         }
     }
