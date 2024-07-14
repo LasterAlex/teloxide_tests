@@ -46,7 +46,8 @@ pub fn handler_tree() -> UpdateHandler<Box<dyn Error + Send + Sync + 'static>> {
         .branch(
             Update::filter_message()
                 .filter_command::<StartCommand>()
-                .branch(case![StartCommand::Start].endpoint(start)),
+                .branch(case![StartCommand::Start].endpoint(start))
+                .branch(case![StartCommand::Cancel].endpoint(cancel)),
         )
         .branch(
             case![State::Start].branch(
@@ -60,8 +61,20 @@ pub fn handler_tree() -> UpdateHandler<Box<dyn Error + Send + Sync + 'static>> {
                             msg.text() == Some(keyboards::CHANGE_NICKNAME_BUTTON)
                         })
                         .endpoint(change_nickname),
+                    )
+                    .branch(
+                        filter(|msg: Message| msg.text() == Some(keyboards::REMOVE_PHRASE_BUTTON))
+                            .endpoint(delete_phrase),
                     ),
             ),
+        )
+        .branch(
+            case![State::ChangeNickname]
+                .branch(Update::filter_message().endpoint(changed_nickname)),
+        )
+        .branch(
+            case![State::WhatPhraseToDelete]
+                .branch(Update::filter_message().endpoint(deleted_phrase)),
         );
 
     // If the dialogue errors out - do not go further

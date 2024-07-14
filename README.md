@@ -56,6 +56,8 @@ Hopefully it is as easy as doing what happens in `./examples`
 5. Get the responces with .get_responces()
 6. Do the testing with the gotten responces
 
+**Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or contact me via telegram [@laster_alex](https://t.me/laster_alex))
+
 ## Todo
 
 - [x] Add dataset

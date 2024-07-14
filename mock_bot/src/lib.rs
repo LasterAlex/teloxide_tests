@@ -87,6 +87,9 @@
 //! sole reason for this crates existance is to test that tree, and we need easy access to it!
 //! Just follow the examples!
 //!
+//! And try to not use the raw bot fields unless you know what you are doing! They are public only
+//! to give more options to those who seek it.
+//!
 pub mod mock_bot;
 #[cfg(test)]
 mod tests;
