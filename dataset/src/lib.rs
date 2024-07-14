@@ -17,6 +17,7 @@ pub trait IntoUpdate {
     fn into_update(self, id: i32) -> Update;
 }
 
+
 //
 //  Structs below are just misc mocked structs
 //

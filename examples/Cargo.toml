@@ -1,3 +1,3 @@
 [workspace]
-members = ["hello_world"]
+members = [ "album_bot", "calculator_bot", "file_download_bot","hello_world"]
 resolver = "2"

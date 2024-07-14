@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ctrlc = "3.4.4"
 gag = "1.0.0"
 dotenv = "0.15.0"
 log = "0.4"

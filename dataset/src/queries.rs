@@ -1,6 +1,8 @@
 use proc_macros::Changeable;
 use teloxide::types::*;
 
+use crate::MockMessageText;
+
 use super::MockUser;
 
 #[derive(Changeable, Clone)]
@@ -32,7 +34,7 @@ impl MockCallbackQuery {
         Self {
             id: Self::ID.to_string(),
             from: MockUser::new().build(),
-            message: None,
+            message: Some(MockMessageText::new().text("This is the callback message").build()),
             inline_message_id: None,
             chat_instance: Self::CHAT_INSTANCE.to_string(),
             data: None,

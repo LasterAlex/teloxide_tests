@@ -6,7 +6,7 @@ use std::{
     panic,
     sync::{
         atomic::{AtomicI32, Ordering},
-        Arc, Mutex,
+        Arc, Mutex, MutexGuard,
     },
 };
 use teloxide::{
@@ -27,9 +27,9 @@ use teloxide::{
     types::Me,
 };
 
-static DISPATCHING_LOCK: Mutex<()> = Mutex::new(());
 static GET_POTENTIAL_STORAGE_LOCK: Mutex<()> = Mutex::new(());
-// Otherwise the fake server will error because of a taken port
+static BOT_LOCK: Mutex<()> = Mutex::new(());
+static UPDATE_LOCK: Mutex<()> = Mutex::new(());
 
 fn find_file(value: Value) -> Option<FileMeta> {
     let mut file_id = None;
@@ -58,9 +58,40 @@ fn find_file(value: Value) -> Option<FileMeta> {
     None
 }
 
+fn find_chat_id(value: Value) -> Option<i64> {
+    if let Value::Object(map) = value {
+        for (k, v) in map {
+            if k == "chat" {
+                return Some(v["id"].as_i64()?);
+            } else if k == "from" {
+                return Some(v["id"].as_i64()?);
+            } else if let Some(found) = find_chat_id(v) {
+                return Some(found);
+            }
+        }
+    }
+    None
+}
+
+fn add_message(message: &mut Message) {
+    let max_id = MESSAGES.max_message_id();
+    if message.id.0 <= max_id || MESSAGES.get_message(message.id.0).is_some() {
+        message.id = MessageId(max_id + 1);
+    }
+    if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
+        let file = File {
+            meta: file_meta,
+            path: "some_path.txt".to_string(), // This doesn't really matter
+        };
+        FILES.lock().unwrap().push(file);
+    }
+    MESSAGES.add_message(message.clone());
+}
+
 /// A mocked bot that sends requests to the fake server
 /// Please check the `new` function docs and github examples for more information.
 /// The github examples will have more information than this doc.
+#[allow(dead_code)]
 pub struct MockBot {
     /// The bot with a fake server url
     pub bot: Bot,
@@ -74,6 +105,8 @@ pub struct MockBot {
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
     pub responses: Mutex<Option<Responses>>,
+    bot_lock: MutexGuard<'static, ()>,
+    update_lock: Mutex<Option<MutexGuard<'static, ()>>>, // I am sorry.
 }
 
 impl MockBot {
@@ -81,6 +114,10 @@ impl MockBot {
     const PORT: Mutex<u16> = Mutex::new(6504);
 
     /// Creates a new MockBot, using something that can be turned into an Update, and a handler tree.
+    /// You can't create a new bot while you have another bot in scope. Otherwise you will have a
+    /// lot of race conditions. If you still somehow manage to create two bots at the same time
+    /// (idk how),
+    /// please look into [this crate for serial testing](https://crates.io/crates/serial_test)
     ///
     /// The `update` is just any Mock type, like `MockMessageText` or `MockCallbackQuery`.
     /// The `handler_tree` is the same as in `dptree::entry()`, you will need to make your handler
@@ -135,7 +172,6 @@ impl MockBot {
             "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
         );
         let update_id = Self::CURRENT_UPDATE_ID.fetch_add(1, Ordering::Relaxed);
-        // let port = Self::get_free_port().await;
 
         let bot = Bot::from_env().set_api_url(
             reqwest::Url::parse(&format!(
@@ -151,6 +187,10 @@ impl MockBot {
             handler_tree,
             responses: Mutex::new(None),
             dependencies: Mutex::new(DependencyMap::new()),
+            bot_lock: BOT_LOCK.lock().unwrap(), // This makes a lock that forbids the creation of
+            // other bots until this one goes out of scope. That way there will be no race
+            // conditions!
+            update_lock: Mutex::new(Some(UPDATE_LOCK.lock().unwrap())),
         }
     }
 
@@ -168,7 +208,9 @@ impl MockBot {
     }
 
     /// Sets the update. Useful for reusing the same mocked bot instance in different tests
+    /// Also, you can't set an update if it wasn't dispatched yet, this is to aviod a race condition
     pub fn update<T: IntoUpdate>(&self, update: T) {
+        *self.update_lock.lock().unwrap() = Some(UPDATE_LOCK.lock().unwrap());
         *self.update.lock().unwrap() =
             update.into_update(Self::CURRENT_UPDATE_ID.fetch_add(1, Ordering::Relaxed));
     }
@@ -178,41 +220,53 @@ impl MockBot {
     /// with `get_responses`. All the responces are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&self) {
-        let lock = DISPATCHING_LOCK.lock(); // Lock all the other threads out
+        let mut update_lock = self.update.lock().unwrap().clone();
+        let self_deps = self.dependencies.lock().unwrap().clone();
 
-        let mut deps = self.dependencies.lock().unwrap();
-
-        let mut update_lock = self.update.lock().unwrap();
+        let runtime = tokio::runtime::Handle::current();
+        // If the user presses ctrl-c, the server will be shut down
+        let _ = ctrlc::set_handler(move || {
+            let client = reqwest::Client::new();
+            runtime
+                .block_on(
+                    client
+                        .post(format!(
+                            "http://127.0.0.1:{}/stop/false",
+                            Self::PORT.lock().unwrap().clone()
+                        ))
+                        .send(),
+                )
+                .unwrap();
+            std::process::exit(1);
+        });
 
         match update_lock.kind.clone() {
             UpdateKind::Message(mut message) => {
                 // Add the message to the list of messages, so the bot can interact with it
-                let max_id = MESSAGES.max_message_id();
-                if message.id.0 <= max_id || MESSAGES.get_message(message.id.0).is_some() {
-                    message.id = MessageId(max_id + 1);
-                    update_lock.kind = UpdateKind::Message(message.clone());
+                add_message(&mut message);
+                update_lock.kind = UpdateKind::Message(message.clone());
+            }
+            UpdateKind::CallbackQuery(mut callback) => {
+                if let Some(ref mut message) = callback.message {
+                    add_message(message);
                 }
-                if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
-                    let file = File {
-                        meta: file_meta,
-                        path: "some_path.txt".to_string(), // This doesn't really matter
-                    };
-                    FILES.lock().unwrap().push(file);
-                }
-                MESSAGES.add_message(message.clone());
+                update_lock.kind = UpdateKind::CallbackQuery(callback.clone());
             }
             _ => {}
         }
 
-        deps.insert_container(deps![
+        let mut deps = deps![
             self.bot.clone(),
             self.me.lock().unwrap().clone(),
             update_lock.clone() // This actually makes an update go through the dptree
-        ]); // These are nessessary for the dispatch
+        ];
+
+        deps.insert_container(self_deps); // These are nessessary for the dispatch
 
         // In the future, this will need to be redone nicely, but right now it works.
         // It prevents a race condition for different bot instances to try to use the same server
-        // (like in docstrings)
+        // (like in docstring)
+        let mut left_tries = 200;
         while reqwest::get(format!(
             "http://127.0.0.1:{}/ping",
             Self::PORT.lock().unwrap().clone()
@@ -220,13 +274,19 @@ impl MockBot {
         .await
         .is_ok()
         {
-            tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+            left_tries -= 1;
+            if left_tries == 0 {
+                panic!(
+                    "Failed to unbind the server on the port {}!",
+                    Self::PORT.lock().unwrap().clone()
+                );
+            }
         }
 
         let server = tokio::spawn(telegram_test_server::main(Self::PORT)); // This starts the server in the background
 
         // This, too, will need to be redone in the ideal world, but it just waits until the server is up
-        let mut left_tries = 50;
+        let mut left_tries = 200;
         while reqwest::get(format!(
             "http://127.0.0.1:{}/ping",
             Self::PORT.lock().unwrap().clone()
@@ -234,7 +294,6 @@ impl MockBot {
         .await
         .is_err()
         {
-            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
             left_tries -= 1;
             if left_tries == 0 {
                 panic!(
@@ -267,7 +326,7 @@ impl MockBot {
             .unwrap();
         server.await.unwrap();
 
-        drop(lock); // And free the lock so that the next test can use it
+        *self.update_lock.lock().unwrap() = None;
     }
 
     /// Returns the responses stored in `responses`
@@ -276,7 +335,7 @@ impl MockBot {
         let responses = self.responses.lock().unwrap().clone();
         match responses {
             Some(responses) => responses,
-            None => panic!("No responses received! Maybe you forgot to dismatch the mocked bot?"),
+            None => panic!("No responses received! Maybe you forgot to dispatch the mocked bot?"),
         }
     }
 
@@ -290,7 +349,8 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let get_potential_storage_lock = GET_POTENTIAL_STORAGE_LOCK.lock();
-        // If not this lock, some panic messages will make it to stderr, even with gag
+        // If not this lock, some panic messages will make it to stderr, even with gag, because
+        // race condition.
         let default_panic = panic::take_hook();
         let in_mem_storage: Option<Arc<Arc<InMemStorage<S>>>>;
         let erased_storage: Option<Arc<Arc<ErasedStorage<S>>>>;
@@ -387,24 +447,28 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
+        let update_lock = self.update.lock().unwrap().clone();
+        let chat_id = match update_lock.chat_id() {
+            Some(chat_id) => chat_id,
+            None => match find_chat_id(serde_json::to_value(&update_lock).unwrap()) {
+                Some(id) => ChatId(id),
+                None => {
+                    panic!("No chat id was detected!");
+                }
+            },
+        };
         if let Some(storage) = in_mem_storage {
             // If memory storage exists
             (*storage)
                 .clone()
-                .update_dialogue(
-                    self.update.lock().unwrap().chat_id().expect("No chat id"),
-                    state,
-                )
+                .update_dialogue(chat_id, state)
                 .await
                 .expect("Failed to update dialogue");
         } else if let Some(storage) = erased_storage {
             // If erased storage exists
             (*storage)
                 .clone()
-                .update_dialogue(
-                    self.update.lock().unwrap().chat_id().expect("No chat id"),
-                    state,
-                )
+                .update_dialogue(chat_id, state)
                 .await
                 .expect("Failed to update dialogue");
         } else {
@@ -421,11 +485,21 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
+        let update_lock = self.update.lock().unwrap().clone();
+        let chat_id = match update_lock.chat_id() {
+            Some(chat_id) => chat_id,
+            None => match find_chat_id(serde_json::to_value(&update_lock).unwrap()) {
+                Some(id) => ChatId(id),
+                None => {
+                    panic!("No chat id was detected!");
+                }
+            },
+        };
         if let Some(storage) = in_mem_storage {
             // If memory storage exists
             (*storage)
                 .clone()
-                .get_dialogue(self.update.lock().unwrap().chat_id().expect("No chat id"))
+                .get_dialogue(chat_id)
                 .await
                 .expect("Error getting dialogue")
                 .expect("State is None")
@@ -433,7 +507,7 @@ impl MockBot {
             // If erased storage exists
             (*storage)
                 .clone()
-                .get_dialogue(self.update.lock().unwrap().chat_id().expect("No chat id"))
+                .get_dialogue(chat_id)
                 .await
                 .expect("Error getting dialogue")
                 .expect("State is None")

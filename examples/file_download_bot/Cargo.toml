@@ -1,0 +1,12 @@
+[package]
+name = "file_download_bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+teloxide = { version = "0.12.2", features = ["macros"] }
+tokio = { version =  "1.38", features = ["rt-multi-thread", "macros"] }
+dotenv = "0.15.0"
+
+[dev-dependencies]
+teloxide_tests = { path = "../../mock_bot" }
