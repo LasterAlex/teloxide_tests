@@ -1,6 +1,6 @@
 use crate::{get_bot_storage, keyboards, private::*, public::*, text, MyDialogue};
 use crate::{private::StartCommand, State};
-use dptree::{case, filter};
+use dptree::{case, entry, filter};
 use std::error::Error;
 use teloxide::dispatching::dialogue::GetChatId;
 use teloxide::dispatching::UpdateFilterExt;
@@ -42,7 +42,7 @@ async fn check_if_the_state_is_ok(update: Update) -> bool {
 
 pub fn handler_tree() -> UpdateHandler<Box<dyn Error + Send + Sync + 'static>> {
     // Just a schema, nothing extraordinary
-    let normal_branch = dialogue::enter::<Update, ErasedStorage<State>, State, _>()
+    let private_branch = dialogue::enter::<Update, ErasedStorage<State>, State, _>()
         .branch(
             Update::filter_message()
                 .filter_command::<StartCommand>()
@@ -65,6 +65,10 @@ pub fn handler_tree() -> UpdateHandler<Box<dyn Error + Send + Sync + 'static>> {
                     .branch(
                         filter(|msg: Message| msg.text() == Some(keyboards::REMOVE_PHRASE_BUTTON))
                             .endpoint(delete_phrase),
+                    )
+                    .branch(
+                        filter(|msg: Message| msg.text() == Some(keyboards::ADD_PHRASE_BUTTON))
+                            .endpoint(add_phrase),
                     ),
             ),
         )
@@ -75,12 +79,40 @@ pub fn handler_tree() -> UpdateHandler<Box<dyn Error + Send + Sync + 'static>> {
         .branch(
             case![State::WhatPhraseToDelete]
                 .branch(Update::filter_message().endpoint(deleted_phrase)),
+        )
+        .branch(
+            entry()
+                .branch(
+                    case![State::WhatIsNewPhraseEmoji]
+                        .branch(Update::filter_message().endpoint(what_is_new_phrase_text)),
+                )
+                .branch(
+                    case![State::WhatIsNewPhraseText { emoji }]
+                        .branch(Update::filter_message().endpoint(what_is_new_phrase_bot_text)),
+                )
+                .branch(
+                    case![State::WhatIsNewPhraseBotText { emoji, text }]
+                        .branch(Update::filter_message().endpoint(added_phrase)),
+                ),
+        );
+
+    let public_branch = Update::filter_message().endpoint(bot_phrase);
+
+    let normal_branch = entry()
+        .branch(
+            filter(|update: Update| update.chat().is_some() && update.chat().unwrap().is_private())
+                .filter_async(check_if_the_state_is_ok)
+                .branch(private_branch),
+        )
+        .branch(
+            filter(|update: Update| {
+                update.chat().is_some()
+                    && (update.chat().unwrap().is_group() || update.chat().unwrap().is_supergroup())
+            })
+            .branch(public_branch),
         );
 
     // If the dialogue errors out - do not go further
-    let catch_updated_dialogue_branch = dptree::entry()
-        .filter_async(check_if_the_state_is_ok)
-        .branch(normal_branch);
 
-    catch_updated_dialogue_branch
+    normal_branch
 }

@@ -13,6 +13,10 @@ pub enum StartCommand {
     Cancel,
 }
 
+//
+//  Commands
+//
+
 pub async fn start(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
     bot.send_message(msg.chat.id, text::START)
         .reply_markup(keyboards::menu_keyboard())
@@ -29,6 +33,10 @@ pub async fn cancel(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResu
     dialogue.update(State::Start).await?;
     Ok(())
 }
+
+//
+//   Menu buttons
+//
 
 async fn send_menu(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
     bot.send_message(msg.chat.id, text::MENU)
@@ -51,6 +59,26 @@ pub async fn change_nickname(bot: Bot, msg: Message, dialogue: MyDialogue) -> Ha
     Ok(())
 }
 
+pub async fn delete_phrase(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
+    bot.send_message(msg.chat.id, text::DELETE_PHRASE)
+        .reply_markup(KeyboardRemove::new())
+        .await?;
+    dialogue.update(State::WhatPhraseToDelete).await?;
+    Ok(())
+}
+
+pub async fn add_phrase(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
+    bot.send_message(msg.chat.id, text::what_is_new_phrase_emoji())
+        .reply_markup(KeyboardRemove::new())
+        .await?;
+    dialogue.update(State::WhatIsNewPhraseEmoji).await?;
+    Ok(())
+}
+
+//
+//  Change nickname branch
+//
+
 pub async fn changed_nickname(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
     let text = match msg.text() {
         Some(text) => text,
@@ -65,13 +93,9 @@ pub async fn changed_nickname(bot: Bot, msg: Message, dialogue: MyDialogue) -> H
     send_menu(bot, msg, dialogue).await
 }
 
-pub async fn delete_phrase(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
-    bot.send_message(msg.chat.id, text::DELETE_PHRASE)
-        .reply_markup(KeyboardRemove::new())
-        .await?;
-    dialogue.update(State::WhatPhraseToDelete).await?;
-    Ok(())
-}
+//
+//   Delete phrase branch
+//
 
 pub async fn deleted_phrase(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResult {
     let _number = match msg.text() {
@@ -92,6 +116,89 @@ pub async fn deleted_phrase(bot: Bot, msg: Message, dialogue: MyDialogue) -> Han
     bot.send_message(msg.chat.id, text::DELETED_PHRASE).await?;
     send_menu(bot, msg, dialogue).await
 }
+
+//
+//  Add new phrase branch
+//
+
+pub async fn what_is_new_phrase_text(
+    bot: Bot,
+    msg: Message,
+    dialogue: MyDialogue,
+) -> HandlerResult {
+    let text = match msg.text() {
+        Some(text) => text,
+        None => {
+            bot.send_message(msg.chat.id, text::PLEASE_SEND_TEXT)
+                .await?;
+            return Ok(());
+        }
+    };
+    if text.chars().count() > 3 {
+        bot.send_message(msg.chat.id, text::NO_MORE_CHARACTERS)
+            .await?;
+        return Ok(());
+    }
+    bot.send_message(msg.chat.id, text::what_is_new_phrase_text(text))
+        .await?;
+    dialogue
+        .update(State::WhatIsNewPhraseText {
+            emoji: text.to_string(),
+        })
+        .await?;
+    Ok(())
+}
+
+pub async fn what_is_new_phrase_bot_text(
+    bot: Bot,
+    msg: Message,
+    dialogue: MyDialogue,
+    emoji: String,
+) -> HandlerResult {
+    let text = match msg.text() {
+        Some(text) => text,
+        None => {
+            bot.send_message(msg.chat.id, text::PLEASE_SEND_TEXT)
+                .await?;
+            return Ok(());
+        }
+    };
+    bot.send_message(msg.chat.id, text::what_is_new_phrase_bot_text(&emoji, text))
+        .await?;
+    dialogue
+        .update(State::WhatIsNewPhraseBotText {
+            emoji,
+            text: text.to_string(),
+        })
+        .await?;
+    Ok(())
+}
+
+pub async fn added_phrase(
+    bot: Bot,
+    msg: Message,
+    dialogue: MyDialogue,
+    state_data: (String, String),
+) -> HandlerResult {
+    let text = match msg.text() {
+        Some(text) => text,
+        None => {
+            bot.send_message(msg.chat.id, text::PLEASE_SEND_TEXT)
+                .await?;
+            return Ok(());
+        }
+    };
+    bot.send_message(
+        msg.chat.id,
+        text::added_phrase(&state_data.0, &state_data.1, text),
+    )
+    .await?;
+    send_menu(bot, msg, dialogue).await
+}
+
+//
+//   Tests
+//
 
 #[cfg(test)]
 mod tests {
@@ -220,21 +327,108 @@ mod tests {
     async fn test_deleted_phrase() {
         let bot = MockBot::new(MockMessageText::new().text("not a number"), handler_tree());
 
+        // Trying to send not a number
         bot.dependencies(deps![get_bot_storage().await]);
         bot.set_state(State::WhatPhraseToDelete).await;
 
         bot.dispatch_and_check_last_text(text::PLEASE_SEND_NUMBER)
             .await;
+
+        // Trying to send not a text message
         bot.update(MockMessageDocument::new());
         bot.dispatch_and_check_last_text(text::PLEASE_SEND_TEXT)
             .await;
+
+        // Sending the correct response
         bot.update(MockMessageText::new().text("1"));
         bot.dispatch_and_check_last_text_and_state(text::MENU, State::Start)
             .await;
+
         let responces = bot.get_responses();
         assert_eq!(
             responces.sent_messages.first().unwrap().text(),
             Some(text::DELETED_PHRASE)
+        );
+    }
+
+    #[tokio::test]
+    async fn test_add_phrase() {
+        let bot = MockBot::new(
+            MockMessageText::new().text(keyboards::ADD_PHRASE_BUTTON),
+            handler_tree(),
+        );
+
+        bot.dependencies(deps![get_bot_storage().await]);
+        bot.set_state(State::Start).await;
+
+        bot.dispatch_and_check_last_text_and_state(
+            &text::what_is_new_phrase_emoji(),
+            State::WhatIsNewPhraseEmoji,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_what_is_new_phrase_text() {
+        let bot = MockBot::new(MockMessageText::new().text("🤗🤗🤗🤗"), handler_tree());
+
+        bot.dependencies(deps![get_bot_storage().await]);
+        bot.set_state(State::WhatIsNewPhraseEmoji).await;
+
+        bot.dispatch_and_check_last_text(text::NO_MORE_CHARACTERS)
+            .await;
+
+        bot.update(MockMessageText::new().text("🤗"));
+        bot.dispatch_and_check_last_text_and_state(
+            &text::what_is_new_phrase_text("🤗"),
+            State::WhatIsNewPhraseText {
+                emoji: "🤗".to_string(),
+            },
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_what_is_new_phrase_bot_text() {
+        let bot = MockBot::new(MockMessageText::new().text("hug"), handler_tree());
+
+        bot.dependencies(deps![get_bot_storage().await]);
+        bot.set_state(State::WhatIsNewPhraseText {
+            emoji: "🤗".to_string(),
+        })
+        .await;
+
+        bot.dispatch_and_check_last_text_and_state(
+            &text::what_is_new_phrase_bot_text("🤗", "hug"),
+            State::WhatIsNewPhraseBotText {
+                emoji: "🤗".to_string(),
+                text: "hug".to_string(),
+            },
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_added_phrase() {
+        let bot = MockBot::new(
+            MockMessageText::new().text("(me) hugged (reply)"),
+            handler_tree(),
+        );
+
+        bot.dependencies(deps![get_bot_storage().await]);
+        bot.set_state(State::WhatIsNewPhraseBotText {
+            emoji: "🤗".to_string(),
+            text: "hug".to_string(),
+        })
+        .await;
+
+        bot.dispatch_and_check_last_text_and_state(text::MENU, State::Start)
+            .await;
+
+        let responces = bot.get_responses();
+        assert_eq!(
+            responces.sent_messages.first().unwrap().text(),
+            Some(text::added_phrase("🤗", "hug", "(me) hugged (reply)")).as_deref()
         );
     }
 }

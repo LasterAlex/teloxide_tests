@@ -9,7 +9,7 @@ use std::{
 use teloxide::{
     dispatching::dialogue::ErasedStorage,
     dptree::di::DependencySupplier,
-    types::{File, FileMeta, MessageId},
+    types::{File, FileMeta, MessageId, MessageKind},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
 use tokio::task::JoinHandle;
@@ -81,6 +81,11 @@ fn add_message(message: &mut Message) {
             path: "some_path.txt".to_string(), // This doesn't really matter
         };
         FILES.lock().unwrap().push(file);
+    }
+    if let MessageKind::Common(ref mut message_kind) = message.kind {
+        if let Some(ref mut reply_message) = message_kind.reply_to_message {
+            add_message(reply_message);
+        }
     }
     MESSAGES.add_message(message.clone());
 }
@@ -348,11 +353,12 @@ impl MockBot {
                                                                            // before they are erased
 
         stop_server().await;
-        server.await.unwrap();  // Waits before the server is shut down
+        server.await.unwrap(); // Waits before the server is shut down
     }
 
     /// Returns the responses stored in `responses`
     /// Panics if no dispatching was done.
+    /// Should be treated as a variable, because it kinda is
     pub fn get_responses(&self) -> telegram_test_server::Responses {
         let responses = self.responses.lock().unwrap().clone();
         match responses {
@@ -557,11 +563,13 @@ impl MockBot {
     /// want the text or caption to be None
     pub async fn dispatch_and_check_last_text(&self, text_or_caption: &str) {
         self.dispatch().await;
+
         let responses = self.get_responses();
         let message = responses
             .sent_messages
             .last()
             .expect("No sent messages were detected!");
+
         if let Some(text) = message.text() {
             assert_eq!(text, text_or_caption, "Texts are not equal!");
         } else if let Some(caption) = message.caption() {
@@ -578,11 +586,13 @@ impl MockBot {
         S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
     {
         self.dispatch().await;
+
         let responses = self.get_responses();
         let message = responses
             .sent_messages
             .last()
             .expect("No sent messages were detected!");
+
         if let Some(text) = message.text() {
             assert_eq!(text, text_or_caption, "Texts are not equal!");
         } else if let Some(caption) = message.caption() {
@@ -606,11 +616,13 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         self.dispatch().await;
+
         let responses = self.get_responses();
         let message = responses
             .sent_messages
             .last()
             .expect("No sent messages were detected!");
+
         if let Some(text) = message.text() {
             assert_eq!(text, text_or_caption, "Texts are not equal!");
         } else if let Some(caption) = message.caption() {
