@@ -1,14 +1,8 @@
 # Teloxide tests
 
-I am trying to make tests for teloxide using fake server and a bot with an url to that server.
+A crate that allows you to unit test your teloxide bots easily! No internet, accounts or anything required!
 
-Server is done, now only finshing touches will be needed.
-
-I am going right now by the following steps:
-
-1. Make it work
-2. Make it beautiful for the user
-3. Make it beautiful on the inside
+You can see the examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples), while this crate isn't out, you can see the docs by going to `mock_bot/` and running `cargo doc --no-deps --open`
 
 What is needed until release:
 
