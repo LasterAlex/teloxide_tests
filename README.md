@@ -59,6 +59,10 @@ Hopefully it is as easy as doing what happens in `./examples`
 
 **Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or contact me via telegram [@laster_alex](https://t.me/laster_alex))
 
+## Contributing
+
+Please see [CONTRIBUTING.md](https://github.com/LasterAlex/teloxide_tests/blob/master/CONTRIBUTING.md)
+
 ## Todo
 
 - [x] Add dataset
