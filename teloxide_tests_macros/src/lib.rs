@@ -1,6 +1,6 @@
 //! Proc macros for teloxide_tests crate
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{parse_macro_input, Data, DeriveInput, Fields, PathArguments, Type, TypeGroup};
 
 #[proc_macro_derive(Changeable)]
@@ -197,11 +197,11 @@ pub fn serialize_raw_fields_derive(input: TokenStream) -> TokenStream {
 
         let key = field_name.to_string();
 
-        if field_type == &syn::parse_str::<syn::Type>("Option<String>").unwrap() {
+        if field_type.clone().to_token_stream().to_string() == syn::parse_str::<syn::Type>("Option<String>").unwrap().to_token_stream().to_string() {
             quote! {
                 #field_name: fields.get(#key).cloned(),
             }
-        } else if field_type == &syn::parse_str::<syn::Type>("String").unwrap() {
+        } else if field_type.clone().to_token_stream().to_string() == syn::parse_str::<syn::Type>("String").unwrap().to_token_stream().to_string() {
             quote! {
                 #field_name: fields.get(#key)?.to_string(),
             }
