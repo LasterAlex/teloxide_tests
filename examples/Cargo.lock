@@ -547,13 +547,12 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.1.2"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47de7e88bbbd467951ae7f5a6f34f70d1b4d9cfce53d5fd70f74ebe118b3db56"
+checksum = "324c74f2155653c90b04f25b2a47a8a631360cb908f92a772695f430c7e31052"
 dependencies = [
  "jobserver",
  "libc",
- "once_cell",
 ]
 
 [[package]]
@@ -762,20 +761,6 @@ dependencies = [
  "darling_core 0.20.10",
  "quote",
  "syn 2.0.71",
-]
-
-[[package]]
-name = "dataset"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "mime",
- "proc_macros",
- "reqwest",
- "serde",
- "serde_json",
- "teloxide",
- "tokio",
 ]
 
 [[package]]
@@ -1784,15 +1769,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "proc_macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1862,9 +1838,9 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c82cf8cff14456045f55ec4241383baeff27af886adb72ffb2162f99911de0fd"
+checksum = "2a908a6e00f1fdd0dfd9c0eb08ce85126f6d8bbda50017e74bc4a4b7d4a926a4"
 dependencies = [
  "bitflags 2.6.0",
 ]
@@ -2007,9 +1983,9 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "security-framework"
-version = "2.11.0"
+version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c627723fd09706bacdb5cf41499e95098555af3c3c29d014dc3c458ef6be11c0"
+checksum = "897b2245f0b511c87893af39b033e5ca9cce68824c4d7e7630b5a1d339658d02"
 dependencies = [
  "bitflags 2.6.0",
  "core-foundation",
@@ -2020,9 +1996,9 @@ dependencies = [
 
 [[package]]
 name = "security-framework-sys"
-version = "2.11.0"
+version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "317936bbbd05227752583946b9e66d7ce3b489f84e11a94a510b4437fef407d7"
+checksum = "75da29fe9b9b08fe9d6b22b5b4bcbc75d8db3aa31e639aa56bb62e9d46bfceaf"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -2255,31 +2231,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20f34339676cdcab560c9a82300c4c2581f68b9369aedf0fae86f2ff9565ff3e"
 
 [[package]]
-name = "telegram_test_server"
-version = "0.1.0"
-dependencies = [
- "actix-multipart",
- "actix-web",
- "actix-web-lab",
- "chrono",
- "dataset",
- "env_logger 0.11.3",
- "futures-util",
- "lazy_static",
- "log",
- "mime",
- "mime_guess",
- "parking_lot",
- "proc_macros",
- "rand",
- "reqwest",
- "serde",
- "serde_json",
- "teloxide",
- "tokio",
-]
-
-[[package]]
 name = "teloxide"
 version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2354,19 +2305,38 @@ dependencies = [
 name = "teloxide_tests"
 version = "0.1.0"
 dependencies = [
+ "actix-multipart",
+ "actix-web",
+ "actix-web-lab",
+ "chrono",
  "ctrlc",
- "dataset",
  "dotenv",
+ "env_logger 0.11.3",
+ "futures-util",
  "gag",
+ "lazy_static",
  "log",
+ "mime",
+ "mime_guess",
+ "parking_lot",
  "pretty_env_logger",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",
- "telegram_test_server",
  "teloxide",
+ "teloxide_tests_macros",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "teloxide_tests_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2458,9 +2428,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.38.0"
+version = "1.38.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba4f4a02a7a80d6f274636f0aa95c7e383b912d41fe721a31f29e29698585a4a"
+checksum = "eb2caba9f80616f438e09748d5acda951967e1ea58508ef53d9c6402485a46df"
 dependencies = [
  "backtrace",
  "bytes",

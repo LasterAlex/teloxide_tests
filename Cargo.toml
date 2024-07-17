@@ -1,5 +1,5 @@
 [workspace]
-members = ["mock_bot", "dataset", "telegram_test_server", "proc_macros"]
+members = ["teloxide_tests", "teloxide_tests_macros"]
 resolver = "2"
 
 [workspace.package]

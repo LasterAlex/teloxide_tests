@@ -2,7 +2,7 @@
 
 A crate that allows you to unit test your teloxide bots easily! No internet, accounts or anything required!
 
-You can see the examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples), while this crate isn't out, you can see the docs by going to `mock_bot/` and running `cargo doc --no-deps --open`
+You can see the examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples), while this crate isn't out, you can see the docs by going to `teloxide_tests/` and running `cargo doc --no-deps --open`
 
 What is needed until release:
 
@@ -14,16 +14,9 @@ What is needed until release:
 - [x] Try to make a real bot with these tests, to see, where it lacks in the real usecases
 - [ ] Some feedback for a sanity check
 
-The main crate is mock_bot, everything is split up for simplicity.
-
 ## Pitfalls
 
 Race conditions. They are, to my knoledge, the most difficult.
-To avoid it, try to do the following:
-
-- Make a new bot for every test. Reusing the bot is ok, just try to not make one bot to rule them all.
-- If you REALLY want to make the one bot work, call bot.update(/_ some update _/); BEFORE any change to the database, state or anything else that can be shared accross tests. .update() locks the bot, and has to wait before this update gets dispatched or goes out of scope to change their own update
-- If you are tired, look at [this crate for serial testing](https://crates.io/crates/serial_test), this basically eliminates all the pain, but it doesn't look as nice
 
 ### Some errors associated with these race conditions:
 
@@ -37,14 +30,7 @@ To avoid it, try to do the following:
 
 - Stupid bugs that change every time you run a test
 
-  Once again, either use serial tests, or try to add `drop(bot);` at the end of every test, and do everything AFTER calling `MockBot::new()`, as the bot creation makes a safe lock that prevent any race conditions.
-
-## Structure
-
-- ./dataset has different mocked structs, that are easy to implement and use
-- ./proc_macros has proc macros, cuz for some reason it has to be a separate crate
-- ./telegram_test_server has a server that mimicks the real one
-- ./mock_bot has a mocked version of a bot, that sends requests to the fake server. It is also the main crate.
+  You can use the crate [serial_test](https://crates.io/crates/serial_test), or try to add `drop(bot);` at the end of every test, and do everything AFTER calling `MockBot::new()`, as the bot creation makes a safe lock that prevent any race conditions.
 
 ## How to implement it?
 

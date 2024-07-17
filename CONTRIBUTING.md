@@ -5,7 +5,7 @@ First of all, thanks! I really want to make this crate as good as possible, as i
 ### Here are the rules for writing code i consider important for PRs:
 
 1. Add code comments and docstrings. I take an example from teloxide source, and they have documented everything in their code very nicely.
-2. Add tests for the source code. Not for every single function, but if you add a dataset item, or a new endpoint, add a test for it. (endpoint tests are in the mock_bot/src/tests.rs)
+2. Add tests for the source code. Not for every single function, but if you add a dataset item, or a new endpoint, add a test for it. (endpoint tests are in the teloxide_tests/src/tests.rs)
 3. The teloxide bot testing for the users of this crate should be very intuitive and easy. That is the reason i made so that the tests can be run without serial_test crate, it adds unnecessary boilerplate.
 4. The bot should handle the test failiure with grace. After all, the tests are made to fail, so the error messages and panics should be clear. Mutex poison errors because of a one failed test are not good at all, as well as server errors. If one test fails, no others should.
 5. Users have to have many options for testing their bot. For that very reason i save bot requests to the fake server, as well as making some fields in the MockBot public.
