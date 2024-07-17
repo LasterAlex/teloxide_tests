@@ -3,6 +3,9 @@ name = "teloxide_tests_macros"
 version = "0.1.0"
 edition = "2021"
 
+description = "Proc macros for teloxide_tests"
+license = "MIT"
+
 [dependencies]
 syn = "1.0"
 quote = "1.0"
