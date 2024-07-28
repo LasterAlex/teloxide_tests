@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::str::from_utf8;
 
-use actix_web::HttpResponse;
 use crate::dataset::{MockPrivateChat, MockSupergroupChat};
+use actix_web::HttpResponse;
 use futures_util::stream::StreamExt as _;
 use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
@@ -11,15 +11,18 @@ use teloxide::types::Chat;
 
 pub mod answer_callback_query;
 pub mod delete_message;
+pub mod download_file;
 pub mod edit_message_caption;
 pub mod edit_message_reply_markup;
 pub mod edit_message_text;
 pub mod get_file;
+pub mod pin_chat_message;
 pub mod send_document;
 pub mod send_message;
 pub mod send_photo;
 pub mod send_video;
-pub mod download_file;
+pub mod unpin_all_chat_messages;
+pub mod unpin_chat_message;
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]

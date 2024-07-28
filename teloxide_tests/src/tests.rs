@@ -112,6 +112,8 @@ pub enum AllCommands {
     Document,
     #[command()]
     EditCaption,
+    #[command()]
+    PinMessage,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -182,6 +184,11 @@ async fn handler(
             bot.download_file(&gotten_document.path, &mut dest).await?;
             assert!(tokio::fs::read_to_string("test.txt").await.is_ok());
             tokio::fs::remove_file("test.txt").await?;
+        }
+        AllCommands::PinMessage => {
+            bot.pin_chat_message(msg.chat.id, sent_message.id).await?;
+            bot.unpin_chat_message(msg.chat.id).await?;
+            bot.unpin_all_chat_messages(msg.chat.id).await?;
         }
     }
     Ok(())
@@ -360,4 +367,19 @@ async fn test_answer_callback_query() {
     let answered_callback = bot.get_responses().answered_callback_queries.pop().unwrap();
 
     assert_eq!(answered_callback.text, Some("test".to_string()));
+}
+
+#[tokio::test]
+async fn test_pin_message() {
+    let bot = MockBot::new(MockMessageText::new().text("/pinmessage"), get_schema());
+
+    bot.dispatch().await;
+
+    let pinned_message = bot.get_responses().pinned_chat_messages.pop();
+    let unpinned_message = bot.get_responses().unpinned_chat_messages.pop();
+    let unpinned_all_chat_messages = bot.get_responses().unpinned_all_chat_messages.pop();
+
+    assert!(pinned_message.is_some());
+    assert!(unpinned_message.is_some());
+    assert!(unpinned_all_chat_messages.is_some());
 }

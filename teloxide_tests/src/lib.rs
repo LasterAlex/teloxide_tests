@@ -64,6 +64,9 @@
 //! - /SendDocument
 //! - /SendPhoto
 //! - /SendVideo
+//! - /PinChatMessage
+//! - /UnpinChatMessage
+//! - /UnpinAllChatMessages
 //!
 //! I will add more endpoints as time goes on!
 //!

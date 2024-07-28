@@ -181,11 +181,13 @@ impl MockBot {
     where
         T: IntoUpdate, // And that code just "proves" that it can be turned into an update
     {
-        env::set_var(
-            // So that teloxide bot doesn't complain
-            "TELOXIDE_TOKEN",
-            "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
-        );
+        unsafe {
+            env::set_var(
+                // So that teloxide bot doesn't complain
+                "TELOXIDE_TOKEN",
+                "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
+            );
+        }
         let _ = pretty_env_logger::try_init();
 
         let bot = Bot::from_env().set_api_url(
@@ -348,9 +350,8 @@ impl MockBot {
             };
         }
 
-        *self.responses.lock().unwrap() =
-            Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses
-                                                                           // before they are erased
+        *self.responses.lock().unwrap() = Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses
+                                                                                           // before they are erased
 
         stop_server().await;
         server.await.unwrap(); // Waits before the server is shut down

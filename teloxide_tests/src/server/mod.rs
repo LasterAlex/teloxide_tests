@@ -6,7 +6,8 @@ use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, delete_message::*, download_file::download_file,
     edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*, get_file::*,
-    send_document::*, send_message::*, send_photo::*, send_video::*,
+    pin_chat_message::*, send_document::*, send_message::*, send_photo::*, send_video::*,
+    unpin_all_chat_messages::*, unpin_chat_message::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -70,34 +71,34 @@ pub struct Responses {
     /// Be warned, editing or deleting messages do not affect this list!
     pub sent_messages: Vec<Message>,
     /// This has only messages that are text messages, sent by the bot.
-    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// The `.message` field has the sent by bot message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub sent_messages_text: Vec<SentMessageText>,
     /// This has only messages that are photo messages, sent by the bot.
-    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// The `.message` field has the sent by bot message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub sent_messages_photo: Vec<SentMessagePhoto>,
     /// This has only messages that are video messages, sent by the bot.
-    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// The `.message` field has the sent by bot message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub sent_messages_video: Vec<SentMessageVideo>,
     /// This has only messages that are document messages, sent by the bot.
-    /// The `.message` field has the sent by bot message, and `.bot_request` 
+    /// The `.message` field has the sent by bot message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub sent_messages_document: Vec<SentMessageDocument>,
     /// This has only edited by the bot text messages.
-    /// The `.message` field has the new edited message, and `.bot_request` 
+    /// The `.message` field has the new edited message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub edited_messages_text: Vec<EditedMessageText>,
     /// This has only edited by the bot caption messages.
-    /// The `.message` field has the new edited message, and `.bot_request` 
+    /// The `.message` field has the new edited message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub edited_messages_caption: Vec<EditedMessageCaption>,
     /// This has only messages whos reply markup was edited by the bot.
-    /// The `.message` field has the new edited message, and `.bot_request` 
+    /// The `.message` field has the new edited message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub edited_messages_reply_markup: Vec<EditedMessageReplyMarkup>,
-    /// This has only messages whos reply markup was deleted by the bot.
+    /// This has only messages which were deleted by the bot.
     /// The `.message` field has the deleted message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub deleted_messages: Vec<DeletedMessage>,
@@ -105,6 +106,15 @@ pub struct Responses {
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
     pub answered_callback_queries: Vec<AnswerCallbackQueryBody>,
+    /// This has only the requests that were sent to the fake server to pin messages.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
+    pub pinned_chat_messages: Vec<PinChatMessageBody>,
+    /// This has only the requests that were sent to the fake server to unpin messages.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
+    pub unpinned_chat_messages: Vec<UnpinChatMessageBody>,
+    pub unpinned_all_chat_messages: Vec<UnpinAllChatMessagesBody>,
 }
 
 lazy_static! {
@@ -244,6 +254,18 @@ pub async fn main(port: Mutex<u16>) {
                     .route(
                         "/bot{token}/AnswerCallbackQuery",
                         web::post().to(answer_callback_query),
+                    )
+                    .route(
+                        "/bot{token}/PinChatMessage",
+                        web::post().to(pin_chat_message),
+                    )
+                    .route(
+                        "/bot{token}/UnpinChatMessage",
+                        web::post().to(unpin_chat_message),
+                    )
+                    .route(
+                        "/bot{token}/UnpinAllChatMessages",
+                        web::post().to(unpin_all_chat_messages),
                     )
                     .route("/file/bot{token}/{file_name}", web::get().to(download_file))
             }

@@ -2,21 +2,19 @@
 
 A crate that allows you to unit test your teloxide bots easily! No internet, accounts or anything required!
 
-You can see the examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples), while this crate isn't out, you can see the docs by going to `teloxide_tests/` and running `cargo doc --no-deps --open`
+[file_download_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs)
+![file_download_bot_example](https://github.com/user-attachments/assets/e4e07376-2d5d-418f-a684-6116b1c4fff6)
 
-What is needed until release:
+[calculator_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs)
+![calculator_bot_example](https://github.com/user-attachments/assets/b6308a80-c94b-42a6-bab0-dc2f61a9a711)
 
-- [x] Add most common endpoints (SendMessage, SendPhoto, SendDocument, SendVideo, EditMessageText, EditMessageCaption, EditMessageReplyMarkup, DeleteMessage, AnswerCallbackQuery, GetFile)
-- [x] Clean up the test server code and make it easily extendable
-- [x] Add some syntactic sugar for testing (e.g .dispatch_and_check_last_sent_text(), .dispatch_and_check_state(), etc.)
-- [x] Export publicly only what is needed
-- [x] Add a lot of different examples for referencing
-- [x] Try to make a real bot with these tests, to see, where it lacks in the real usecases
-- [ ] Some feedback for a sanity check
+You can see more useful examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) and the docs at [docs.rs](https://docs.rs/teloxide_tests)
 
 ## Pitfalls
 
 Race conditions. They are, to my knoledge, the most difficult.
+
+And also when you use a method that is still not supported by this crate. Please reffer to the docs to see, what endpoints are implemented in the latest release (or look at [server/routes](https://github.com/LasterAlex/teloxide_tests/tree/master/teloxide_tests/src/server/routes) files to look at the current endpoints)
 
 ### Some errors associated with these race conditions:
 
@@ -67,4 +65,4 @@ Please see [CONTRIBUTING.md](https://github.com/LasterAlex/teloxide_tests/blob/m
 - [x] Make mocked bot that sends requests to fake server
 - [x] Add tests to that bot
 - [x] Make it into a library
-- [ ] Publish it when it is ready
+- [x] Publish it when it is ready

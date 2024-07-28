@@ -52,7 +52,7 @@ mod tests {
     use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText};
 
     #[tokio::test]
-    async fn test_download_document() {
+    async fn test_not_a_document() {
         let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
         bot.dispatch_and_check_last_text("Not a document").await;
     }
