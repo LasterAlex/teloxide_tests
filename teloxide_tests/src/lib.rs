@@ -52,7 +52,9 @@
 //! so I decided to write this. This crate tries to give as much tooling for testing as reasonably possible,
 //! while keeping it simple to work with and implement.
 //! The goal of this crate is to test most of the teloxide and telegram features. This crate is not yet
-//! complete, but you still can use it for what it has! Right now this bot supports such endpoints:
+//! complete, but you still can use it for what it has!
+//!
+//! ## Supported Endpoints
 //!
 //! - /AnswerCallbackQuery
 //! - /DeleteMessage
@@ -68,7 +70,7 @@
 //! - /UnpinChatMessage
 //! - /UnpinAllChatMessages
 //!
-//! I will add more endpoints as time goes on!
+//! More endpoints will be added as time goes on!
 //!
 //! (do not worry about /GetMe and /GetUpdates, they are not needed for this bot!)
 //!

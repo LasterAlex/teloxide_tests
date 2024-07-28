@@ -2,13 +2,34 @@
 
 A crate that allows you to unit test your teloxide bots easily! No internet, accounts or anything required!
 
-[file_download_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs)
+[[`file_download_bot`]](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs)
 ![file_download_bot_example](https://github.com/user-attachments/assets/e4e07376-2d5d-418f-a684-6116b1c4fff6)
 
-[calculator_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs)
+[[`calculator_bot`]](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs)
 ![calculator_bot_example](https://github.com/user-attachments/assets/b6308a80-c94b-42a6-bab0-dc2f61a9a711)
 
 You can see more useful examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) and the docs at [docs.rs](https://docs.rs/teloxide_tests)
+
+## How to implement it?
+
+Hopefully it is as easy as doing what happens in `./examples`
+
+1. Import the `teloxide_tests`
+2. Create a mocked bot with something that can be turned into an update, like MockMessageText or MockMessagePhoto
+3. Add dependencies and/or a different bot using .dependencies(deps![]) and .me(MockedMe::new().build())
+4. Dispatch it with .dispatch().await
+5. Get the responces with .get_responces()
+6. Do the testing with the gotten responces
+
+**Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or contact me via telegram [@laster_alex](https://t.me/laster_alex))
+
+## What this crate has
+
+- Easy testing of handlers with access to raw bot requests (see [hello_world_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/hello_world_bot/src/main.rs))
+- Support of dependencies, changes of `me` and multiple updates (see [album_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/album_bot/src/main.rs))
+- Syntactic sugar and native support for storage, dialogue and states (see [calculator_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs))
+- Fake file getting and downloading (see [file_download_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs))
+- Ability to be used with databases (see [phrase_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/phrase_bot/src/main.rs))
 
 ## Pitfalls
 
@@ -29,19 +50,6 @@ And also when you use a method that is still not supported by this crate. Please
 - Stupid bugs that change every time you run a test
 
   You can use the crate [serial_test](https://crates.io/crates/serial_test), or try to add `drop(bot);` at the end of every test, and do everything AFTER calling `MockBot::new()`, as the bot creation makes a safe lock that prevent any race conditions.
-
-## How to implement it?
-
-Hopefully it is as easy as doing what happens in `./examples`
-
-1. Import the `teloxide_tests`
-2. Create a mocked bot with something that can be turned into an update, like MockMessageText or MockMessagePhoto
-3. Add dependencies and/or a different bot using .dependencies(deps![]) and .me(MockedMe::new().build())
-4. Dispatch it with .dispatch().await
-5. Get the responces with .get_responces()
-6. Do the testing with the gotten responces
-
-**Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or contact me via telegram [@laster_alex](https://t.me/laster_alex))
 
 ## Contributing
 
