@@ -1,11 +1,14 @@
 use super::*;
 use crate::dataset::*;
 use serde::{Deserialize, Serialize};
-use teloxide::dispatching::{UpdateHandler, HandlerExt};
+use teloxide::dispatching::{HandlerExt, UpdateHandler};
 use teloxide::dptree::case;
 use teloxide::net::Download;
+use teloxide::payloads::CopyMessageSetters;
 use teloxide::requests::Requester;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, MessageEntity, Update};
+use teloxide::types::{
+    InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, MessageEntity, Update,
+};
 use teloxide::{
     dispatching::{
         dialogue::{self, InMemStorage},
@@ -116,6 +119,8 @@ pub enum AllCommands {
     PinMessage,
     #[command()]
     ForwardMessage,
+    #[command()]
+    CopyMessage,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -167,7 +172,8 @@ async fn handler(
                 .await?;
         }
         AllCommands::Document => {
-            let document = InputFile::file("/home/laster/http_requests.txt".to_string()).file_name("test.txt");
+            let document =
+                InputFile::file("/home/laster/http_requests.txt".to_string()).file_name("test.txt");
             let document_message = bot
                 .send_document(msg.chat.id, document)
                 .caption("test")
@@ -194,6 +200,17 @@ async fn handler(
         }
         AllCommands::ForwardMessage => {
             bot.forward_message(msg.chat.id, msg.chat.id, sent_message.id)
+                .await?;
+        }
+        AllCommands::CopyMessage => {
+            let document =
+                InputFile::file("/home/laster/http_requests.txt".to_string()).file_name("test.txt");
+            let document_message = bot.send_document(msg.chat.id, document).await?;
+            bot.copy_message(msg.chat.id, msg.chat.id, document_message.id)
+                .caption("test")
+                .reply_markup(InlineKeyboardMarkup::new(vec![vec![
+                    InlineKeyboardButton::callback("test", "test"),
+                ]]))
                 .await?;
         }
     }
@@ -234,7 +251,8 @@ async fn test_echo() {
 
 #[tokio::test]
 #[should_panic]
-async fn test_panic() {  // Nothing else should fail because it panics
+async fn test_panic() {
+    // Nothing else should fail because it panics
     let bot = MockBot::new(MockMessageText::new().text("/echo echo"), get_schema());
 
     bot.dispatch().await;
@@ -328,7 +346,10 @@ async fn test_edit_caption() {
 
 #[tokio::test]
 async fn test_edit_reply_markup() {
-    let bot = MockBot::new(MockMessageText::new().text("/editreplymarkup"), get_schema());
+    let bot = MockBot::new(
+        MockMessageText::new().text("/editreplymarkup"),
+        get_schema(),
+    );
 
     bot.dispatch().await;
 
@@ -401,5 +422,27 @@ async fn test_forward_message() {
     let last_sent_message = responses.sent_messages.last().unwrap();
 
     assert_eq!(last_sent_message.text(), Some("/forwardmessage"));
-    assert_eq!(last_sent_message.forward_date(), Some(first_sent_message.date));
+    assert_eq!(
+        last_sent_message.forward_date(),
+        Some(first_sent_message.date)
+    );
+}
+
+#[tokio::test]
+async fn test_copy_message() {
+    let bot = MockBot::new(MockMessageText::new().text("/copymessage"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let second_sent_message = responses.sent_messages.get(1).unwrap();
+    let last_sent_message = responses.sent_messages.last().unwrap();
+
+    assert!(second_sent_message.caption().is_none());
+    assert!(last_sent_message.document().is_some());
+    assert_eq!(last_sent_message.caption(), Some("test"));
+    assert_eq!(
+        last_sent_message.reply_markup().unwrap().inline_keyboard[0][0].text,
+        "test"
+    );
 }

@@ -1,0 +1,94 @@
+use actix_web::error::ErrorBadRequest;
+use actix_web::{web, Responder};
+use serde::Deserialize;
+use serde_json::json;
+use teloxide::types::{
+    MediaAnimation, MediaAudio, MediaDocument, MediaKind, MediaPhoto, MediaVideo, MediaVoice,
+    MessageEntity, MessageId, MessageKind, ParseMode, ReplyMarkup,
+};
+
+use crate::server::CopiedMessage;
+use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
+
+use super::{make_telegram_result, BodyChatId};
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct CopyMessageBody {
+    pub chat_id: BodyChatId,
+    pub message_thread_id: Option<i64>,
+    pub from_chat_id: BodyChatId,
+    pub message_id: i32,
+    pub caption: Option<String>,
+    pub parse_mode: Option<ParseMode>,
+    pub caption_entities: Option<Vec<MessageEntity>>,
+    pub show_caption_above_media: Option<bool>,
+    pub disable_notification: Option<bool>,
+    pub protect_content: Option<bool>,
+    pub reply_markup: Option<ReplyMarkup>,
+}
+
+pub async fn copy_message(body: web::Json<CopyMessageBody>) -> impl Responder {
+    let chat = body.chat_id.chat();
+    check_if_message_exists!(body.message_id);
+    let mut message = MESSAGES.get_message(body.message_id).unwrap();
+    message.chat = chat;
+
+    if let MessageKind::Common(ref mut common) = message.kind {
+        common.forward = None;
+        match common.media_kind {
+            MediaKind::Animation(MediaAnimation {
+                ref mut caption,
+                ref mut caption_entities,
+                ..
+            })
+            | MediaKind::Audio(MediaAudio {
+                ref mut caption,
+                ref mut caption_entities,
+                ..
+            })
+            | MediaKind::Document(MediaDocument {
+                ref mut caption,
+                ref mut caption_entities,
+                ..
+            })
+            | MediaKind::Photo(MediaPhoto {
+                ref mut caption,
+                ref mut caption_entities,
+                ..
+            })
+            | MediaKind::Video(MediaVideo {
+                ref mut caption,
+                ref mut caption_entities,
+                ..
+            })
+            | MediaKind::Voice(MediaVoice {
+                ref mut caption,
+                ref mut caption_entities,
+                ..
+            }) => {
+                *caption = body.caption.clone();
+                *caption_entities = body.caption_entities.clone().unwrap_or_default();
+            }
+            _ => {}
+        };
+        if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
+            common.reply_markup = Some(markup);
+        }
+    }
+
+    let last_id = MESSAGES.max_message_id();
+    message.id = MessageId(last_id + 1);
+    message.chat = body.chat_id.chat();
+    let message = MESSAGES.add_message(message);
+
+    let mut responses_lock = RESPONSES.lock().unwrap();
+    responses_lock.sent_messages.push(message.clone());
+    responses_lock.copied_messages.push(CopiedMessage {
+        message_id: message.id,
+        bot_request: body.into_inner(),
+    });
+
+    make_telegram_result(json!({
+        "message_id": message.id.0
+    }))
+}
