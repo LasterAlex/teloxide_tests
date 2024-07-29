@@ -16,10 +16,44 @@
 
 
 [[`file_download_bot`]](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs)
-![file_download_bot_example](https://github.com/user-attachments/assets/e4e07376-2d5d-418f-a684-6116b1c4fff6)
+```rust,ignore
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText};
+
+    #[tokio::test]
+    async fn test_not_a_document() {
+        let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+        bot.dispatch_and_check_last_text("Not a document").await;
+    }
+
+    #[tokio::test]
+    async fn test_download_document_and_check() {
+        let bot = MockBot::new(MockMessageDocument::new(), handler_tree());
+        bot.dispatch_and_check_last_text("Downloaded!").await;
+    }
+}
+```
 
 [[`calculator_bot`]](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs)
-![calculator_bot_example](https://github.com/user-attachments/assets/b6308a80-c94b-42a6-bab0-dc2f61a9a711)
+```rust,ignore
+#[tokio::test]
+async fn test_what_is_the_first_number() {
+    let bot = MockBot::new(MockCallbackQuery::new().data("add"), handler_tree());
+
+    bot.dependencies(deps![get_bot_storage().await]);
+    bot.set_state(State::WhatDoYouWant).await;
+
+    bot.dispatch_and_check_last_text_and_state(
+        text::ENTER_THE_FIRST_NUMBER,
+        State::GetFirstNumber {
+            operation: "add".to_owned(),
+        },
+    )
+    .await;
+}
+```
 
 You can see more useful examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) and the docs at [docs.rs](https://docs.rs/teloxide_tests)
 
