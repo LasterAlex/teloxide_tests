@@ -1,6 +1,18 @@
-# Teloxide tests
+<div align="center">
+  <h1><code>teloxide tests</code></h1>
+  <a href="https://docs.rs/teloxide_tests/">
+    <img src="https://docs.rs/teloxide_tests/badge.svg">
+  </a>
+  <a href="https://crates.io/crates/teloxide_tests">
+    <img src="https://img.shields.io/crates/v/teloxide_tests.svg">
+  </a>
+  <a href="https://t.me/laster_alex">
+    <img src="https://img.shields.io/badge/my%20contact-t.me%2Flaster__alex-blueviolet">
+  </a>
 
-A crate that allows you to unit test your teloxide bots easily! No internet, accounts or anything required!
+  A crate that allows you to unit test your teloxide bots easily! No internet, accounts or anything required!
+</div>
+
 
 [[`file_download_bot`]](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs)
 ![file_download_bot_example](https://github.com/user-attachments/assets/e4e07376-2d5d-418f-a684-6116b1c4fff6)
