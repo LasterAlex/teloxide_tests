@@ -69,6 +69,8 @@
 //! - /PinChatMessage
 //! - /UnpinChatMessage
 //! - /UnpinAllChatMessages
+//! - /ForwardMessage
+//! - /CopyMessage
 //!
 //! More endpoints will be added as time goes on!
 //!
