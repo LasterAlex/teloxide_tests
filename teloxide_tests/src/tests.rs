@@ -114,6 +114,8 @@ pub enum AllCommands {
     EditCaption,
     #[command()]
     PinMessage,
+    #[command()]
+    ForwardMessage,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -189,6 +191,10 @@ async fn handler(
             bot.pin_chat_message(msg.chat.id, sent_message.id).await?;
             bot.unpin_chat_message(msg.chat.id).await?;
             bot.unpin_all_chat_messages(msg.chat.id).await?;
+        }
+        AllCommands::ForwardMessage => {
+            bot.forward_message(msg.chat.id, msg.chat.id, sent_message.id)
+                .await?;
         }
     }
     Ok(())
@@ -382,4 +388,18 @@ async fn test_pin_message() {
     assert!(pinned_message.is_some());
     assert!(unpinned_message.is_some());
     assert!(unpinned_all_chat_messages.is_some());
+}
+
+#[tokio::test]
+async fn test_forward_message() {
+    let bot = MockBot::new(MockMessageText::new().text("/forwardmessage"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let first_sent_message = responses.sent_messages.first().unwrap();
+    let last_sent_message = responses.sent_messages.last().unwrap();
+
+    assert_eq!(last_sent_message.text(), Some("/forwardmessage"));
+    assert_eq!(last_sent_message.forward_date(), Some(first_sent_message.date));
 }

@@ -23,6 +23,7 @@ pub mod send_photo;
 pub mod send_video;
 pub mod unpin_all_chat_messages;
 pub mod unpin_chat_message;
+pub mod forward_message;
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]

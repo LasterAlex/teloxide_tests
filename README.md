@@ -46,9 +46,11 @@ Hopefully it is as easy as doing what happens in `./examples`
 
 ## Pitfalls
 
-Race conditions. They are, to my knoledge, the most difficult.
+1. Race conditions. They are, to my knoledge, the most difficult.
 
-And also when you use a method that is still not supported by this crate. Please reffer to the docs to see, what endpoints are implemented in the latest release (or look at [server/routes](https://github.com/LasterAlex/teloxide_tests/tree/master/teloxide_tests/src/server/routes) files to look at the current endpoints)
+2. And also when you use a method that is still not supported by this crate. Please reffer to the docs to see, what endpoints are implemented in the latest release (or look at [server/routes](https://github.com/LasterAlex/teloxide_tests/tree/master/teloxide_tests/src/server/routes) files to look at the current endpoints)
+
+3. Maybe also the fact that the fake server actually checks the messages and files that are present, and it starts with a clean state. You can't just send a file by file_id or forward a message by an arbitrary message_id that was sent long ago, the bot wouldn't know what to do with it, so you need to separately add it by dispatching the bot with that update, so that it gets added as the user message to memory (you can change file_id and message_id in the mocked structs to anything you need).
 
 ### Some errors associated with these race conditions:
 
@@ -87,3 +89,7 @@ Please see [CONTRIBUTING.md](https://github.com/LasterAlex/teloxide_tests/blob/m
 - [x] Add tests to that bot
 - [x] Make it into a library
 - [x] Publish it when it is ready
+
+## Special thanks to
+
+The teloxide team! They made an absolutely incredible library with amazing internal documentation, which helped me a lot during development! It is an amazing project, and i'm happy i'm able to add to it something useful!

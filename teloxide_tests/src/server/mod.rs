@@ -7,7 +7,7 @@ use routes::{
     answer_callback_query::*, delete_message::*, download_file::download_file,
     edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*, get_file::*,
     pin_chat_message::*, send_document::*, send_message::*, send_photo::*, send_video::*,
-    unpin_all_chat_messages::*, unpin_chat_message::*,
+    unpin_all_chat_messages::*, unpin_chat_message::*, forward_message::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -65,6 +65,12 @@ pub struct EditedMessageReplyMarkup {
     pub bot_request: EditMessageReplyMarkupBody,
 }
 
+#[derive(Clone, Debug)]
+pub struct ForwardedMessage {
+    pub message: Message,
+    pub bot_request: ForwardMessageBody,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Responses {
     /// All of the sent messages, including text, photo, audio, etc.
@@ -102,6 +108,10 @@ pub struct Responses {
     /// The `.message` field has the deleted message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub deleted_messages: Vec<DeletedMessage>,
+    /// This has only the requests that were sent to the fake server to forward messages.
+    /// The `.message` field has the forwarded message, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub forwarded_messages: Vec<ForwardedMessage>,
     /// This has only the requests that were sent to the fake server to answer callback queries.
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
@@ -114,6 +124,9 @@ pub struct Responses {
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
     pub unpinned_chat_messages: Vec<UnpinChatMessageBody>,
+    /// This has only the requests that were sent to the fake server to unpin all messages.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
     pub unpinned_all_chat_messages: Vec<UnpinAllChatMessagesBody>,
 }
 
@@ -251,6 +264,7 @@ pub async fn main(port: Mutex<u16>) {
                         web::post().to(edit_message_reply_markup),
                     )
                     .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
+                    .route("/bot{token}/ForwardMessage", web::post().to(forward_message))
                     .route(
                         "/bot{token}/AnswerCallbackQuery",
                         web::post().to(answer_callback_query),
