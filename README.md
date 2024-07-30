@@ -14,25 +14,47 @@
   A crate that allows you to unit test your teloxide bots easily! No internet, accounts or anything required!
 </div>
 
+## What this crate has
+
+- Easy testing of handlers with access to raw bot requests (see [hello_world_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/hello_world_bot/src/main.rs))
+- Support of dependencies, changes of `me` and multiple updates (see [album_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/album_bot/src/main.rs))
+- Syntactic sugar and native support for storage, dialogue and states (see [calculator_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs))
+- Fake file getting and downloading (see [file_download_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs))
+- Ability to be used with databases (see [phrase_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/phrase_bot/src/main.rs))
+
+## Examples
+
+Simplified [[`hello_world_bot`]](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/hello_world_bot/src/main.rs)
+```rust,ignore
+#[tokio::test]
+async fn test_hello_world() {
+    let message = MockMessageText::new().text("Hi!");
+    let bot = MockBot::new(message, handler_tree());
+    // Sends the message as if it was from a user
+    bot.dispatch().await;  
+
+    let responses = bot.get_responses();
+    let message = responses
+        .sent_messages
+        .last()
+        .expect("No sent messages were detected!");
+    assert_eq!(message.text(), Some("Hello World!"));
+}
+```
 
 [[`file_download_bot`]](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs)
 ```rust,ignore
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText};
+#[tokio::test]
+async fn test_not_a_document() {
+    let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+    // Syntactic sugar
+    bot.dispatch_and_check_last_text("Not a document").await;
+}
 
-    #[tokio::test]
-    async fn test_not_a_document() {
-        let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
-        bot.dispatch_and_check_last_text("Not a document").await;
-    }
-
-    #[tokio::test]
-    async fn test_download_document_and_check() {
-        let bot = MockBot::new(MockMessageDocument::new(), handler_tree());
-        bot.dispatch_and_check_last_text("Downloaded!").await;
-    }
+#[tokio::test]
+async fn test_download_document_and_check() {
+    let bot = MockBot::new(MockMessageDocument::new(), handler_tree());
+    bot.dispatch_and_check_last_text("Downloaded!").await;
 }
 ```
 
@@ -57,6 +79,8 @@ async fn test_what_is_the_first_number() {
 
 You can see more useful examples at [examples/](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) and the docs at [docs.rs](https://docs.rs/teloxide_tests)
 
+It is highly reccomended you read at least [`hello_world_bot`](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/hello_world_bot/src/main.rs) (there is a lot of comments that explain how to use this crate which i removed in the README) and [`calculator_bot`](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs) (it teaches about the syntactic sugar and working with dialogue)
+
 ## How to implement it?
 
 Hopefully it is as easy as doing what happens in `./examples`
@@ -69,14 +93,6 @@ Hopefully it is as easy as doing what happens in `./examples`
 6. Do the testing with the gotten responces
 
 **Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or contact me via telegram [@laster_alex](https://t.me/laster_alex))
-
-## What this crate has
-
-- Easy testing of handlers with access to raw bot requests (see [hello_world_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/hello_world_bot/src/main.rs))
-- Support of dependencies, changes of `me` and multiple updates (see [album_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/album_bot/src/main.rs))
-- Syntactic sugar and native support for storage, dialogue and states (see [calculator_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs))
-- Fake file getting and downloading (see [file_download_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs))
-- Ability to be used with databases (see [phrase_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/phrase_bot/src/main.rs))
 
 ## Pitfalls
 
