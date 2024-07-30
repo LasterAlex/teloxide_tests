@@ -68,6 +68,7 @@
 //! - /SendVideo
 //! - /SendAudio
 //! - /SendVoice
+//! - /SendVideoNote
 //! - /PinChatMessage
 //! - /UnpinChatMessage
 //! - /UnpinAllChatMessages

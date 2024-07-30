@@ -116,6 +116,8 @@ pub enum AllCommands {
     #[command()]
     Voice,
     #[command()]
+    VideoNote,
+    #[command()]
     Document,
     #[command()]
     EditCaption,
@@ -181,6 +183,12 @@ async fn handler(
             bot.send_voice(msg.chat.id, voice)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
+                .reply_to_message_id(msg.id)
+                .await?;
+        }
+        AllCommands::VideoNote => {
+            let video_note = InputFile::memory("somedata".to_string()).file_name("test.mp4");
+            bot.send_video_note(msg.chat.id, video_note)
                 .reply_to_message_id(msg.id)
                 .await?;
         }
@@ -355,6 +363,22 @@ async fn test_send_voice() {
     assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
     assert_eq!(last_sent_voice.bot_request.file_name, "test.mp3");
     assert_eq!(last_sent_voice.bot_request.file_data, "somedata");
+}
+
+#[tokio::test]
+async fn test_send_video_note() {
+    let bot = MockBot::new(MockMessageText::new().text("/videonote"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_sent_video_note = bot.get_responses().sent_messages_video_note.pop().unwrap();
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/videonote")
+    );
+    assert_eq!(last_sent_video_note.bot_request.file_name, "test.mp4");
+    assert_eq!(last_sent_video_note.bot_request.file_data, "somedata");
 }
 
 #[tokio::test]
