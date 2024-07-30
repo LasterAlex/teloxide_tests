@@ -86,13 +86,15 @@ It is highly reccomended you read at least [`hello_world_bot`](https://github.co
 Hopefully it is as easy as doing what happens in `./examples`
 
 1. Import the `teloxide_tests`
-2. Create a mocked bot with something that can be turned into an update, like MockMessageText or MockMessagePhoto
-3. Add dependencies and/or a different bot using .dependencies(deps![]) and .me(MockedMe::new().build())
-4. Dispatch it with .dispatch().await
-5. Get the responces with .get_responces()
-6. Do the testing with the gotten responces
+2. Make your handler tree into a separate function (we are going to test it, after all)
+3. Create a mocked bot with something that can be turned into an update, like MockMessageText or MockMessagePhoto
+4. Add dependencies and/or a different bot using .dependencies(deps![]) and .me(MockedMe::new().build())
+5. Dispatch it with .dispatch().await
+6. Get the responces with .get_responces()
+7. Do the testing with the gotten responces
+8. If you want to re-use the current bot and state with a new update, just call .update(MockMessageText::new()) and follow from the 5th step!
 
-**Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or contact me via telegram [@laster_alex](https://t.me/laster_alex))
+**Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or write it in the telegram group [@teloxide_tests](https://t.me/teloxide_tests))
 
 ## Pitfalls
 
@@ -130,7 +132,7 @@ Please see [CONTRIBUTING.md](https://github.com/LasterAlex/teloxide_tests/blob/m
   - [ ] Add structs without a category (low priority)
 - [x] Add fake server
   - [x] Add most common endpoints
-  - [ ] Add all common messages (low priority)
+  - [ ] Add all common messages
   - [ ] Add inline queries (low priority)
   - [ ] Add all queries (low priority)
   - [ ] Add all messages (super low priority)

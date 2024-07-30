@@ -6,8 +6,9 @@ use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, copy_message::*, delete_message::*, download_file::download_file,
     edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*,
-    forward_message::*, get_file::*, pin_chat_message::*, send_document::*, send_message::*,
-    send_photo::*, send_video::*, unpin_all_chat_messages::*, unpin_chat_message::*,
+    forward_message::*, get_file::*, pin_chat_message::*, send_audio::*, send_document::*,
+    send_message::*, send_photo::*, send_video::*, unpin_all_chat_messages::*,
+    unpin_chat_message::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -33,6 +34,12 @@ pub struct SentMessagePhoto {
 pub struct SentMessageVideo {
     pub message: Message,
     pub bot_request: SendMessageVideoBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessageAudio {
+    pub message: Message,
+    pub bot_request: SendMessageAudioBody,
 }
 
 #[derive(Clone, Debug)]
@@ -97,6 +104,11 @@ pub struct Responses {
     /// The `.message` field has the sent by bot message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub sent_messages_video: Vec<SentMessageVideo>,
+
+    /// This has only messages that are audio messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub sent_messages_audio: Vec<SentMessageAudio>,
 
     /// This has only messages that are document messages, sent by the bot.
     /// The `.message` field has the sent by bot message, and `.bot_request`
@@ -274,6 +286,7 @@ pub async fn main(port: Mutex<u16>) {
                     .route("/bot{token}/SendMessage", web::post().to(send_message))
                     .route("/bot{token}/SendPhoto", web::post().to(send_photo))
                     .route("/bot{token}/SendVideo", web::post().to(send_video))
+                    .route("/bot{token}/SendAudio", web::post().to(send_audio))
                     .route("/bot{token}/SendDocument", web::post().to(send_document))
                     .route(
                         "/bot{token}/EditMessageText",

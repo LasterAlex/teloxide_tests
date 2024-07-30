@@ -112,6 +112,8 @@ pub enum AllCommands {
     #[command()]
     Video,
     #[command()]
+    Audio,
+    #[command()]
     Document,
     #[command()]
     EditCaption,
@@ -159,6 +161,14 @@ async fn handler(
         AllCommands::Video => {
             let video = InputFile::memory("somedata".to_string()).file_name("test.mp4");
             bot.send_video(msg.chat.id, video)
+                .caption("test")
+                .caption_entities(vec![MessageEntity::bold(0, 3)])
+                .reply_to_message_id(msg.id)
+                .await?;
+        }
+        AllCommands::Audio => {
+            let audio = InputFile::memory("somedata".to_string()).file_name("test.mp3");
+            bot.send_audio(msg.chat.id, audio)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
                 .reply_to_message_id(msg.id)
@@ -290,15 +300,33 @@ async fn test_send_video() {
     bot.dispatch().await;
 
     let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
-    let last_sent_photo = bot.get_responses().sent_messages_video.pop().unwrap();
+    let last_sent_video = bot.get_responses().sent_messages_video.pop().unwrap();
     assert_eq!(last_sent_message.caption(), Some("test"));
     assert_eq!(
         last_sent_message.reply_to_message().unwrap().text(),
         Some("/video")
     );
     assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
-    assert_eq!(last_sent_photo.bot_request.file_name, "test.mp4");
-    assert_eq!(last_sent_photo.bot_request.file_data, "somedata");
+    assert_eq!(last_sent_video.bot_request.file_name, "test.mp4");
+    assert_eq!(last_sent_video.bot_request.file_data, "somedata");
+}
+
+#[tokio::test]
+async fn test_send_audio() {
+    let bot = MockBot::new(MockMessageText::new().text("/audio"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_sent_audio = bot.get_responses().sent_messages_audio.pop().unwrap();
+    assert_eq!(last_sent_message.caption(), Some("test"));
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/audio")
+    );
+    assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
+    assert_eq!(last_sent_audio.bot_request.file_name, "test.mp3");
+    assert_eq!(last_sent_audio.bot_request.file_data, "somedata");
 }
 
 #[tokio::test]

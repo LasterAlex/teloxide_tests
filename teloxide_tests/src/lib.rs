@@ -48,7 +48,7 @@
 //! To run the tests, just run `cargo test` in the terminal! It's that easy! No internet connection required!
 //!
 //!
-//! I haven't seen telegram bot testing tools that are up to my standards (for any bot api wrapper, not just teloxide), 
+//! I haven't seen telegram bot testing tools that are up to my standards (for any bot api wrapper, not just teloxide),
 //! so I decided to write this. This crate tries to give as much tooling for testing as reasonably possible,
 //! while keeping it simple to work with and implement.
 //! The goal of this crate is to test most of the teloxide and telegram features. This crate is not yet
@@ -66,6 +66,7 @@
 //! - /SendDocument
 //! - /SendPhoto
 //! - /SendVideo
+//! - /SendAudio
 //! - /PinChatMessage
 //! - /UnpinChatMessage
 //! - /UnpinAllChatMessages
@@ -92,23 +93,23 @@
 //! If you see something that works in teloxide, but doesn't work in this crate, while it should
 //! (a missing endpoint doesn't qualify as a bug), please open an issue on the [GitHub repo!](https://github.com/LasterAlex/teloxide_tests)
 //! All feedback and suggestions are very welcome!
-//! You can contact me via telegram: [@laster_alex](https://t.me/laster_alex)
+//! Or you can write to the [@teloxide_tests](https://t.me/teloxide_tests) group!
 //!
 //! And huge thanks to the teloxide team, their code was amazing to work with! Without all of the
 //! code comments, i would've gone insane. The crate itself is also just amazing!
 //!
 //! To start, i recommend you look at the [[`examples github`]](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) folder
 //!
-//! Or MockBot struct documentation
+//! Or [MockBot struct documentation](https://docs.rs/teloxide_tests/latest/teloxide_tests/mock_bot/struct.MockBot.html)
 //!
-//! The only thing you need to change in your existing bots is to shift your dptree to some function, because the
+//! The only thing you need to change in your existing bots is to shift your dptree (handler tree) to some function, because the
 //! sole reason for this crates existance is to test that tree, and we need easy access to it!
 //! Just follow the examples!
 //!
 //! And try to not use the raw bot fields unless you know what you are doing! They are public only
 //! to give more options to those who seek it.
-//! 
-//! ## **!!! IMPORTANT !!!** 
+//!
+//! ## **!!! IMPORTANT !!!**
 //!
 //! If you want to use the database or
 //! something that is shared across all tests, DO IT __AFTER__ THE `MockBot::new()`!!!!!
@@ -116,16 +117,21 @@
 //! this bot becomes out of scope.
 //! If you encounter issues regarding this, try to manually add `drop(bot);` at the end of your
 //! tests!
-//! 
+//! Or use the [serial_test](https://crates.io/crates/serial_test) crate
+//!
 //! Please refer to the [phrase_bot example](https://github.com/LasterAlex/teloxide_tests/tree/master/examples/phrase_bot) for more information
 //!
-pub mod mock_bot;
+#![doc(
+    html_logo_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040",
+    html_favicon_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040"
+)]
 mod dataset;
+pub mod mock_bot;
 mod server;
 #[cfg(test)]
 mod tests;
 
-pub use mock_bot::MockBot;
-use teloxide_tests_macros as proc_macros;
 pub use dataset::*;
+pub use mock_bot::MockBot;
 pub use server::Responses;
+use teloxide_tests_macros as proc_macros;
