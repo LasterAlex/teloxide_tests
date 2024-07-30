@@ -19,11 +19,12 @@ pub mod edit_message_text;
 pub mod forward_message;
 pub mod get_file;
 pub mod pin_chat_message;
+pub mod send_audio;
 pub mod send_document;
 pub mod send_message;
 pub mod send_photo;
 pub mod send_video;
-pub mod send_audio;
+pub mod send_voice;
 pub mod unpin_all_chat_messages;
 pub mod unpin_chat_message;
 
