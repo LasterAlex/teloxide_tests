@@ -128,3 +128,4 @@ mod tests;
 pub use mock_bot::MockBot;
 use teloxide_tests_macros as proc_macros;
 pub use dataset::*;
+pub use server::Responses;
