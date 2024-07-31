@@ -6,10 +6,10 @@ use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, ban_chat_member::*, copy_message::*, delete_message::*,
     download_file::download_file, edit_message_caption::*, edit_message_reply_markup::*,
-    edit_message_text::*, forward_message::*, get_file::*, pin_chat_message::*, send_audio::*,
-    send_document::*, send_message::*, send_photo::*, send_video::*, send_video_note::*,
-    send_voice::*, unban_chat_member::*, unpin_all_chat_messages::*, unpin_chat_message::*,
-    restrict_chat_member::*,
+    edit_message_text::*, forward_message::*, get_file::*, pin_chat_message::*,
+    restrict_chat_member::*, send_audio::*, send_document::*, send_message::*, send_photo::*,
+    send_video::*, send_video_note::*, send_voice::*, unban_chat_member::*,
+    unpin_all_chat_messages::*, unpin_chat_message::*,
 };
 use serde::Serialize;
 use std::sync::{

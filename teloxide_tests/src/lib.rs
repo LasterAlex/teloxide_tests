@@ -74,6 +74,9 @@
 //! - /UnpinAllChatMessages
 //! - /ForwardMessage
 //! - /CopyMessage
+//! - /BanChatMember
+//! - /UnbanChatMember
+//! - /RestrictChatMember
 //!
 //! More endpoints will be added as time goes on!
 //!
