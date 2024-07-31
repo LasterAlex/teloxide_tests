@@ -4,10 +4,11 @@ use serde::{Deserialize, Serialize};
 use teloxide::dispatching::{HandlerExt, UpdateHandler};
 use teloxide::dptree::case;
 use teloxide::net::Download;
-use teloxide::payloads::CopyMessageSetters;
+use teloxide::payloads::{BanChatMemberSetters, CopyMessageSetters};
 use teloxide::requests::Requester;
 use teloxide::types::{
-    InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, MessageEntity, Update,
+    ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, MessageEntity,
+    Update,
 };
 use teloxide::{
     dispatching::{
@@ -127,6 +128,10 @@ pub enum AllCommands {
     ForwardMessage,
     #[command()]
     CopyMessage,
+    #[command()]
+    Ban,
+    #[command()]
+    Restrict,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -240,6 +245,24 @@ async fn handler(
                     InlineKeyboardButton::callback("test", "test"),
                 ]]))
                 .await?;
+        }
+        AllCommands::Ban => {
+            bot.ban_chat_member(msg.chat.id, msg.from().unwrap().id)
+                .revoke_messages(true)
+                .await?;
+            // Test revoking messages
+            let result = bot.delete_message(msg.chat.id, sent_message.id).await;
+            assert!(result.is_err());
+            bot.unban_chat_member(msg.chat.id, msg.from().unwrap().id)
+                .await?;
+        }
+        AllCommands::Restrict => {
+            bot.restrict_chat_member(
+                msg.chat.id,
+                msg.from().unwrap().id,
+                ChatPermissions::empty(),
+            )
+            .await?;
         }
     }
     Ok(())
@@ -525,4 +548,31 @@ async fn test_copy_message() {
         last_sent_message.reply_markup().unwrap().inline_keyboard[0][0].text,
         "test"
     );
+}
+
+#[tokio::test]
+async fn test_ban_and_unban() {
+    let bot = MockBot::new(MockMessageText::new().text("/ban"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let banned_user = responses.banned_chat_members.last().unwrap();
+    let unbanned_user = responses.unbanned_chat_members.last().unwrap();
+
+    assert_eq!(banned_user.user_id, MockUser::ID);
+    assert_eq!(unbanned_user.user_id, MockUser::ID);
+}
+
+#[tokio::test]
+async fn test_restrict() {
+    let bot = MockBot::new(MockMessageText::new().text("/restrict"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let restricted_user = responses.restricted_chat_members.last().unwrap();
+
+    assert_eq!(restricted_user.user_id, MockUser::ID);
+    assert_eq!(restricted_user.permissions, ChatPermissions::empty());
 }

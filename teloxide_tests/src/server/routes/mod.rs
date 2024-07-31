@@ -10,6 +10,7 @@ use serde_json::json;
 use teloxide::types::Chat;
 
 pub mod answer_callback_query;
+pub mod ban_chat_member;
 pub mod copy_message;
 pub mod delete_message;
 pub mod download_file;
@@ -19,16 +20,20 @@ pub mod edit_message_text;
 pub mod forward_message;
 pub mod get_file;
 pub mod pin_chat_message;
+pub mod restrict_chat_member;
 pub mod send_audio;
 pub mod send_document;
 pub mod send_message;
 pub mod send_photo;
 pub mod send_video;
-pub mod send_voice;
 pub mod send_video_note;
+pub mod send_voice;
+pub mod unban_chat_member;
 pub mod unpin_all_chat_messages;
 pub mod unpin_chat_message;
 
+/// Telegram accepts both `i64` and `String` for chat_id,
+/// so it is a wrapper for both
 #[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum BodyChatId {
@@ -37,6 +42,7 @@ pub enum BodyChatId {
 }
 
 impl BodyChatId {
+    /// Returns the ID of the chat
     pub fn id(&self) -> i64 {
         match self {
             BodyChatId::Text(_) => 123456789,
@@ -44,6 +50,7 @@ impl BodyChatId {
         }
     }
 
+    /// Returns the chat
     pub fn chat(&self) -> Chat {
         let chat_id: i64 = self.id();
         if chat_id < 0 {

@@ -4,11 +4,12 @@ use actix_web::{dev::ServerHandle, web, App, HttpResponse, HttpServer, Responder
 use actix_web_lab::extract::Path;
 use lazy_static::lazy_static;
 use routes::{
-    answer_callback_query::*, copy_message::*, delete_message::*, download_file::download_file,
-    edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*,
-    forward_message::*, get_file::*, pin_chat_message::*, send_audio::*, send_document::*,
-    send_message::*, send_photo::*, send_video::*, send_voice::*, unpin_all_chat_messages::*,
-    unpin_chat_message::*, send_video_note::*
+    answer_callback_query::*, ban_chat_member::*, copy_message::*, delete_message::*,
+    download_file::download_file, edit_message_caption::*, edit_message_reply_markup::*,
+    edit_message_text::*, forward_message::*, get_file::*, pin_chat_message::*, send_audio::*,
+    send_document::*, send_message::*, send_photo::*, send_video::*, send_video_note::*,
+    send_voice::*, unban_chat_member::*, unpin_all_chat_messages::*, unpin_chat_message::*,
+    restrict_chat_member::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -186,6 +187,21 @@ pub struct Responses {
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
     pub unpinned_all_chat_messages: Vec<UnpinAllChatMessagesBody>,
+
+    /// This has only the requests that were sent to the fake server to ban chat members.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
+    pub banned_chat_members: Vec<BanChatMemberBody>,
+
+    /// This has only the requests that were sent to the fake server to unban chat members.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
+    pub unbanned_chat_members: Vec<UnbanChatMemberBody>,
+
+    /// This has only the requests that were sent to the fake server to restrict chat members.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
+    pub restricted_chat_members: Vec<RestrictChatMemberBody>,
 }
 
 lazy_static! {
@@ -300,7 +316,7 @@ pub async fn main(port: Mutex<u16>) {
 
             move || {
                 App::new()
-                    // .wrap(Logger::default())
+                    // .wrap(actix_web::middleware::Logger::default())
                     .app_data(stop_handle.clone())
                     .route("/ping", web::get().to(ping))
                     .route("/stop/{graceful}", web::post().to(stop))
@@ -345,6 +361,15 @@ pub async fn main(port: Mutex<u16>) {
                     .route(
                         "/bot{token}/UnpinAllChatMessages",
                         web::post().to(unpin_all_chat_messages),
+                    )
+                    .route("/bot{token}/BanChatMember", web::post().to(ban_chat_member))
+                    .route(
+                        "/bot{token}/UnbanChatMember",
+                        web::post().to(unban_chat_member),
+                    )
+                    .route(
+                        "/bot{token}/RestrictChatMember",
+                        web::post().to(restrict_chat_member),
                     )
                     .route("/file/bot{token}/{file_name}", web::get().to(download_file))
             }
