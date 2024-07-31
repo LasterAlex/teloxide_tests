@@ -20,4 +20,3 @@ pub async fn unban_chat_member(body: web::Json<UnbanChatMemberBody>) -> impl Res
 
     make_telegram_result(true)
 }
-

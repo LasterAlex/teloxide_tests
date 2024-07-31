@@ -16,7 +16,7 @@ use std::sync::{
     atomic::{AtomicI32, Ordering},
     Mutex,
 };
-use teloxide::types::{File, Message, MessageId, ReplyMarkup};
+use teloxide::types::{File, Me, Message, MessageId, ReplyMarkup};
 
 #[derive(Clone, Debug)]
 pub struct SentMessageText {
@@ -296,7 +296,7 @@ async fn stop(Path(graceful): Path<bool>, stop_handle: web::Data<StopHandle>) ->
     HttpResponse::NoContent().finish()
 }
 
-pub async fn main(port: Mutex<u16>) {
+pub async fn main(port: Mutex<u16>, me: Me) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
@@ -318,6 +318,7 @@ pub async fn main(port: Mutex<u16>) {
                 App::new()
                     // .wrap(actix_web::middleware::Logger::default())
                     .app_data(stop_handle.clone())
+                    .app_data(web::Data::new(me.clone()))
                     .route("/ping", web::get().to(ping))
                     .route("/stop/{graceful}", web::post().to(stop))
                     .route("/bot{token}/GetFile", web::post().to(get_file))

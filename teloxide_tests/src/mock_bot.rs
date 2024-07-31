@@ -314,7 +314,7 @@ impl MockBot {
             }
         }
 
-        let server = tokio::spawn(server::main(Self::PORT)); // This starts the server in the background
+        let server = tokio::spawn(server::main(Self::PORT, self.me.lock().unwrap().clone())); // This starts the server in the background
 
         let mut left_tries = 200;
         while reqwest::get(format!(

@@ -3,7 +3,7 @@ use actix_web::{web, Responder};
 use serde::Deserialize;
 use serde_json::json;
 use teloxide::types::{
-    MediaAnimation, MediaAudio, MediaDocument, MediaKind, MediaPhoto, MediaVideo, MediaVoice,
+    Me, MediaAnimation, MediaAudio, MediaDocument, MediaKind, MediaPhoto, MediaVideo, MediaVoice,
     MessageEntity, MessageId, MessageKind, ParseMode, ReplyMarkup,
 };
 
@@ -27,7 +27,7 @@ pub struct CopyMessageBody {
     pub reply_markup: Option<ReplyMarkup>,
 }
 
-pub async fn copy_message(body: web::Json<CopyMessageBody>) -> impl Responder {
+pub async fn copy_message(body: web::Json<CopyMessageBody>, me: web::Data<Me>) -> impl Responder {
     let chat = body.chat_id.chat();
     check_if_message_exists!(body.message_id);
     let mut message = MESSAGES.get_message(body.message_id).unwrap();
@@ -35,6 +35,7 @@ pub async fn copy_message(body: web::Json<CopyMessageBody>) -> impl Responder {
 
     if let MessageKind::Common(ref mut common) = message.kind {
         common.forward = None;
+        common.from = Some(me.user.clone());
         match common.media_kind {
             MediaKind::Animation(MediaAnimation {
                 ref mut caption,

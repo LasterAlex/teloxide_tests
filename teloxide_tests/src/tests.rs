@@ -251,7 +251,7 @@ async fn handler(
                 .revoke_messages(true)
                 .await?;
             // Test revoking messages
-            let result = bot.delete_message(msg.chat.id, sent_message.id).await;
+            let result = bot.delete_message(msg.chat.id, msg.id).await;
             assert!(result.is_err());
             bot.unban_chat_member(msg.chat.id, msg.from().unwrap().id)
                 .await?;

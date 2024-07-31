@@ -1,8 +1,8 @@
+use crate::dataset::message_common::MockMessageText;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
-use crate::dataset::message_common::MockMessageText;
 use serde::Deserialize;
-use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup};
 
 use crate::server::{routes::check_if_message_exists, SentMessageText, MESSAGES, RESPONSES};
 
@@ -23,10 +23,14 @@ pub struct SendMessageTextBody {
     pub reply_to_message_id: Option<i32>,
 }
 
-pub async fn send_message(body: web::Json<SendMessageTextBody>) -> impl Responder {
+pub async fn send_message(
+    body: web::Json<SendMessageTextBody>,
+    me: web::Data<Me>,
+) -> impl Responder {
     let chat = body.chat_id.chat();
     let mut message = // Creates the message, which will be mutated to fit the needed shape
         MockMessageText::new().text(&body.text).chat(chat);
+    message.from = Some(me.user.clone());
 
     message.entities = body.entities.clone().unwrap_or_default();
     if let Some(id) = body.reply_to_message_id {

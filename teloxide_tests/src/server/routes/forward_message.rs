@@ -1,7 +1,7 @@
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
-use teloxide::types::{ChatKind, Forward, ForwardedFrom, MessageId, MessageKind};
+use teloxide::types::{ChatKind, Forward, ForwardedFrom, Me, MessageId, MessageKind};
 
 use crate::server::ForwardedMessage;
 use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
@@ -18,7 +18,10 @@ pub struct ForwardMessageBody {
     pub protect_content: Option<bool>,
 }
 
-pub async fn forward_message(body: web::Json<ForwardMessageBody>) -> impl Responder {
+pub async fn forward_message(
+    body: web::Json<ForwardMessageBody>,
+    me: web::Data<Me>,
+) -> impl Responder {
     check_if_message_exists!(body.message_id);
     let mut message = MESSAGES.get_message(body.message_id).unwrap();
 
@@ -48,7 +51,8 @@ pub async fn forward_message(body: web::Json<ForwardMessageBody>) -> impl Respon
                 },
                 ChatKind::Public(_) => ForwardedFrom::Chat(message_clone.chat.clone()),
             },
-        })
+        });
+        common.from = Some(me.user.clone());
     }
 
     let last_id = MESSAGES.max_message_id();

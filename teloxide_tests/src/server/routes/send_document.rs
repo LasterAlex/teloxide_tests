@@ -2,21 +2,23 @@ use crate::server::routes::{FileType, SerializeRawFields};
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use actix_multipart::Multipart;
-use actix_web::error::ErrorBadRequest;
-use actix_web::Responder;
 use crate::dataset::MockMessageDocument;
-use mime::Mime;
 use crate::proc_macros::SerializeRawFields;
+use actix_multipart::Multipart;
+use actix_web::Responder;
+use actix_web::{error::ErrorBadRequest, web};
+use mime::Mime;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
-use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::server::{routes::check_if_message_exists, SentMessageDocument, FILES, MESSAGES, RESPONSES};
+use crate::server::{
+    routes::check_if_message_exists, SentMessageDocument, FILES, MESSAGES, RESPONSES,
+};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
-pub async fn send_document(mut payload: Multipart) -> impl Responder {
+pub async fn send_document(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body =
         SendMessageDocumentBody::serialize_raw_fields(&fields, &attachments, FileType::Document)
@@ -25,6 +27,7 @@ pub async fn send_document(mut payload: Multipart) -> impl Responder {
 
     let mut message = // Creates the message, which will be mutated to fit the needed shape
         MockMessageDocument::new().chat(chat);
+    message.from = Some(me.user.clone());
     message.caption = body.caption.clone();
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
 

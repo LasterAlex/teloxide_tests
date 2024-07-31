@@ -9,10 +9,10 @@ pub mod chat;
 pub mod message;
 pub mod message_common;
 pub mod queries;
-use teloxide_tests_macros as proc_macros;
 pub use chat::*;
 pub use message_common::*;
 pub use queries::*;
+use teloxide_tests_macros as proc_macros;
 #[cfg(test)]
 mod tests;
 
@@ -116,7 +116,7 @@ pub struct MockMe {
 }
 
 impl MockMe {
-    pub const ID: u64 = 12345678;
+    pub const ID: u64 = 123456;
     pub const IS_BOT: bool = true;
     pub const FIRST_NAME: &'static str = "Test";
     pub const LAST_NAME: &'static str = "Bot";

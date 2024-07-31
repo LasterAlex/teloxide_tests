@@ -19,9 +19,9 @@ pub struct RestrictChatMemberBody {
 pub async fn restrict_chat_member(body: web::Json<RestrictChatMemberBody>) -> impl Responder {
     // Idk what to verify here
     let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.restricted_chat_members.push(body.into_inner());
+    responses_lock
+        .restricted_chat_members
+        .push(body.into_inner());
 
     make_telegram_result(true)
 }
-
-

@@ -1,9 +1,9 @@
 // #[macro_export]
 macro_rules! Message {
     (
-        #[derive($($derive:meta),*)] 
-        $pub:vis struct $name:ident { 
-            $($fpub:vis $field:ident : $type:ty,)* 
+        #[derive($($derive:meta),*)]
+        $pub:vis struct $name:ident {
+            $($fpub:vis $field:ident : $type:ty,)*
         }
     ) => {
         #[derive($($derive),*)]

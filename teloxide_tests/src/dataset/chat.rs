@@ -8,9 +8,9 @@ use super::MockUser;
 
 macro_rules! Chat {
     (
-        #[derive($($derive:meta),*)] 
-        $pub:vis struct $name:ident { 
-            $($fpub:vis $field:ident : $type:ty,)* 
+        #[derive($($derive:meta),*)]
+        $pub:vis struct $name:ident {
+            $($fpub:vis $field:ident : $type:ty,)*
         }
     ) => {
         #[derive($($derive),*)]
@@ -57,9 +57,9 @@ macro_rules! Chat {
 
 macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat myself
     (
-        #[derive($($derive:meta),*)] 
-        $pub:vis struct $name:ident { 
-            $($fpub:vis $field:ident : $type:ty,)* 
+        #[derive($($derive:meta),*)]
+        $pub:vis struct $name:ident {
+            $($fpub:vis $field:ident : $type:ty,)*
         }
     ) => {
         Chat! {

@@ -1,10 +1,10 @@
-use core::sync::atomic::{AtomicI32, Ordering};
-use super::{MockLocation, MockPhotoSize, MockVideo};
 use super::message::Message;
 use super::{chat::MockPrivateChat, MockUser};
-use chrono::{DateTime, Utc};
-use mime::Mime;
+use super::{MockLocation, MockPhotoSize, MockVideo};
 use crate::proc_macros::Changeable;
+use chrono::{DateTime, Utc};
+use core::sync::atomic::{AtomicI32, Ordering};
+use mime::Mime;
 use teloxide::types::*;
 
 macro_rules! MessageCommon {  // Rust was supposed to be used withot inheritance, and yet here i am, reinventing it...

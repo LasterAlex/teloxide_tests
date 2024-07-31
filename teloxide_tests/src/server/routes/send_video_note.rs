@@ -2,29 +2,32 @@ use crate::{
     server::{
         routes::{FileType, SerializeRawFields},
         SentMessageVideoNote,
-    }, MockMessageVideoNote
+    },
+    MockMessageVideoNote,
 };
 use std::collections::HashMap;
 
 use crate::proc_macros::SerializeRawFields;
 use actix_multipart::Multipart;
-use actix_web::error::ErrorBadRequest;
 use actix_web::Responder;
+use actix_web::{error::ErrorBadRequest, web};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
-use teloxide::types::ReplyMarkup;
+use teloxide::types::{Me, ReplyMarkup};
 
 use crate::server::{routes::check_if_message_exists, FILES, MESSAGES, RESPONSES};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
-pub async fn send_video_note(mut payload: Multipart) -> impl Responder {
+pub async fn send_video_note(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body =
-        SendMessageVideoNoteBody::serialize_raw_fields(&fields, &attachments, FileType::Voice).unwrap();
+        SendMessageVideoNoteBody::serialize_raw_fields(&fields, &attachments, FileType::Voice)
+            .unwrap();
     let chat = body.chat_id.chat();
 
     let mut message = MockMessageVideoNote::new().chat(chat.clone());
+    message.from = Some(me.user.clone());
 
     if let Some(id) = body.reply_to_message_id {
         check_if_message_exists!(id);
@@ -52,10 +55,12 @@ pub async fn send_video_note(mut payload: Multipart) -> impl Responder {
     });
     let mut responses_lock = RESPONSES.lock().unwrap();
     responses_lock.sent_messages.push(message.clone());
-    responses_lock.sent_messages_video_note.push(SentMessageVideoNote {
-        message: message.clone(),
-        bot_request: body,
-    });
+    responses_lock
+        .sent_messages_video_note
+        .push(SentMessageVideoNote {
+            message: message.clone(),
+            bot_request: body,
+        });
 
     make_telegram_result(message)
 }
@@ -74,4 +79,3 @@ pub struct SendMessageVideoNoteBody {
     pub reply_to_message_id: Option<i32>,
     pub reply_markup: Option<ReplyMarkup>,
 }
-
