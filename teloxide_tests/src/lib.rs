@@ -73,6 +73,9 @@
 //! - /SendLocation
 //! - /SendVenue
 //! - /SendContact
+//! - /SendDice
+//! - /SendPoll
+//! - /SendSticker
 //! - /SendChatAction
 //! - /SendMediaGroup
 //! - /PinChatMessage

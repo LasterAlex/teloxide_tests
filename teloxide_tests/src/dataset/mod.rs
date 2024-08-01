@@ -12,6 +12,7 @@ pub mod queries;
 pub use chat::*;
 pub use message_common::*;
 pub use queries::*;
+pub use message::*;
 use teloxide_tests_macros as proc_macros;
 #[cfg(test)]
 mod tests;

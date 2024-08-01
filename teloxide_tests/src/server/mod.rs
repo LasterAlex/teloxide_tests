@@ -7,10 +7,11 @@ use routes::{
     answer_callback_query::*, ban_chat_member::*, copy_message::*, delete_message::*,
     download_file::download_file, edit_message_caption::*, edit_message_reply_markup::*,
     edit_message_text::*, forward_message::*, get_file::*, pin_chat_message::*,
-    restrict_chat_member::*, send_animation::*, send_audio::*, send_document::*, send_message::*,
-    send_photo::*, send_video::*, send_video_note::*, send_voice::*, unban_chat_member::*,
-    unpin_all_chat_messages::*, unpin_chat_message::*, send_media_group::*, send_location::*,
-    send_venue::*, send_chat_action::*, send_contact::*,
+    restrict_chat_member::*, send_animation::*, send_audio::*, send_chat_action::*,
+    send_contact::*, send_dice::*, send_document::*, send_location::*, send_media_group::*,
+    send_message::*, send_photo::*, send_poll::*, send_sticker::*, send_venue::*, send_video::*,
+    send_video_note::*, send_voice::*, unban_chat_member::*, unpin_all_chat_messages::*,
+    unpin_chat_message::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -84,6 +85,24 @@ pub struct SentMessageVenue {
 pub struct SentMessageContact {
     pub message: Message,
     pub bot_request: SendMessageContactBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessageDice {
+    pub message: Message,
+    pub bot_request: SendMessageDiceBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessagePoll {
+    pub message: Message,
+    pub bot_request: SendMessagePollBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessageSticker {
+    pub message: Message,
+    pub bot_request: SendMessageStickerBody,
 }
 
 #[derive(Clone, Debug)]
@@ -189,6 +208,21 @@ pub struct Responses {
     /// has the request that was sent to the fake server
     pub sent_messages_contact: Vec<SentMessageContact>,
 
+    /// This has only messages that are dice messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub sent_messages_dice: Vec<SentMessageDice>,
+
+    /// This has only messages that are poll messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub sent_messages_poll: Vec<SentMessagePoll>,
+
+    /// This has only messages that are stickers, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub sent_messages_sticker: Vec<SentMessageSticker>,
+
     /// This has only messages that are media group messages, sent by the bot.
     /// The `.messages` field has the sent by bot messages, and `.bot_request`
     /// has the request that was sent to the fake server
@@ -258,7 +292,7 @@ pub struct Responses {
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
     pub restricted_chat_members: Vec<RestrictChatMemberBody>,
-    
+
     /// This has only the requests that were sent to the fake server to send chat actions.
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
@@ -394,8 +428,17 @@ pub async fn main(port: Mutex<u16>, me: Me) {
                     .route("/bot{token}/SendLocation", web::post().to(send_location))
                     .route("/bot{token}/SendVenue", web::post().to(send_venue))
                     .route("/bot{token}/SendContact", web::post().to(send_contact))
-                    .route("/bot{token}/SendChatAction", web::post().to(send_chat_action))
-                    .route("/bot{token}/SendMediaGroup", web::post().to(send_media_group))
+                    .route("/bot{token}/SendSticker", web::post().to(send_sticker))
+                    .route(
+                        "/bot{token}/SendChatAction",
+                        web::post().to(send_chat_action),
+                    )
+                    .route("/bot{token}/SendDice", web::post().to(send_dice))
+                    .route("/bot{token}/SendPoll", web::post().to(send_poll))
+                    .route(
+                        "/bot{token}/SendMediaGroup",
+                        web::post().to(send_media_group),
+                    )
                     .route(
                         "/bot{token}/EditMessageText",
                         web::post().to(edit_message_text),

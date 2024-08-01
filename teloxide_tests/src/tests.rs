@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 use teloxide::dispatching::{HandlerExt, UpdateHandler};
 use teloxide::dptree::case;
 use teloxide::net::Download;
-use teloxide::payloads::{BanChatMemberSetters, CopyMessageSetters};
+use teloxide::payloads::{BanChatMemberSetters, CopyMessageSetters, SendPollSetters};
 use teloxide::requests::Requester;
 use teloxide::types::{
-    ChatAction, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia,
-    InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message, MessageEntity,
-    Update,
+    ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile,
+    InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message,
+    MessageEntity, PollOption, PollType, Update,
 };
 use teloxide::{
     dispatching::{
@@ -129,6 +129,12 @@ pub enum AllCommands {
     Venue,
     #[command()]
     Contact,
+    #[command()]
+    Dice,
+    #[command()]
+    Poll,
+    #[command()]
+    Sticker,
     #[command()]
     MediaGroup,
     #[command()]
@@ -257,6 +263,27 @@ async fn handler(
         AllCommands::Contact => {
             bot.send_contact(msg.chat.id, "123456789", "test")
                 .reply_to_message_id(msg.id)
+                .await?;
+        }
+        AllCommands::Dice => {
+            bot.send_dice(msg.chat.id).await?;
+        }
+        AllCommands::Poll => {
+            bot.send_poll(
+                msg.chat.id,
+                "what is test",
+                vec!["test".to_string(), "not test".to_string()],
+            )
+            .type_(PollType::Quiz)
+            .reply_to_message_id(msg.id)
+            .explanation("because test")
+            .correct_option_id(0)
+            .await?;
+        }
+        AllCommands::Sticker => {
+            let sticker = InputFile::memory("somedata".to_string()).file_name("test.webp");
+            bot.send_sticker(msg.chat.id, sticker)
+                .reply_to_message_id(msg.id.0)
                 .await?;
         }
         AllCommands::MediaGroup => {
@@ -675,8 +702,72 @@ async fn test_send_contact() {
         last_sent_message.reply_to_message().unwrap().text(),
         Some("/contact")
     );
-    assert_eq!(last_sent_message.contact().unwrap().phone_number, "123456789");
+    assert_eq!(
+        last_sent_message.contact().unwrap().phone_number,
+        "123456789"
+    );
     assert_eq!(last_sent_message.contact().unwrap().first_name, "test");
+}
+
+#[tokio::test]
+async fn test_send_dice() {
+    let bot = MockBot::new(MockMessageText::new().text("/dice"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_contact = bot.get_responses().sent_messages_dice.pop().unwrap();
+    let last_sent_message = last_sent_contact.message;
+    assert_eq!(last_sent_message.dice().unwrap().emoji, DiceEmoji::Dice);
+    assert!(last_sent_message.dice().unwrap().value < 100);
+}
+
+#[tokio::test]
+async fn test_send_poll() {
+    let bot = MockBot::new(MockMessageText::new().text("/poll"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_contact = bot.get_responses().sent_messages_poll.pop().unwrap();
+    let last_sent_message = last_sent_contact.message;
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/poll")
+    );
+    assert_eq!(last_sent_message.poll().unwrap().question, "what is test");
+    assert_eq!(
+        last_sent_message.poll().unwrap().options,
+        vec![
+            PollOption {
+                text: "test".to_string(),
+                voter_count: 0
+            },
+            PollOption {
+                text: "not test".to_string(),
+                voter_count: 0
+            }
+        ],
+    );
+    assert_eq!(
+        last_sent_message.poll().unwrap().explanation,
+        Some("because test".to_string())
+    );
+    assert_eq!(last_sent_message.poll().unwrap().poll_type, PollType::Quiz);
+    assert_eq!(last_sent_message.poll().unwrap().correct_option_id, Some(0));
+}
+
+#[tokio::test]
+async fn test_send_sticker() {
+    let bot = MockBot::new(MockMessageText::new().text("/sticker"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_contact = bot.get_responses().sent_messages_sticker.pop().unwrap();
+    let last_sent_message = last_sent_contact.message;
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/sticker")
+    );
+    assert_eq!(last_sent_message.sticker().unwrap().emoji, None);
 }
 
 #[tokio::test]

@@ -1,4 +1,9 @@
-// #[macro_export]
+use super::chat::MockPrivateChat;
+use crate::proc_macros::Changeable;
+use chrono::{DateTime, Utc};
+use core::sync::atomic::{AtomicI32, Ordering};
+use teloxide::types::*;
+
 macro_rules! Message {
     (
         #[derive($($derive:meta),*)]
@@ -67,3 +72,48 @@ macro_rules! Message {
 pub(crate) use Message;
 
 // More messages like Webapp data is needed
+
+Message! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageDice {
+        pub value: i32,
+        pub emoji: DiceEmoji,
+    }
+}
+
+impl MockMessageDice {
+    pub const VALUE: i32 = 1;
+    pub const EMOJI: DiceEmoji = DiceEmoji::Dice;
+
+    /// Creates a new easily changable message dice builder
+    ///
+    /// # Example
+    /// ```
+    /// let message = teloxide_tests::MockMessageDice::new()
+    ///     .value(2)
+    ///     .build();
+    /// assert_eq!(message.dice().unwrap().value, 2);
+    /// ```
+    ///
+    pub fn new() -> Self {
+        Self::new_message(Self::VALUE, Self::EMOJI)
+    }
+
+    /// Builds the message dice
+    ///
+    /// # Example
+    /// ```
+    /// let mock_message = teloxide_tests::MockMessageDice::new();
+    /// let message = mock_message.build();
+    /// assert_eq!(message.dice().unwrap().emoji, teloxide_tests::MockMessageDice::EMOJI);  // EMOJI is a default value
+    /// ```
+    ///
+    pub fn build(self) -> Message {
+        self.clone().build_message(MessageKind::Dice(MessageDice {
+            dice: Dice {
+                emoji: self.emoji,
+                value: self.value,
+            },
+        }))
+    }
+}

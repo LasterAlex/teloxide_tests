@@ -132,7 +132,7 @@ Please see [CONTRIBUTING.md](https://github.com/LasterAlex/teloxide_tests/blob/m
   - [ ] Add structs without a category (low priority)
 - [x] Add fake server
   - [x] Add most common endpoints
-  - [ ] Add all common messages
+  - [x] Add all common messages
   - [ ] Add inline queries (low priority)
   - [ ] Add all queries (low priority)
   - [ ] Add all messages (super low priority)
