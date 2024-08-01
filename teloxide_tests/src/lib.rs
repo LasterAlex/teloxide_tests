@@ -72,6 +72,8 @@
 //! - /SendAnimation
 //! - /SendLocation
 //! - /SendVenue
+//! - /SendContact
+//! - /SendChatAction
 //! - /SendMediaGroup
 //! - /PinChatMessage
 //! - /UnpinChatMessage

@@ -75,6 +75,7 @@ pub async fn copy_message(body: web::Json<CopyMessageBody>, me: web::Data<Me>) -
         if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
             common.reply_markup = Some(markup);
         }
+        common.has_protected_content = body.protect_content.unwrap_or(false);
     }
 
     let last_id = MESSAGES.max_message_id();

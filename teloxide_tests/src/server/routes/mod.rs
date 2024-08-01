@@ -24,6 +24,8 @@ pub mod pin_chat_message;
 pub mod restrict_chat_member;
 pub mod send_animation;
 pub mod send_audio;
+pub mod send_chat_action;
+pub mod send_contact;
 pub mod send_document;
 pub mod send_location;
 pub mod send_media_group;

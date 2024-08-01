@@ -28,6 +28,7 @@ pub async fn send_animation(mut payload: Multipart, me: web::Data<Me>) -> impl R
     let mut message = // Creates the message, which will be mutated to fit the needed shape
         MockMessageAnimation::new().chat(chat);
     message.from = Some(me.user.clone());
+    message.has_protected_content = body.protect_content.unwrap_or(false);
     message.caption = body.caption.clone();
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
     message.has_media_spoiler = body.has_spoiler.unwrap_or_default();

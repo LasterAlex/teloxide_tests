@@ -29,6 +29,7 @@ pub async fn send_video_note(mut payload: Multipart, me: web::Data<Me>) -> impl 
 
     let mut message = MockMessageVideoNote::new().chat(chat.clone());
     message.from = Some(me.user.clone());
+    message.has_protected_content = body.protect_content.unwrap_or(false);
 
     if let Some(id) = body.reply_to_message_id {
         check_if_message_exists!(id);

@@ -52,6 +52,7 @@ pub async fn send_document(mut payload: Multipart, me: web::Data<Me>) -> impl Re
             .first()
             .unwrap_or(Mime::from_str("text/plain").unwrap()),
     );
+    message.has_protected_content = body.protect_content.unwrap_or(false);
 
     let last_id = MESSAGES.max_message_id();
     let message = MESSAGES.add_message(message.id(last_id + 1).build());

@@ -38,6 +38,7 @@ pub async fn send_location(
     message.live_period = body.live_period;
     message.heading = body.heading;
     message.proximity_alert_radius = body.proximity_alert_radius;
+    message.has_protected_content = body.protect_content.unwrap_or(false);
 
     if let Some(id) = body.reply_to_message_id {
         check_if_message_exists!(id);

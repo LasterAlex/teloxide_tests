@@ -31,6 +31,7 @@ pub async fn send_message(
     let mut message = // Creates the message, which will be mutated to fit the needed shape
         MockMessageText::new().text(&body.text).chat(chat);
     message.from = Some(me.user.clone());
+    message.has_protected_content = body.protect_content.unwrap_or(false);
 
     message.entities = body.entities.clone().unwrap_or_default();
     if let Some(id) = body.reply_to_message_id {

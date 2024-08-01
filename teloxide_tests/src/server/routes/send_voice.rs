@@ -29,6 +29,7 @@ pub async fn send_voice(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
 
     let mut message = MockMessageVoice::new().chat(chat.clone());
     message.from = Some(me.user.clone());
+    message.has_protected_content = body.protect_content.unwrap_or(false);
     message.caption = body.caption.clone();
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
 

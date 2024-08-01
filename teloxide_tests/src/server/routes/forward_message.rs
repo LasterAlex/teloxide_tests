@@ -53,6 +53,7 @@ pub async fn forward_message(
             },
         });
         common.from = Some(me.user.clone());
+        common.has_protected_content = body.protect_content.unwrap_or(false);
     }
 
     let last_id = MESSAGES.max_message_id();

@@ -7,7 +7,9 @@ use teloxide::net::Download;
 use teloxide::payloads::{BanChatMemberSetters, CopyMessageSetters};
 use teloxide::requests::Requester;
 use teloxide::types::{
-    ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message, MessageEntity, Update
+    ChatAction, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia,
+    InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message, MessageEntity,
+    Update,
 };
 use teloxide::{
     dispatching::{
@@ -126,6 +128,8 @@ pub enum AllCommands {
     #[command()]
     Venue,
     #[command()]
+    Contact,
+    #[command()]
     MediaGroup,
     #[command()]
     EditCaption,
@@ -139,6 +143,8 @@ pub enum AllCommands {
     Ban,
     #[command()]
     Restrict,
+    #[command()]
+    ChatAction,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -248,6 +254,11 @@ async fn handler(
                 .reply_to_message_id(msg.id)
                 .await?;
         }
+        AllCommands::Contact => {
+            bot.send_contact(msg.chat.id, "123456789", "test")
+                .reply_to_message_id(msg.id)
+                .await?;
+        }
         AllCommands::MediaGroup => {
             let audio1 = InputFile::memory("somedata".to_string()).file_name("audio1.mp3");
             let audio2 = InputFile::memory("somedata2".to_string()).file_name("audio2.mp3");
@@ -326,6 +337,10 @@ async fn handler(
                 ChatPermissions::empty(),
             )
             .await?;
+        }
+        AllCommands::ChatAction => {
+            bot.send_chat_action(msg.chat.id, ChatAction::Typing)
+                .await?;
         }
     }
     Ok(())
@@ -508,27 +523,108 @@ async fn test_send_media_group() {
     let responses = bot.get_responses();
 
     let audio_group = responses.sent_media_group[0].clone();
-    assert_eq!(audio_group.messages.first().unwrap().caption(), Some("test"));
-    assert_eq!(audio_group.messages.first().unwrap().audio().unwrap().file_name, Some("audio1.mp3".to_string()));
-    assert_eq!(audio_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(
+        audio_group.messages.first().unwrap().caption(),
+        Some("test")
+    );
+    assert_eq!(
+        audio_group
+            .messages
+            .first()
+            .unwrap()
+            .audio()
+            .unwrap()
+            .file_name,
+        Some("audio1.mp3".to_string())
+    );
+    assert_eq!(
+        audio_group
+            .messages
+            .first()
+            .unwrap()
+            .reply_to_message()
+            .unwrap()
+            .text(),
+        Some("/mediagroup")
+    );
     assert_eq!(audio_group.bot_request.media.len(), 2);
 
     let document_group = responses.sent_media_group[1].clone();
-    assert_eq!(document_group.messages.first().unwrap().caption(), Some("test"));
-    assert_eq!(document_group.messages.first().unwrap().document().unwrap().file_name, Some("document1.txt".to_string()));
-    assert_eq!(document_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(
+        document_group.messages.first().unwrap().caption(),
+        Some("test")
+    );
+    assert_eq!(
+        document_group
+            .messages
+            .first()
+            .unwrap()
+            .document()
+            .unwrap()
+            .file_name,
+        Some("document1.txt".to_string())
+    );
+    assert_eq!(
+        document_group
+            .messages
+            .first()
+            .unwrap()
+            .reply_to_message()
+            .unwrap()
+            .text(),
+        Some("/mediagroup")
+    );
     assert_eq!(document_group.bot_request.media.len(), 2);
 
     let photo_group = responses.sent_media_group[2].clone();
-    assert_eq!(photo_group.messages.first().unwrap().caption(), Some("test"));
-    assert!(!photo_group.messages.first().unwrap().photo().unwrap().is_empty());
-    assert_eq!(photo_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(
+        photo_group.messages.first().unwrap().caption(),
+        Some("test")
+    );
+    assert!(!photo_group
+        .messages
+        .first()
+        .unwrap()
+        .photo()
+        .unwrap()
+        .is_empty());
+    assert_eq!(
+        photo_group
+            .messages
+            .first()
+            .unwrap()
+            .reply_to_message()
+            .unwrap()
+            .text(),
+        Some("/mediagroup")
+    );
     assert_eq!(photo_group.bot_request.media.len(), 2);
 
     let video_group = responses.sent_media_group[3].clone();
-    assert_eq!(video_group.messages.first().unwrap().caption(), Some("test"));
-    assert_eq!(video_group.messages.first().unwrap().video().unwrap().file_name, Some("video1.mp4".to_string()));
-    assert_eq!(video_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(
+        video_group.messages.first().unwrap().caption(),
+        Some("test")
+    );
+    assert_eq!(
+        video_group
+            .messages
+            .first()
+            .unwrap()
+            .video()
+            .unwrap()
+            .file_name,
+        Some("video1.mp4".to_string())
+    );
+    assert_eq!(
+        video_group
+            .messages
+            .first()
+            .unwrap()
+            .reply_to_message()
+            .unwrap()
+            .text(),
+        Some("/mediagroup")
+    );
     assert_eq!(video_group.bot_request.media.len(), 2);
 }
 
@@ -565,6 +661,22 @@ async fn test_send_venue() {
     assert_eq!(last_sent_message.venue().unwrap().location.longitude, 1.0);
     assert_eq!(last_sent_message.venue().unwrap().title, "test");
     assert_eq!(last_sent_message.venue().unwrap().address, "test");
+}
+
+#[tokio::test]
+async fn test_send_contact() {
+    let bot = MockBot::new(MockMessageText::new().text("/contact"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_contact = bot.get_responses().sent_messages_contact.pop().unwrap();
+    let last_sent_message = last_sent_contact.message;
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/contact")
+    );
+    assert_eq!(last_sent_message.contact().unwrap().phone_number, "123456789");
+    assert_eq!(last_sent_message.contact().unwrap().first_name, "test");
 }
 
 #[tokio::test]
@@ -721,4 +833,16 @@ async fn test_restrict() {
 
     assert_eq!(restricted_user.user_id, MockUser::ID);
     assert_eq!(restricted_user.permissions, ChatPermissions::empty());
+}
+
+#[tokio::test]
+async fn test_send_chat_action() {
+    let bot = MockBot::new(MockMessageText::new().text("/chataction"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let last_chat_action = responses.sent_chat_actions.last().unwrap();
+
+    assert_eq!(last_chat_action.action, "typing");
 }
