@@ -2587,6 +2587,8 @@ dependencies = [
 [[package]]
 name = "teloxide_tests_macros"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0e43e2b37321cb3a71653e6fc64277eaf7fd19219ac6714da69d922364c00a9"
 dependencies = [
  "proc-macro2",
  "quote",

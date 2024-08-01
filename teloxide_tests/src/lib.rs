@@ -70,6 +70,8 @@
 //! - /SendVoice
 //! - /SendVideoNote
 //! - /SendAnimation
+//! - /SendLocation
+//! - /SendVenue
 //! - /SendMediaGroup
 //! - /PinChatMessage
 //! - /UnpinChatMessage

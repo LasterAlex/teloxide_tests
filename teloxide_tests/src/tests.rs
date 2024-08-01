@@ -7,9 +7,7 @@ use teloxide::net::Download;
 use teloxide::payloads::{BanChatMemberSetters, CopyMessageSetters};
 use teloxide::requests::Requester;
 use teloxide::types::{
-    ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia,
-    InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message, MessageEntity,
-    Update,
+    ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message, MessageEntity, Update
 };
 use teloxide::{
     dispatching::{
@@ -124,6 +122,10 @@ pub enum AllCommands {
     #[command()]
     Animation,
     #[command()]
+    Location,
+    #[command()]
+    Venue,
+    #[command()]
     MediaGroup,
     #[command()]
     EditCaption,
@@ -234,6 +236,17 @@ async fn handler(
         AllCommands::Animation => {
             let animation = InputFile::memory("somedata".to_string()).file_name("animation.mp4");
             bot.send_animation(msg.chat.id, animation).await?;
+        }
+        AllCommands::Location => {
+            bot.send_location(msg.chat.id, 1.0, 1.0)
+                .live_period(60)
+                .reply_to_message_id(msg.id)
+                .await?;
+        }
+        AllCommands::Venue => {
+            bot.send_venue(msg.chat.id, 1.0, 1.0, "test", "test")
+                .reply_to_message_id(msg.id)
+                .await?;
         }
         AllCommands::MediaGroup => {
             let audio1 = InputFile::memory("somedata".to_string()).file_name("audio1.mp3");
@@ -517,6 +530,41 @@ async fn test_send_media_group() {
     assert_eq!(video_group.messages.first().unwrap().video().unwrap().file_name, Some("video1.mp4".to_string()));
     assert_eq!(video_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
     assert_eq!(video_group.bot_request.media.len(), 2);
+}
+
+#[tokio::test]
+async fn test_send_location() {
+    let bot = MockBot::new(MockMessageText::new().text("/location"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_sent_location = bot.get_responses().sent_messages_location.pop().unwrap();
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/location")
+    );
+    assert_eq!(last_sent_message.location().unwrap().latitude, 1.0);
+    assert_eq!(last_sent_message.location().unwrap().longitude, 1.0);
+    assert_eq!(last_sent_location.bot_request.live_period, Some(60));
+}
+
+#[tokio::test]
+async fn test_send_venue() {
+    let bot = MockBot::new(MockMessageText::new().text("/venue"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_venue = bot.get_responses().sent_messages_venue.pop().unwrap();
+    let last_sent_message = last_sent_venue.message;
+    assert_eq!(
+        last_sent_message.reply_to_message().unwrap().text(),
+        Some("/venue")
+    );
+    assert_eq!(last_sent_message.venue().unwrap().location.latitude, 1.0);
+    assert_eq!(last_sent_message.venue().unwrap().location.longitude, 1.0);
+    assert_eq!(last_sent_message.venue().unwrap().title, "test");
+    assert_eq!(last_sent_message.venue().unwrap().address, "test");
 }
 
 #[tokio::test]

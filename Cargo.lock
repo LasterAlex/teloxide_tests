@@ -2428,7 +2428,7 @@ dependencies = [
  "serde_json",
  "serial_test",
  "teloxide",
- "teloxide_tests_macros",
+ "teloxide_tests_macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
  "url",
 ]
@@ -2436,6 +2436,17 @@ dependencies = [
 [[package]]
 name = "teloxide_tests_macros"
 version = "0.1.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
+]
+
+[[package]]
+name = "teloxide_tests_macros"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0e43e2b37321cb3a71653e6fc64277eaf7fd19219ac6714da69d922364c00a9"
 dependencies = [
  "proc-macro2",
  "quote",
