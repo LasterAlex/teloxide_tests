@@ -7,7 +7,8 @@ use teloxide::net::Download;
 use teloxide::payloads::{BanChatMemberSetters, CopyMessageSetters};
 use teloxide::requests::Requester;
 use teloxide::types::{
-    ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, MessageEntity,
+    ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia,
+    InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message, MessageEntity,
     Update,
 };
 use teloxide::{
@@ -121,6 +122,10 @@ pub enum AllCommands {
     #[command()]
     Document,
     #[command()]
+    Animation,
+    #[command()]
+    MediaGroup,
+    #[command()]
     EditCaption,
     #[command()]
     PinMessage,
@@ -225,6 +230,51 @@ async fn handler(
             bot.download_file(&gotten_document.path, &mut dest).await?;
             assert!(tokio::fs::read_to_string("test.txt").await.is_ok());
             tokio::fs::remove_file("test.txt").await?;
+        }
+        AllCommands::Animation => {
+            let animation = InputFile::memory("somedata".to_string()).file_name("animation.mp4");
+            bot.send_animation(msg.chat.id, animation).await?;
+        }
+        AllCommands::MediaGroup => {
+            let audio1 = InputFile::memory("somedata".to_string()).file_name("audio1.mp3");
+            let audio2 = InputFile::memory("somedata2".to_string()).file_name("audio2.mp3");
+            let media_group = vec![
+                InputMedia::Audio(InputMediaAudio::new(audio1.clone()).caption("test")),
+                InputMedia::Audio(InputMediaAudio::new(audio2.clone())),
+            ];
+            bot.send_media_group(msg.chat.id, media_group)
+                .reply_to_message_id(msg.id)
+                .await?;
+
+            let document1 = InputFile::memory("somedata".to_string()).file_name("document1.txt");
+            let document2 = InputFile::memory("somedata2".to_string()).file_name("document2.txt");
+            let media_group = vec![
+                InputMedia::Document(InputMediaDocument::new(document1.clone()).caption("test")),
+                InputMedia::Document(InputMediaDocument::new(document2.clone())),
+            ];
+            bot.send_media_group(msg.chat.id, media_group)
+                .reply_to_message_id(msg.id)
+                .await?;
+
+            let photo1 = InputFile::memory("somedata".to_string());
+            let photo2 = InputFile::memory("somedata2".to_string());
+            let media_group = vec![
+                InputMedia::Photo(InputMediaPhoto::new(photo1.clone()).caption("test")),
+                InputMedia::Photo(InputMediaPhoto::new(photo2.clone())),
+            ];
+            bot.send_media_group(msg.chat.id, media_group)
+                .reply_to_message_id(msg.id)
+                .await?;
+
+            let video1 = InputFile::memory("somedata".to_string()).file_name("video1.mp4");
+            let video2 = InputFile::memory("somedata2".to_string()).file_name("video2.mp4");
+            let media_group = vec![
+                InputMedia::Video(InputMediaVideo::new(video1.clone()).caption("test")),
+                InputMedia::Video(InputMediaVideo::new(video2.clone())),
+            ];
+            bot.send_media_group(msg.chat.id, media_group)
+                .reply_to_message_id(msg.id)
+                .await?;
         }
         AllCommands::PinMessage => {
             bot.pin_chat_message(msg.chat.id, sent_message.id).await?;
@@ -419,6 +469,54 @@ async fn test_send_document() {
     );
     assert_eq!(last_sent_message.caption_entities().unwrap().len(), 1);
     assert_eq!(last_sent_photo.bot_request.file_name, "test.txt");
+}
+
+#[tokio::test]
+async fn test_send_animation() {
+    let bot = MockBot::new(MockMessageText::new().text("/animation"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_sent_animation = bot.get_responses().sent_messages_animation.pop().unwrap();
+    assert_eq!(
+        last_sent_message.animation().unwrap().file_name,
+        Some("animation.mp4".to_string())
+    );
+    assert_eq!(last_sent_animation.bot_request.file_name, "animation.mp4");
+}
+
+#[tokio::test]
+async fn test_send_media_group() {
+    let bot = MockBot::new(MockMessageText::new().text("/mediagroup"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+
+    let audio_group = responses.sent_media_group[0].clone();
+    assert_eq!(audio_group.messages.first().unwrap().caption(), Some("test"));
+    assert_eq!(audio_group.messages.first().unwrap().audio().unwrap().file_name, Some("audio1.mp3".to_string()));
+    assert_eq!(audio_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(audio_group.bot_request.media.len(), 2);
+
+    let document_group = responses.sent_media_group[1].clone();
+    assert_eq!(document_group.messages.first().unwrap().caption(), Some("test"));
+    assert_eq!(document_group.messages.first().unwrap().document().unwrap().file_name, Some("document1.txt".to_string()));
+    assert_eq!(document_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(document_group.bot_request.media.len(), 2);
+
+    let photo_group = responses.sent_media_group[2].clone();
+    assert_eq!(photo_group.messages.first().unwrap().caption(), Some("test"));
+    assert!(!photo_group.messages.first().unwrap().photo().unwrap().is_empty());
+    assert_eq!(photo_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(photo_group.bot_request.media.len(), 2);
+
+    let video_group = responses.sent_media_group[3].clone();
+    assert_eq!(video_group.messages.first().unwrap().caption(), Some("test"));
+    assert_eq!(video_group.messages.first().unwrap().video().unwrap().file_name, Some("video1.mp4".to_string()));
+    assert_eq!(video_group.messages.first().unwrap().reply_to_message().unwrap().text(), Some("/mediagroup"));
+    assert_eq!(video_group.bot_request.media.len(), 2);
 }
 
 #[tokio::test]

@@ -1,33 +1,36 @@
 use crate::server::routes::Attachment;
 use crate::server::routes::{FileType, SerializeRawFields};
+use crate::server::SentMessageAnimation;
+use crate::MockMessageAnimation;
 use std::collections::HashMap;
+use std::str::FromStr;
 
-use crate::dataset::{MockMessagePhoto, MockPhotoSize};
 use crate::proc_macros::SerializeRawFields;
 use actix_multipart::Multipart;
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::Responder;
+use actix_web::{error::ErrorBadRequest, web};
+use mime::Mime;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::server::{
-    routes::check_if_message_exists, SentMessagePhoto, FILES, MESSAGES, RESPONSES,
-};
+use crate::server::{routes::check_if_message_exists, FILES, MESSAGES, RESPONSES};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
-pub async fn send_photo(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
+pub async fn send_animation(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body =
-        SendMessagePhotoBody::serialize_raw_fields(&fields, &attachments, FileType::Photo).unwrap();
+        SendMessageAnimationBody::serialize_raw_fields(&fields, &attachments, FileType::Animation)
+            .unwrap();
     let chat = body.chat_id.chat();
 
     let mut message = // Creates the message, which will be mutated to fit the needed shape
-        MockMessagePhoto::new().chat(chat);
+        MockMessageAnimation::new().chat(chat);
     message.from = Some(me.user.clone());
     message.caption = body.caption.clone();
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
+    message.has_media_spoiler = body.has_spoiler.unwrap_or_default();
 
     if let Some(id) = body.reply_to_message_id {
         check_if_message_exists!(id);
@@ -40,39 +43,52 @@ pub async fn send_photo(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
     let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
     let file_unique_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
 
-    message.photo = vec![MockPhotoSize::new()
-        .file_id(file_id.clone())
-        .file_unique_id(file_unique_id.clone())
-        .file_size(body.file_data.bytes().len() as u32)
-        .build()];
+    message.file_name = Some(body.file_name.clone());
+    message.file_id = file_id.clone();
+    message.file_unique_id = file_unique_id.clone();
+    message.file_size = body.file_data.bytes().len() as u32;
+    message.duration = body.duration.unwrap_or(100);
+    message.width = body.width.unwrap_or(100);
+    message.height = body.height.unwrap_or(100);
+    message.mime_type = Some(
+        mime_guess::from_path(body.file_name.clone())
+            .first()
+            .unwrap_or(Mime::from_str("image/gif").unwrap()),
+    );
 
     let last_id = MESSAGES.max_message_id();
     let message = MESSAGES.add_message(message.id(last_id + 1).build());
 
     FILES.lock().unwrap().push(teloxide::types::File {
-        meta: message.photo().unwrap()[0].file.clone(),
+        meta: message.animation().unwrap().file.clone(),
         path: body.file_name.to_owned(),
     });
     let mut responses_lock = RESPONSES.lock().unwrap();
     responses_lock.sent_messages.push(message.clone());
-    responses_lock.sent_messages_photo.push(SentMessagePhoto {
-        message: message.clone(),
-        bot_request: body,
-    });
+    responses_lock
+        .sent_messages_animation
+        .push(SentMessageAnimation {
+            message: message.clone(),
+            bot_request: body,
+        });
 
     make_telegram_result(message)
 }
 
 #[derive(Debug, Clone, Deserialize, SerializeRawFields)]
-pub struct SendMessagePhotoBody {
+pub struct SendMessageAnimationBody {
     pub chat_id: BodyChatId,
     pub file_name: String,
     pub file_data: String,
+    pub duration: Option<u32>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
     pub caption: Option<String>,
     pub message_thread_id: Option<i64>,
     pub parse_mode: Option<ParseMode>,
     pub caption_entities: Option<Vec<MessageEntity>>,
-    pub disable_web_page_preview: Option<bool>,
+    pub show_caption_above_media: Option<bool>,
+    pub has_spoiler: Option<bool>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,

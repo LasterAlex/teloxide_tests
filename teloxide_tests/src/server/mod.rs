@@ -7,9 +7,9 @@ use routes::{
     answer_callback_query::*, ban_chat_member::*, copy_message::*, delete_message::*,
     download_file::download_file, edit_message_caption::*, edit_message_reply_markup::*,
     edit_message_text::*, forward_message::*, get_file::*, pin_chat_message::*,
-    restrict_chat_member::*, send_audio::*, send_document::*, send_message::*, send_photo::*,
-    send_video::*, send_video_note::*, send_voice::*, unban_chat_member::*,
-    unpin_all_chat_messages::*, unpin_chat_message::*,
+    restrict_chat_member::*, send_animation::*, send_audio::*, send_document::*, send_message::*,
+    send_photo::*, send_video::*, send_video_note::*, send_voice::*, unban_chat_member::*,
+    unpin_all_chat_messages::*, unpin_chat_message::*, send_media_group::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -59,6 +59,18 @@ pub struct SentMessageVideoNote {
 pub struct SentMessageDocument {
     pub message: Message,
     pub bot_request: SendMessageDocumentBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessageAnimation {
+    pub message: Message,
+    pub bot_request: SendMessageAnimationBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMediaGroup {
+    pub messages: Vec<Message>,
+    pub bot_request: SendMediaGroupBody,
 }
 
 #[derive(Clone, Debug)]
@@ -137,6 +149,16 @@ pub struct Responses {
     /// The `.message` field has the sent by bot message, and `.bot_request`
     /// has the request that was sent to the fake server
     pub sent_messages_document: Vec<SentMessageDocument>,
+
+    /// This has only messages that are animation messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub sent_messages_animation: Vec<SentMessageAnimation>,
+
+    /// This has only messages that are media group messages, sent by the bot.
+    /// The `.messages` field has the sent by bot messages, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub sent_media_group: Vec<SentMediaGroup>,
 
     /// This has only edited by the bot text messages.
     /// The `.message` field has the new edited message, and `.bot_request`
@@ -329,6 +351,8 @@ pub async fn main(port: Mutex<u16>, me: Me) {
                     .route("/bot{token}/SendAudio", web::post().to(send_audio))
                     .route("/bot{token}/SendVideoNote", web::post().to(send_video_note))
                     .route("/bot{token}/SendDocument", web::post().to(send_document))
+                    .route("/bot{token}/SendAnimation", web::post().to(send_animation))
+                    .route("/bot{token}/SendMediaGroup", web::post().to(send_media_group))
                     .route(
                         "/bot{token}/EditMessageText",
                         web::post().to(edit_message_text),

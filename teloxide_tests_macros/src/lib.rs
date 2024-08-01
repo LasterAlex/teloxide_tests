@@ -220,12 +220,15 @@ pub fn serialize_raw_fields_derive(input: TokenStream) -> TokenStream {
         impl SerializeRawFields for #name {
             fn serialize_raw_fields(
                 fields: &HashMap<String, String>,
-                attachments: &HashMap<String, String>,
+                attachments: &HashMap<String, Attachment>,
                 file_type: FileType,
             ) -> Option<Self> {
                 let attachment = attachments.keys().last();
                 let (file_name, file_data) = match attachment {
-                    Some(attachment) => attachments.get_key_value(attachment)?,
+                    Some(attachment) => {
+                        let attach = attachments.get_key_value(attachment)?;
+                        (&attach.1.file_name, &attach.1.file_data)
+                    },
                     None => match file_type {
                         FileType::Photo => (&"no_name.jpg".to_string(), fields.get("photo")?),
                         FileType::Video => (&"no_name.mp4".to_string(), fields.get("video")?),
@@ -234,6 +237,7 @@ pub fn serialize_raw_fields_derive(input: TokenStream) -> TokenStream {
                         FileType::Sticker => (&"no_name.png".to_string(), fields.get("sticker")?),
                         FileType::Voice => (&"no_name.mp3".to_string(), fields.get("voice")?),
                         FileType::VideoNote => (&"no_name.mp4".to_string(), fields.get("video_note")?),
+                        FileType::Animation => (&"no_name.gif".to_string(), fields.get("animation")?),
                     },
                 };
 

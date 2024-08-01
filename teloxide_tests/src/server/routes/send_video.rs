@@ -1,3 +1,4 @@
+use crate::server::routes::Attachment;
 use crate::server::routes::{FileType, SerializeRawFields};
 use std::collections::HashMap;
 use std::str::FromStr;

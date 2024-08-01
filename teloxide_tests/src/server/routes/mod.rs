@@ -5,9 +5,10 @@ use crate::dataset::{MockPrivateChat, MockSupergroupChat};
 use actix_web::HttpResponse;
 use futures_util::stream::StreamExt as _;
 use futures_util::TryStreamExt;
+use rand::distributions::{Alphanumeric, DistString};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use teloxide::types::Chat;
+use teloxide::types::{Chat, MessageEntity, ParseMode};
 
 pub mod answer_callback_query;
 pub mod ban_chat_member;
@@ -21,8 +22,10 @@ pub mod forward_message;
 pub mod get_file;
 pub mod pin_chat_message;
 pub mod restrict_chat_member;
+pub mod send_animation;
 pub mod send_audio;
 pub mod send_document;
+pub mod send_media_group;
 pub mod send_message;
 pub mod send_photo;
 pub mod send_video;
@@ -61,6 +64,67 @@ impl BodyChatId {
     }
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum MediaGroupInputMedia {
+    InputMediaAudio(MediaGroupInputMediaAudio),
+    InputMediaDocument(MediaGroupInputMediaDocument),
+    InputMediaPhoto(MediaGroupInputMediaPhoto),
+    InputMediaVideo(MediaGroupInputMediaVideo),
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct MediaGroupInputMediaAudio {
+    pub r#type: String,
+    pub file_name: String,
+    pub file_data: String,
+    pub caption: Option<String>,
+    pub parse_mode: Option<ParseMode>,
+    pub caption_entities: Option<Vec<MessageEntity>>,
+    pub duration: Option<u32>,
+    pub performer: Option<String>,
+    pub title: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct MediaGroupInputMediaDocument {
+    pub r#type: String,
+    pub file_name: String,
+    pub file_data: String,
+    pub caption: Option<String>,
+    pub parse_mode: Option<ParseMode>,
+    pub caption_entities: Option<Vec<MessageEntity>>,
+    pub disable_content_type_detection: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct MediaGroupInputMediaPhoto {
+    pub r#type: String,
+    pub file_name: String,
+    pub file_data: String,
+    pub caption: Option<String>,
+    pub parse_mode: Option<ParseMode>,
+    pub caption_entities: Option<Vec<MessageEntity>>,
+    pub show_caption_above_media: Option<bool>,
+    pub has_spoiler: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct MediaGroupInputMediaVideo {
+    pub r#type: String,
+    pub file_name: String,
+    pub file_data: String,
+    pub caption: Option<String>,
+    pub parse_mode: Option<ParseMode>,
+    pub caption_entities: Option<Vec<MessageEntity>>,
+    pub show_caption_above_media: Option<bool>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub duration: Option<u32>,
+    pub supports_streaming: Option<bool>,
+    pub has_spoiler: Option<bool>,
+}
+
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum FileType {
@@ -71,12 +135,19 @@ pub enum FileType {
     Sticker,
     Voice,
     VideoNote,
+    Animation,
+}
+
+pub struct Attachment {
+    pub raw_name: String,
+    pub file_name: String,
+    pub file_data: String,
 }
 
 pub trait SerializeRawFields {
     fn serialize_raw_fields(
         fields: &HashMap<String, String>,
-        attachments: &HashMap<String, String>,
+        attachments: &HashMap<String, Attachment>,
         file_type: FileType,
     ) -> Option<Self>
     where
@@ -95,9 +166,9 @@ pub(crate) use check_if_message_exists;
 
 pub async fn get_raw_multipart_fields(
     payload: &mut actix_multipart::Multipart,
-) -> (HashMap<String, String>, HashMap<String, String>) {
+) -> (HashMap<String, String>, HashMap<String, Attachment>) {
     let mut raw_fields: HashMap<String, Vec<u8>> = HashMap::new();
-    let mut raw_attachments: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut raw_attachments: HashMap<String, (String, Vec<u8>)> = HashMap::new();
 
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_disposition = field.content_disposition().unwrap();
@@ -112,7 +183,26 @@ pub async fn get_raw_multipart_fields(
 
         if let Some(fname) = filename {
             // Treat raw_fields with filenames as raw_attachments
-            raw_attachments.insert(fname, field_data);
+            let mut attachment_key = fname.clone();
+            if raw_attachments.contains_key(&fname) {
+                // If two files have the same name, add a random string to the filename
+                attachment_key = fname
+                    .split('.')
+                    .enumerate()
+                    .map(|(i, s)| {
+                        if i == 0 {
+                            format!(
+                                "{s}{}",
+                                Alphanumeric.sample_string(&mut rand::thread_rng(), 5)
+                            )
+                        } else {
+                            s.to_string()
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join(".");
+            }
+            raw_attachments.insert(attachment_key, (name, field_data));
         } else {
             raw_fields.insert(name, field_data);
         }
@@ -130,7 +220,14 @@ pub async fn get_raw_multipart_fields(
 
     let mut attachments = HashMap::new();
     for (filename, data) in raw_attachments {
-        attachments.insert(filename.to_string(), from_utf8(&data).unwrap().to_string());
+        attachments.insert(
+            filename.to_string(),
+            Attachment {
+                raw_name: data.0.to_string(),
+                file_name: filename.to_string(),
+                file_data: from_utf8(&data.1).unwrap().to_string(),
+            },
+        );
     }
 
     (fields, attachments)

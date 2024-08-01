@@ -1,13 +1,13 @@
 [package]
 name = "teloxide_tests_macros"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 description = "Proc macros for teloxide_tests"
 license = "MIT"
 
 [dependencies]
-syn = "1.0"
+syn = "2.0"
 quote = "1.0"
 proc-macro2 = "1.0"
 
