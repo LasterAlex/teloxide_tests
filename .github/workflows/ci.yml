@@ -1,0 +1,62 @@
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+name: Continuous integration
+
+env:
+  CARGO_TERM_COLOR: always
+  CI: 1
+
+jobs:
+  ci-pass:
+    name: CI succeeded
+    runs-on: ubuntu-latest
+    if: always()
+
+    needs:
+      - build
+      - test-examples
+
+    steps:
+      - name: Check whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@v2
+      
+    - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+    
+    - name: Build
+      run: cargo build --verbose
+      
+    - name: Run tests
+      run: cargo test --verbose
+
+  test-examples:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Test examples
+      run: cargo test --manifest-path=./examples/Cargo.toml
