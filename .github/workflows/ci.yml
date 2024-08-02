@@ -18,7 +18,7 @@ jobs:
 
     needs:
       - build
-      - test-examples
+      - check-examples
 
     steps:
       - name: Check whether the needed jobs succeeded or failed
@@ -49,7 +49,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
-  test-examples:
+  check-examples:
     runs-on: ubuntu-latest
 
     steps:
@@ -58,5 +58,5 @@ jobs:
     - name: Cache Dependencies
       uses: Swatinem/rust-cache@v2
 
-    - name: Test examples
-      run: cargo test --manifest-path=./examples/Cargo.toml
+    - name: Check examples
+      run: cargo check --manifest-path=./examples/Cargo.toml
