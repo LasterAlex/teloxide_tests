@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040" width="250"/>
-  <h1><code>teloxide tests</code></h1>
+  <h1><code>teloxide_tests</code></h1>
   <a href="https://docs.rs/teloxide_tests/">
     <img src="https://docs.rs/teloxide_tests/badge.svg">
   </a>
