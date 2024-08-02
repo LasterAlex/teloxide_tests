@@ -225,7 +225,7 @@ async fn handler(
         }
         AllCommands::Document => {
             let document =
-                InputFile::file("/home/laster/http_requests.txt".to_string()).file_name("test.txt");
+                InputFile::memory("somedata".to_string()).file_name("test.txt");
             let document_message = bot
                 .send_document(msg.chat.id, document)
                 .caption("test")
@@ -338,7 +338,7 @@ async fn handler(
         }
         AllCommands::CopyMessage => {
             let document =
-                InputFile::file("/home/laster/http_requests.txt".to_string()).file_name("test.txt");
+                InputFile::memory("somedata".to_string()).file_name("test.txt");
             let document_message = bot.send_document(msg.chat.id, document).await?;
             bot.copy_message(msg.chat.id, msg.chat.id, document_message.id)
                 .caption("test")
