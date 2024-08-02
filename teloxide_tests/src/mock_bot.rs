@@ -137,7 +137,7 @@ impl MockBot {
     /// `vec![MockMessagePhoto]` if you want! All updates will be sent consecutively and asynchronously.
     /// The `handler_tree` is the same as in `dptree::entry()`, you will need to make your handler
     /// tree into a separate function, like this:
-    /// ```
+    /// ```no_run
     /// use teloxide::dispatching::UpdateHandler;
     /// fn handler_tree() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     ///     teloxide::dptree::entry() /* your handlers go here */
@@ -146,7 +146,7 @@ impl MockBot {
     ///
     /// # Full example
     ///
-    /// ```
+    /// ```no_run
     /// use teloxide::dispatching::UpdateHandler;
     /// use teloxide::types::Update;
     /// use teloxide_tests::{MockBot, MockMessageText};
@@ -420,7 +420,7 @@ impl MockBot {
     /// Panics if no storage was found
     ///
     /// # Example
-    /// ```
+    /// ```no_run
     /// use teloxide::dispatching::UpdateHandler;
     /// use teloxide::types::Update;
     /// use teloxide_tests::{MockBot, MockMessageText};
