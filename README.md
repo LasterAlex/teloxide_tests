@@ -4,6 +4,9 @@
   <a href="https://docs.rs/teloxide_tests/">
     <img src="https://docs.rs/teloxide_tests/badge.svg">
   </a>
+  <a href="https://github.com/LasterAlex/teloxide_tests/actions">
+    <img src="https://github.com/LasterAlex/teloxide_tests/workflows/Continuous%20integration/badge.svg">
+  </a>
   <a href="https://crates.io/crates/teloxide_tests">
     <img src="https://img.shields.io/crates/v/teloxide_tests.svg">
   </a>
