@@ -9,6 +9,8 @@ A simple bot that sends Hello World! and introduces to the bot testing, telling 
 
 A little harder bot that shows the sintactic sugar for testing, and how to work with persistent state storage (using redis, but changing to InMemStorage is possible and easy).
 
+Tests are in src/tests.rs
+
 ### file_download_bot
 
 Bot that shows how to download files from the server and test it.
@@ -16,6 +18,12 @@ Bot that shows how to download files from the server and test it.
 ### album_bot
 
 Bot that tests the album sending and sending multiple updates at once.
+
+### deep_linking_bot
+
+Bot that shows how to handle deep links with a simple chat bot with InMemStorage (links like https://t.me/some_bot?start=123456789, you've probably seen them as 'referral bot links').
+
+Tests are in src/tests.rs
 
 ### phrase_bot
 
