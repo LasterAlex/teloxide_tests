@@ -3,6 +3,7 @@ use crate::proc_macros::Changeable;
 use chrono::{DateTime, Utc};
 use core::sync::atomic::{AtomicI32, Ordering};
 use teloxide::types::*;
+use crate::MockUser;
 
 macro_rules! Message {
     (
@@ -14,9 +15,12 @@ macro_rules! Message {
         #[derive($($derive),*)]
         $pub struct $name {  // This is basically a template
             pub id: MessageId,
-            pub thread_id: Option<i32>,
+            pub thread_id: Option<ThreadId>,
+            pub from: Option<User>,
+            pub sender_chat: Option<Chat>,
             pub date: DateTime<Utc>,
             pub chat: Chat,
+            pub is_topic_message: bool,
             pub via_bot: Option<User>,
             $($fpub $field : $type,)*
         }
@@ -26,8 +30,11 @@ macro_rules! Message {
                 Self {  // To not repeat this over and over again
                     id: MessageId($name::ID),
                     thread_id: None,
+                    from: Some(MockUser::new().build()),
+                    sender_chat: None,
                     date: Utc::now(),
                     chat: MockPrivateChat::new().build(),
+                    is_topic_message: false,
                     via_bot: None,
                     $($field,)*
                 }
@@ -37,8 +44,11 @@ macro_rules! Message {
                 Message {
                     id: self.id,
                     thread_id: self.thread_id,
+                    from: self.from,
+                    sender_chat: self.sender_chat,
                     date: self.date,
                     chat: self.chat,
+                    is_topic_message: self.is_topic_message,
                     via_bot: self.via_bot,
                     kind: message_kind,
                 }
@@ -53,7 +63,7 @@ macro_rules! Message {
             /// use teloxide_tests::IntoUpdate;
             /// let mock_message = teloxide_tests::MockMessageText::new();
             /// let update = mock_message.clone().into_update(1.into())[0].clone();
-            /// assert_eq!(update.id, 1);
+            /// assert_eq!(update.id, teloxide::types::UpdateId(1));
             /// assert_eq!(update.kind, teloxide::types::UpdateKind::Message(
             ///     mock_message.build())
             /// );
@@ -61,7 +71,7 @@ macro_rules! Message {
             ///
             fn into_update(self, id: AtomicI32) -> Vec<Update> {
                 vec![Update {
-                    id: id.fetch_add(1, Ordering::Relaxed).into(),
+                    id: UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32),
                     kind: UpdateKind::Message(self.build()),
                 }]
             }
@@ -76,13 +86,13 @@ pub(crate) use Message;
 Message! {
     #[derive(Changeable, Clone)]
     pub struct MockMessageDice {
-        pub value: i32,
+        pub value: u8,
         pub emoji: DiceEmoji,
     }
 }
 
 impl MockMessageDice {
-    pub const VALUE: i32 = 1;
+    pub const VALUE: u8 = 1;
     pub const EMOJI: DiceEmoji = DiceEmoji::Dice;
 
     /// Creates a new easily changable message dice builder

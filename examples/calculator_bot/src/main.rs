@@ -33,7 +33,7 @@ pub enum State {
 }
 
 pub async fn get_bot_storage() -> MyStorage {
-    let storage: MyStorage = RedisStorage::open(dotenv::var("REDIS_URL").unwrap(), Cbor)
+    let storage: MyStorage = RedisStorage::open(&dotenv::var("REDIS_URL").unwrap(), Cbor)
         // For reasons unknown to me, Binary serializer doesn't accept json-like objects,
         // so im using it. If you want to use InMemStorage, just change
         // ErasedStorage to InMemStorage (dont forget to do it in the handler_tree.rs), 

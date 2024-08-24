@@ -11,7 +11,7 @@ use actix_web::{error::ErrorBadRequest, web};
 use mime::Mime;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
-use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
 
 use crate::server::{
     routes::check_if_message_exists, SentMessageVideo, FILES, MESSAGES, RESPONSES,
@@ -31,10 +31,12 @@ pub async fn send_video(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
     message.caption = body.caption.clone();
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
 
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
+
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);
     }
@@ -49,7 +51,7 @@ pub async fn send_video(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
         .file_name(body.file_name.clone())
         .width(body.width.unwrap_or(100))
         .height(body.height.unwrap_or(100))
-        .duration(body.duration.unwrap_or(100))
+        .duration(body.duration.unwrap_or(Seconds::from_seconds(1)))
         .mime_type(Mime::from_str("video/mp4").unwrap())
         .build();
 
@@ -76,7 +78,7 @@ pub struct SendMessageVideoBody {
     pub message_thread_id: Option<i64>,
     pub file_name: String,
     pub file_data: String,
-    pub duration: Option<u32>,
+    pub duration: Option<Seconds>,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub caption: Option<String>,
@@ -89,5 +91,5 @@ pub struct SendMessageVideoBody {
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }

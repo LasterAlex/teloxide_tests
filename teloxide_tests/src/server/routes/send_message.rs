@@ -2,7 +2,7 @@ use crate::dataset::message_common::MockMessageText;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters};
 
 use crate::server::{routes::check_if_message_exists, SentMessageText, MESSAGES, RESPONSES};
 
@@ -15,12 +15,12 @@ pub struct SendMessageTextBody {
     pub message_thread_id: Option<i64>,
     pub parse_mode: Option<ParseMode>,
     pub entities: Option<Vec<MessageEntity>>,
-    pub disable_web_page_preview: Option<bool>,
+    pub link_preview_options: Option<LinkPreviewOptions>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }
 
 pub async fn send_message(
@@ -34,9 +34,10 @@ pub async fn send_message(
     message.has_protected_content = body.protect_content.unwrap_or(false);
 
     message.entities = body.entities.clone().unwrap_or_default();
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);

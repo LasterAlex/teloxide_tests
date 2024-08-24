@@ -32,10 +32,11 @@ pub async fn copy_message(body: web::Json<CopyMessageBody>, me: web::Data<Me>) -
     check_if_message_exists!(body.message_id);
     let mut message = MESSAGES.get_message(body.message_id).unwrap();
     message.chat = chat;
+    message.from = Some(me.user.clone());
 
     if let MessageKind::Common(ref mut common) = message.kind {
-        common.forward = None;
-        common.from = Some(me.user.clone());
+        common.forward_origin = None;
+        common.external_reply = None;
         match common.media_kind {
             MediaKind::Animation(MediaAnimation {
                 ref mut caption,

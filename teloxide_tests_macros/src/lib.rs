@@ -18,6 +18,12 @@ pub fn changeable_derive(input: TokenStream) -> TokenStream {
                 fields.named.iter().map(|f| {
                     let field_name = &f.ident;
                     let field_type = &f.ty;
+                    let field_visibility = &f.vis;
+                    // If field is private, return
+                    match field_visibility {
+                        syn::Visibility::Public(_) => (),
+                        _ => return quote! {},
+                    }
 
                     // Because of regular macros, some of the types can be in a group
                     let type_path = match field_type {
@@ -164,7 +170,7 @@ pub fn serialize_raw_fields_derive(input: TokenStream) -> TokenStream {
     // This proc macro just creates a body struct out of the raw request fields
     let input = parse_macro_input!(input as DeriveInput);
 
-    let name = input.ident;
+    let name = input.ident.clone();
 
     let fields = if let Data::Struct(data_struct) = input.data {
         data_struct.fields
@@ -227,17 +233,17 @@ pub fn serialize_raw_fields_derive(input: TokenStream) -> TokenStream {
                 let (file_name, file_data) = match attachment {
                     Some(attachment) => {
                         let attach = attachments.get_key_value(attachment)?;
-                        (&attach.1.file_name, &attach.1.file_data)
+                        (attach.1.file_name.clone(), &attach.1.file_data)
                     },
                     None => match file_type {
-                        FileType::Photo => (&"no_name.jpg".to_string(), fields.get("photo")?),
-                        FileType::Video => (&"no_name.mp4".to_string(), fields.get("video")?),
-                        FileType::Audio => (&"no_name.mp3".to_string(), fields.get("audio")?),
-                        FileType::Document => (&"no_name.txt".to_string(), fields.get("document")?),
-                        FileType::Sticker => (&"no_name.png".to_string(), fields.get("sticker")?),
-                        FileType::Voice => (&"no_name.mp3".to_string(), fields.get("voice")?),
-                        FileType::VideoNote => (&"no_name.mp4".to_string(), fields.get("video_note")?),
-                        FileType::Animation => (&"no_name.gif".to_string(), fields.get("animation")?),
+                        FileType::Photo => ("no_name.jpg".to_string(), fields.get("photo")?),
+                        FileType::Video => ("no_name.mp4".to_string(), fields.get("video")?),
+                        FileType::Audio => ("no_name.mp3".to_string(), fields.get("audio")?),
+                        FileType::Document => ("no_name.txt".to_string(), fields.get("document")?),
+                        FileType::Sticker => ("no_name.png".to_string(), fields.get("sticker")?),
+                        FileType::Voice => ("no_name.mp3".to_string(), fields.get("voice")?),
+                        FileType::VideoNote => ("no_name.mp4".to_string(), fields.get("video_note")?),
+                        FileType::Animation => ("no_name.gif".to_string(), fields.get("animation")?),
                     },
                 };
 

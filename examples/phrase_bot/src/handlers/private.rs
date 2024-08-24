@@ -23,7 +23,7 @@ pub async fn start(bot: Bot, msg: Message, dialogue: MyDialogue) -> HandlerResul
     if user.is_err() {
         db::create_user(msg.chat.id.0).unwrap();
     }
-    bot.send_message(msg.chat.id, text::START)
+    let msg = bot.send_message(msg.chat.id, text::START)
         .reply_markup(keyboards::menu_keyboard())
         .await?;
     dialogue.update(State::Start).await?;

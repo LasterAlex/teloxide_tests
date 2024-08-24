@@ -3,7 +3,7 @@ use crate::MockMessageLocation;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup};
+use teloxide::types::{Me, ReplyMarkup, ReplyParameters, Seconds};
 
 use crate::server::routes::check_if_message_exists;
 
@@ -15,7 +15,7 @@ pub struct SendMessageLocationBody {
     pub latitude: f64,
     pub longitude: f64,
     pub horizontal_accuracy: Option<f64>,
-    pub live_period: Option<u32>,
+    pub live_period: Option<Seconds>,
     pub heading: Option<u16>,
     pub proximity_alert_radius: Option<u32>,
     pub message_thread_id: Option<i64>,
@@ -23,7 +23,7 @@ pub struct SendMessageLocationBody {
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }
 
 pub async fn send_location(
@@ -40,9 +40,10 @@ pub async fn send_location(
     message.proximity_alert_radius = body.proximity_alert_radius;
     message.has_protected_content = body.protect_content.unwrap_or(false);
 
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);

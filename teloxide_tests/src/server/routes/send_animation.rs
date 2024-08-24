@@ -12,7 +12,7 @@ use actix_web::{error::ErrorBadRequest, web};
 use mime::Mime;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
-use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
 
 use crate::server::{routes::check_if_message_exists, FILES, MESSAGES, RESPONSES};
 
@@ -33,9 +33,10 @@ pub async fn send_animation(mut payload: Multipart, me: web::Data<Me>) -> impl R
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
     message.has_media_spoiler = body.has_spoiler.unwrap_or_default();
 
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);
@@ -48,7 +49,7 @@ pub async fn send_animation(mut payload: Multipart, me: web::Data<Me>) -> impl R
     message.file_id = file_id.clone();
     message.file_unique_id = file_unique_id.clone();
     message.file_size = body.file_data.bytes().len() as u32;
-    message.duration = body.duration.unwrap_or(100);
+    message.duration = body.duration.unwrap_or(Seconds::from_seconds(0));
     message.width = body.width.unwrap_or(100);
     message.height = body.height.unwrap_or(100);
     message.mime_type = Some(
@@ -81,7 +82,7 @@ pub struct SendMessageAnimationBody {
     pub chat_id: BodyChatId,
     pub file_name: String,
     pub file_data: String,
-    pub duration: Option<u32>,
+    pub duration: Option<Seconds>,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub caption: Option<String>,
@@ -94,5 +95,5 @@ pub struct SendMessageAnimationBody {
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }

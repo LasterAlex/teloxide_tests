@@ -1,18 +1,21 @@
 //! A set of mocked structs for testing purposes. Read more in teloxide_tests crate.
 use std::sync::atomic::{AtomicI32, Ordering};
 
+use chrono::{DateTime, Utc};
 use mime::Mime;
 use proc_macros::Changeable;
-use teloxide::types::{ChatPhoto, FileMeta, Location, Me, PhotoSize, Update, User, UserId, Video};
+use teloxide::types::{
+    ChatFullInfo, ChatPhoto, FileMeta, LinkPreviewOptions, Location, Me, PhotoSize, Seconds, Update, User, UserId, Video
+};
 pub mod chat;
 
 pub mod message;
 pub mod message_common;
 pub mod queries;
 pub use chat::*;
+pub use message::*;
 pub use message_common::*;
 pub use queries::*;
-pub use message::*;
 use teloxide_tests_macros as proc_macros;
 #[cfg(test)]
 mod tests;
@@ -240,7 +243,7 @@ pub struct MockLocation {
     pub latitude: f64,
     pub longitude: f64,
     pub horizontal_accuracy: Option<f64>,
-    pub live_period: Option<u32>,
+    pub live_period: Option<Seconds>,
     pub heading: Option<u16>,
     pub proximity_alert_radius: Option<u32>,
 }
@@ -354,8 +357,8 @@ impl MockPhotoSize {
 pub struct MockVideo {
     pub width: u32,
     pub height: u32,
-    pub duration: u32,
-    pub thumb: Option<PhotoSize>,
+    pub duration: Seconds,
+    pub thumbnail: Option<PhotoSize>,
     pub file_name: Option<String>,
     pub mime_type: Option<Mime>,
     // FileMeta
@@ -367,7 +370,7 @@ pub struct MockVideo {
 impl MockVideo {
     pub const WIDTH: u32 = 640;
     pub const HEIGHT: u32 = 480;
-    pub const DURATION: u32 = 52;
+    pub const DURATION: Seconds = Seconds::from_seconds(52);
     pub const FILE_ID: &'static str = "BAADAgpAADdawy_JxS72kRvV3cortAg";
     pub const UNIQUE_FILE_ID: &'static str = "unique_file_id";
     pub const FILE_SIZE: u32 = 10099782;
@@ -387,7 +390,7 @@ impl MockVideo {
             width: Self::WIDTH,
             height: Self::HEIGHT,
             duration: Self::DURATION,
-            thumb: None,
+            thumbnail: None,
             file_name: None,
             mime_type: None,
             file_id: Self::FILE_ID.to_string(),
@@ -410,7 +413,7 @@ impl MockVideo {
             width: self.width,
             height: self.height,
             duration: self.duration,
-            thumb: self.thumb,
+            thumbnail: self.thumbnail,
             file_name: self.file_name,
             mime_type: self.mime_type,
             file: FileMeta {
@@ -418,6 +421,112 @@ impl MockVideo {
                 unique_id: self.file_unique_id,
                 size: self.file_size,
             },
+        }
+    }
+}
+
+#[derive(Changeable, Clone)]
+pub struct MockChatFullInfo {
+    pub accent_color_id: Option<u8>,
+    pub background_custom_emoji_id: Option<String>,
+    pub profile_accent_color_id: Option<u8>,
+    pub profile_background_custom_emoji_id: Option<String>,
+    pub emoji_status_custom_emoji_id: Option<String>,
+    pub emoji_status_expiration_date: Option<DateTime<Utc>>,
+    pub has_visible_history: bool,
+}
+
+impl MockChatFullInfo {
+    /// Creates a new easily changable chat full info builder
+    ///
+    /// # Examples
+    /// ```
+    /// let chat_full_info = teloxide_tests::MockChatFullInfo::new()
+    ///     .accent_color_id(1)
+    ///     .build();
+    /// assert_eq!(chat_full_info.accent_color_id, Some(1));
+    /// ```
+    ///
+    pub fn new() -> Self {
+        Self {
+            accent_color_id: None,
+            background_custom_emoji_id: None,
+            profile_accent_color_id: None,
+            profile_background_custom_emoji_id: None,
+            emoji_status_custom_emoji_id: None,
+            emoji_status_expiration_date: None,
+            has_visible_history: true,
+        }
+    }
+
+    /// Builds the chat full info
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_chat_full_info = teloxide_tests::MockChatFullInfo::new();
+    /// let chat_full_info = mock_chat_full_info.build();
+    /// assert_eq!(chat_full_info.has_visible_history, true);
+    /// ```
+    ///
+    pub fn build(self) -> ChatFullInfo {
+        ChatFullInfo {
+            accent_color_id: self.accent_color_id,
+            background_custom_emoji_id: self.background_custom_emoji_id,
+            profile_accent_color_id: self.profile_accent_color_id,
+            profile_background_custom_emoji_id: self.profile_background_custom_emoji_id,
+            emoji_status_custom_emoji_id: self.emoji_status_custom_emoji_id,
+            emoji_status_expiration_date: self.emoji_status_expiration_date,
+            has_visible_history: self.has_visible_history,
+        }
+    }
+}
+
+#[derive(Changeable, Clone)]
+pub struct MockLinkPreviewOptions {
+    pub is_disabled: bool,
+    pub url: Option<String>,
+    pub prefer_small_media: bool,
+    pub prefer_large_media: bool,
+    pub show_above_text: bool,
+}
+
+impl MockLinkPreviewOptions {
+    /// Creates a new easily changable link preview options builder
+    ///
+    /// # Examples
+    /// ```
+    /// let link_preview_options = teloxide_tests::MockLinkPreviewOptions::new()
+    ///     .is_disabled(true)
+    ///     .build();
+    /// assert_eq!(link_preview_options.is_disabled, true);
+    /// ```
+    ///
+    pub fn new() -> Self {
+        Self {
+            is_disabled: false,
+            url: None,
+            prefer_small_media: false,
+            prefer_large_media: false,
+            show_above_text: false,
+        }
+    }
+
+    /// Builds the link preview options
+    ///
+    /// # Examples
+    /// ```
+    /// let mock_link_preview_options = teloxide_tests::MockLinkPreviewOptions::new();
+    /// let link_preview_options = mock_link_preview_options.build();
+    /// assert_eq!(link_preview_options.url, None);
+    /// ```
+    ///
+    pub fn build(self) -> LinkPreviewOptions {
+        LinkPreviewOptions {
+            is_disabled: self.is_disabled,
+            url: self.url,
+            prefer_small_media: self.prefer_small_media,
+            prefer_large_media: self.prefer_large_media,
+            show_above_text: self.show_above_text,
         }
     }
 }

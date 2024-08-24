@@ -2,15 +2,15 @@ use crate::dataset::*;
 use crate::proc_macros::Changeable;
 use teloxide::{
     dispatching::dialogue::GetChatId,
-    types::{ChatId, MessageEntity, MessageId, True, UserId},
+    types::{ChatId, MessageEntity, MessageId, True, UpdateId, UserId},
 };
 
 #[derive(Changeable)]
 struct Test {
-    field1: String,
-    field2: ChatId,
-    field3: Option<String>,
-    field4: Option<i32>,
+    pub field1: String,
+    pub field2: ChatId,
+    pub field3: Option<String>,
+    pub field4: Option<i32>,
 }
 
 #[test]
@@ -119,7 +119,7 @@ fn test_message_common_text() {
 
     assert_eq!(simple_message_object.text(), Some("simple"));
     assert_eq!(
-        simple_message_object.from().unwrap().first_name,
+        simple_message_object.from.unwrap().first_name,
         MockUser::FIRST_NAME
     );
     assert_eq!(simple_message_object.chat.id, ChatId(MockUser::ID as i64)); // Some sane default values
@@ -137,7 +137,7 @@ fn test_message_common_text() {
 
     assert_eq!(message_object.text(), Some("text"));
     assert_eq!(message_object.id, MessageId(123));
-    assert_eq!(message_object.from().unwrap().first_name, "Test");
+    assert_eq!(message_object.from.clone().unwrap().first_name, "Test");
     assert_eq!(message_object.chat.id, ChatId(-123));
     assert_eq!(message_object.is_automatic_forward(), true);
     assert_eq!(
@@ -152,7 +152,7 @@ fn test_into_update() {
 
     let update = message.into_update(1.into())[0].clone();
 
-    assert_eq!(update.id, 1);
+    assert_eq!(update.id, UpdateId(1));
     assert_eq!(update.chat_id(), Some(ChatId(MockUser::ID as i64)));
 }
 
@@ -306,10 +306,6 @@ fn test_message_common_sticker() {
         message_object.sticker().unwrap().file.id,
         MockMessageSticker::FILE_ID
     );
-    assert_eq!(
-        message_object.sticker().unwrap().format,
-        MockMessageSticker::FORMAT
-    );
 }
 
 #[test]
@@ -354,7 +350,7 @@ fn test_message_common_migration_to_chat() {
     let message_object = message.build();
     assert_eq!(
         message_object.migrate_to_chat_id().unwrap(),
-        ChatId(MockMessageMigrationToChat::MIGRATE_TO_CHAT_ID)
+        &ChatId(MockMessageMigrationToChat::MIGRATE_TO_CHAT_ID)
     );
 }
 
@@ -365,7 +361,7 @@ fn test_message_common_migration_from_chat() {
     let message_object = message.build();
     assert_eq!(
         message_object.migrate_from_chat_id().unwrap(),
-        ChatId(MockMessageMigrationFromChat::MIGRATE_FROM_CHAT_ID)
+        &ChatId(MockMessageMigrationFromChat::MIGRATE_FROM_CHAT_ID)
     );
 }
 

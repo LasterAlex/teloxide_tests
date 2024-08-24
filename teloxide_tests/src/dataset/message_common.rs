@@ -17,34 +17,31 @@ macro_rules! MessageCommon {  // Rust was supposed to be used withot inheritance
         Message! {  // DRY is dangerous. This looks scary.
             #[derive($($derive),*)]
             $pub struct $name {
-                pub from: Option<User>,
-                pub sender_chat: Option<Chat>,
                 pub author_signature: Option<String>,
-                pub forward: Option<Forward>,
+                pub forward_origin: Option<MessageOrigin>,
                 pub reply_to_message: Option<Box<Message>>,
+                pub external_reply: Option<ExternalReplyInfo>,
+                pub quote: Option<TextQuote>,
                 pub edit_date: Option<DateTime<Utc>>,
                 pub reply_markup: Option<InlineKeyboardMarkup>,
-                pub is_topic_message: bool,
                 pub is_automatic_forward: bool,
                 pub has_protected_content: bool,
                 $($fpub $field : $type,)*  // Just all of the other fields, nothig too scary here
             }
         }
         impl $name {  // Implements common functions
-            pub const IS_TOPIC_MESSAGE: bool = false;  // Constant because why not
             pub const IS_AUTOMATIC_FORWARD: bool = false;
             pub const HAS_PROTECTED_CONTENT: bool = false;
 
             pub(crate) fn new_message_common($($field:$type,)*) -> Self {
                  $name::new_message(
-                     Some(MockUser::new().build()),
-                     Some(MockPrivateChat::new().build()), // I feel like a private chat is a sane default
                      None,
                      None,
                      None,
                      None,
                      None,
-                     $name::IS_TOPIC_MESSAGE,
+                     None,
+                     None,
                      $name::IS_AUTOMATIC_FORWARD,
                      $name::HAS_PROTECTED_CONTENT,
                      $($field,)*  // All of the other fields from the child struct
@@ -53,15 +50,14 @@ macro_rules! MessageCommon {  // Rust was supposed to be used withot inheritance
 
             pub(crate) fn build_message_common(self, media_kind: MediaKind) -> Message {
                 self.clone().build_message(MessageKind::Common(MessageCommon {
-                    from: self.from,
-                    sender_chat: self.sender_chat,
                     author_signature: self.author_signature,
-                    forward: self.forward,
+                    forward_origin: self.forward_origin,
                     reply_to_message: self.reply_to_message,
+                    external_reply: self.external_reply,
+                    quote: self.quote,
                     edit_date: self.edit_date,
                     reply_markup: self.reply_markup,
                     media_kind,
-                    is_topic_message: self.is_topic_message,
                     is_automatic_forward: self.is_automatic_forward,
                     has_protected_content: self.has_protected_content,
                 }))
@@ -85,6 +81,7 @@ MessageCommon! {
     pub struct MockMessageText {
         pub text: String,
         pub entities: Vec<MessageEntity>,
+        pub link_preview_options: Option<LinkPreviewOptions>,
     }
 }
 
@@ -102,7 +99,7 @@ impl MockMessageText {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_message_common(Self::TEXT.to_string(), vec![])
+        Self::new_message_common(Self::TEXT.to_string(), vec![], None)
     }
 
     /// Builds the message text
@@ -119,6 +116,7 @@ impl MockMessageText {
             .build_message_common(MediaKind::Text(MediaText {
                 text: self.text,
                 entities: self.entities,
+                link_preview_options: self.link_preview_options,
             }))
     }
 }
@@ -132,8 +130,8 @@ MessageCommon! {
         // Animation
         pub width: u32,
         pub height: u32,
-        pub duration: u32,
-        pub thumb: Option<PhotoSize>,
+        pub duration: Seconds,
+        pub thumbnail: Option<PhotoSize>,
         pub file_name: Option<String>,
         pub mime_type: Option<Mime>,
         // FileMeta
@@ -147,7 +145,7 @@ impl MockMessageAnimation {
     pub const HAS_MEDIA_SPOILER: bool = false;
     pub const WIDTH: u32 = 50;
     pub const HEIGHT: u32 = 50;
-    pub const DURATION: u32 = 50;
+    pub const DURATION: Seconds = Seconds::from_seconds(60);
     pub const FILE_ID: &'static str = "file_id";
     pub const UNIQUE_FILE_ID: &'static str = "file_unique_id";
     pub const FILE_SIZE: u32 = 50;
@@ -203,7 +201,7 @@ impl MockMessageAnimation {
                     width: self.width,
                     height: self.height,
                     duration: self.duration,
-                    thumb: self.thumb,
+                    thumbnail: self.thumbnail,
                     file_name: self.file_name,
                     mime_type: self.mime_type,
                 },
@@ -218,10 +216,10 @@ MessageCommon! {
         pub caption_entities: Vec<MessageEntity>,
         pub media_group_id: Option<String>,
         // Audio
-        pub duration: u32,
+        pub duration: Seconds,
         pub performer: Option<String>,
         pub title: Option<String>,
-        pub thumb: Option<PhotoSize>,
+        pub thumbnail: Option<PhotoSize>,
         pub file_name: Option<String>,
         pub mime_type: Option<Mime>,
         // FileMeta
@@ -232,7 +230,7 @@ MessageCommon! {
 }
 
 impl MockMessageAudio {
-    pub const DURATION: u32 = 236;
+    pub const DURATION: Seconds = Seconds::from_seconds(236);
     pub const FILE_ID: &'static str = "CQADAgADbQEAAsnrIUpNoRRNsH7_hAI";
     pub const UNIQUE_FILE_ID: &'static str = "file_unique_id";
     pub const FILE_SIZE: u32 = 9507774;
@@ -241,10 +239,11 @@ impl MockMessageAudio {
     ///
     /// # Example
     /// ```
+    /// use teloxide::types::Seconds;
     /// let message = teloxide_tests::MockMessageAudio::new()
-    ///     .duration(236)
+    ///     .duration(Seconds::from_seconds(236))
     ///     .build();
-    /// assert_eq!(message.audio().unwrap().duration, 236);  // DURATION is a default value
+    /// assert_eq!(message.audio().unwrap().duration, Seconds::from_seconds(236));
     /// ```
     ///
     pub fn new() -> Self {
@@ -288,7 +287,7 @@ impl MockMessageAudio {
                     duration: self.duration,
                     performer: self.performer,
                     title: self.title,
-                    thumb: self.thumb,
+                    thumbnail: self.thumbnail,
                     file_name: self.file_name,
                     mime_type: self.mime_type,
                 },
@@ -361,7 +360,7 @@ MessageCommon! {
         pub caption_entities: Vec<MessageEntity>,
         pub media_group_id: Option<String>,
         // Document
-        pub thumb: Option<PhotoSize>,
+        pub thumbnail: Option<PhotoSize>,
         pub file_name: Option<String>,
         pub mime_type: Option<Mime>,
         // FileMeta
@@ -421,7 +420,7 @@ impl MockMessageDocument {
                         unique_id: self.file_unique_id,
                         size: self.file_size,
                     },
-                    thumb: self.thumb,
+                    thumbnail: self.thumbnail,
                     file_name: self.file_name,
                     mime_type: self.mime_type,
                 },
@@ -560,7 +559,7 @@ MessageCommon! {
         pub latitude: f64,
         pub longitude: f64,
         pub horizontal_accuracy: Option<f64>,
-        pub live_period: Option<u32>,
+        pub live_period: Option<Seconds>,
         pub heading: Option<u16>,
         pub proximity_alert_radius: Option<u32>,
     }
@@ -672,14 +671,14 @@ MessageCommon! {
         pub question: String,
         pub options: Vec<PollOption>,
         pub is_closed: bool,
-        pub total_voter_count: i32,
+        pub total_voter_count: u32,
         pub is_anonymous: bool,
         pub poll_type: PollType,
         pub allows_multiple_answers: bool,
         pub correct_option_id: Option<u8>,
         pub explanation: Option<String>,
         pub explanation_entities: Option<Vec<MessageEntity>>,
-        pub open_period: Option<u16>,
+        pub open_period: Option<Seconds>,
         pub close_date: Option<DateTime<Utc>>,
     }
 }
@@ -689,7 +688,7 @@ impl MockMessagePoll {
     pub const QUESTION: &'static str = "Question";
     pub const IS_CLOSED: bool = true;
     pub const IS_ANONYMOUS: bool = true;
-    pub const TOTAL_VOTER_COUNT: i32 = 50;
+    pub const TOTAL_VOTER_COUNT: u32 = 50;
     pub const POLL_TYPE: PollType = PollType::Regular;
     pub const ALLOW_MULTIPLE_ANSWERS: bool = true;
 
@@ -759,10 +758,11 @@ MessageCommon! {
         pub width: u16,
         pub height: u16,
         pub kind: StickerKind,
-        pub format: StickerFormat,
-        pub thumb: Option<PhotoSize>,
+        pub flags: StickerFormatFlags,
+        pub thumbnail: Option<PhotoSize>,
         pub emoji: Option<String>,
         pub set_name: Option<String>,
+        pub needs_repainting: bool,
         // File meta
         pub file_id: String,
         pub file_unique_id: String,
@@ -776,7 +776,6 @@ impl MockMessageSticker {
     pub const KIND: StickerKind = StickerKind::Regular {
         premium_animation: None,
     };
-    pub const FORMAT: StickerFormat = StickerFormat::Raster;
     pub const FILE_ID: &'static str = "AAbbCCddEEffGGhh1234567890";
     pub const FILE_UNIQUE_ID: &'static str = "file_unique_id";
     pub const FILE_SIZE: u32 = 12345;
@@ -795,10 +794,14 @@ impl MockMessageSticker {
             Self::WIDTH,
             Self::HEIGHT,
             Self::KIND,
-            Self::FORMAT,
+            StickerFormatFlags {
+                is_animated: false,
+                is_video: false,
+            },
             None,
             None,
             None,
+            false,
             Self::FILE_ID.to_string(),
             Self::FILE_UNIQUE_ID.to_string(),
             Self::FILE_SIZE,
@@ -826,10 +829,11 @@ impl MockMessageSticker {
                     width: self.width,
                     height: self.height,
                     kind: self.kind,
-                    format: self.format,
-                    thumb: self.thumb,
+                    flags: self.flags,
+                    thumbnail: self.thumbnail,
                     emoji: self.emoji,
                     set_name: self.set_name,
+                    needs_repainting: self.needs_repainting,
                 },
             }))
     }
@@ -893,8 +897,8 @@ MessageCommon! {
     #[derive(Changeable, Clone)]
     pub struct MockMessageVideoNote {
         pub length: u32,
-        pub duration: u32,
-        pub thumb: Option<PhotoSize>,
+        pub duration: Seconds,
+        pub thumbnail: Option<PhotoSize>,
         // File meta
         pub file_id: String,
         pub file_unique_id: String,
@@ -904,7 +908,7 @@ MessageCommon! {
 
 impl MockMessageVideoNote {
     pub const LENGTH: u32 = 50;
-    pub const DURATION: u32 = 50;
+    pub const DURATION: Seconds = Seconds::from_seconds(50);
     pub const FILE_ID: &'static str = "file_id";
     pub const FILE_UNIQUE_ID: &'static str = "file_unique_id";
     pub const FILE_SIZE: u32 = 50;
@@ -948,7 +952,7 @@ impl MockMessageVideoNote {
                     },
                     length: self.length,
                     duration: self.duration,
-                    thumb: self.thumb,
+                    thumbnail: self.thumbnail,
                 },
             }))
     }
@@ -957,7 +961,7 @@ impl MockMessageVideoNote {
 MessageCommon! {
     #[derive(Changeable, Clone)]
     pub struct MockMessageVoice {
-        pub duration: u32,
+        pub duration: Seconds,
         pub mime_type: Option<Mime>,
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
@@ -969,7 +973,7 @@ MessageCommon! {
 }
 
 impl MockMessageVoice {
-    pub const DURATION: u32 = 1;
+    pub const DURATION: Seconds = Seconds::from_seconds(1);
     pub const FILE_ID: &'static str = "AwADawAgADADy_JxS2gopIVIIxlhAg";
     pub const FILE_UNIQUE_ID: &'static str = "file_unique_id";
     pub const FILE_SIZE: u32 = 4321;
@@ -978,8 +982,9 @@ impl MockMessageVoice {
     ///
     /// # Example
     /// ```
-    /// let message = teloxide_tests::MockMessageVoice::new().duration(1).build();
-    /// assert_eq!(message.voice().unwrap().duration, 1);
+    /// use teloxide::types::Seconds;
+    /// let message = teloxide_tests::MockMessageVoice::new().duration(Seconds::from_seconds(1)).build();
+    /// assert_eq!(message.voice().unwrap().duration, Seconds::from_seconds(1));
     /// ```
     ///
     pub fn new() -> Self {

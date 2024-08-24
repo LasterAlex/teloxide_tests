@@ -8,7 +8,7 @@ use futures_util::TryStreamExt;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use teloxide::types::{Chat, MessageEntity, ParseMode};
+use teloxide::types::{Chat, MessageEntity, ParseMode, Seconds};
 
 pub mod answer_callback_query;
 pub mod ban_chat_member;
@@ -88,7 +88,7 @@ pub struct MediaGroupInputMediaAudio {
     pub caption: Option<String>,
     pub parse_mode: Option<ParseMode>,
     pub caption_entities: Option<Vec<MessageEntity>>,
-    pub duration: Option<u32>,
+    pub duration: Option<Seconds>,
     pub performer: Option<String>,
     pub title: Option<String>,
 }
@@ -127,7 +127,7 @@ pub struct MediaGroupInputMediaVideo {
     pub show_caption_above_media: Option<bool>,
     pub width: Option<u32>,
     pub height: Option<u32>,
-    pub duration: Option<u32>,
+    pub duration: Option<Seconds>,
     pub supports_streaming: Option<bool>,
     pub has_spoiler: Option<bool>,
 }

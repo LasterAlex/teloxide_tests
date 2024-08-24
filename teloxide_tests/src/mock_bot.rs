@@ -10,7 +10,7 @@ use std::{
 use teloxide::{
     dispatching::dialogue::ErasedStorage,
     dptree::di::DependencySupplier,
-    types::{File, FileMeta, MessageId, MessageKind},
+    types::{File, FileMeta, MaybeInaccessibleMessage, MessageId, MessageKind},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
 use tokio::task::JoinHandle;
@@ -242,7 +242,7 @@ impl MockBot {
                     update_lock.kind = UpdateKind::Message(message.clone());
                 }
                 UpdateKind::CallbackQuery(mut callback) => {
-                    if let Some(ref mut message) = callback.message {
+                    if let Some(MaybeInaccessibleMessage::Regular(ref mut message)) = callback.message {
                         add_message(message);
                     }
                     update_lock.kind = UpdateKind::CallbackQuery(callback.clone());

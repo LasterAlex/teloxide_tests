@@ -35,7 +35,7 @@ pub async fn what_is_the_first_number(
     call: CallbackQuery,
 ) -> HandlerResult {
     let chat_id = call.clone().chat_id().unwrap();
-    bot.edit_message_reply_markup(chat_id, call.message.unwrap().id)
+    bot.edit_message_reply_markup(chat_id, call.regular_message().unwrap().id)
         .await?;
     bot.send_message(chat_id, text::ENTER_THE_FIRST_NUMBER)
         .await?;
