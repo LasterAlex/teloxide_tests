@@ -368,6 +368,12 @@ pub async fn ping() -> impl Responder {
     "pong"
 }
 
+#[allow(dead_code)]
+pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
+    dbg!(body);
+    HttpResponse::Ok()
+}
+
 #[derive(Default)]
 struct StopHandle {
     inner: parking_lot::Mutex<Option<ServerHandle>>,

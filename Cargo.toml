@@ -3,7 +3,8 @@ members = ["teloxide_tests", "teloxide_tests_macros"]
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.70"
+# MSRV
+rust-version = "1.72"
 edition = "2021"
 
 license = "MIT"

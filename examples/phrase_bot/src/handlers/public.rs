@@ -5,7 +5,11 @@ use crate::{db, text, HandlerResult};
 pub async fn bot_phrase(bot: Bot, msg: Message) -> HandlerResult {
     if let Some(reply) = msg.reply_to_message() {
         if let Some(text) = msg.text() {
-            let user_phrases = db::get_user_phrases(msg.from().unwrap().id.0 as i64).unwrap();
+            let user_from = msg.from.clone().unwrap();
+            let reply_from = reply.from.clone().unwrap();
+            let user_from_id = user_from.clone().id.0 as i64;
+            let reply_from_id = reply_from.clone().id.0 as i64;
+            let user_phrases = db::get_user_phrases(user_from_id).unwrap();
             // Gets all the phrases and tries to find a matching one in the db
             let phrase = user_phrases.iter().find(|phrase| phrase.text.to_lowercase() == text.to_lowercase());
 
@@ -13,21 +17,21 @@ pub async fn bot_phrase(bot: Bot, msg: Message) -> HandlerResult {
                 // If successfull, start making the test string
                 let raw_text = format!("{} | {}", phrase.emoji, phrase.bot_text);
 
-                let me_user = db::get_user(msg.from().unwrap().id.0 as i64);
-                let reply_user = db::get_user(reply.from().unwrap().id.0 as i64);
+                let me_user = db::get_user(user_from_id);
+                let reply_user = db::get_user(reply_from_id);
 
                 let me_nickname = match me_user {
-                    Ok(user) => user.nickname.unwrap_or(msg.from().unwrap().full_name()),
-                    Err(_) => msg.from().unwrap().full_name(),
+                    Ok(user) => user.nickname.unwrap_or(user_from.full_name()),
+                    Err(_) => user_from.full_name(),
                 };
 
                 let reply_nickname = match reply_user {
-                    Ok(user) => user.nickname.unwrap_or(reply.from().unwrap().full_name()),
-                    Err(_) => reply.from().unwrap().full_name(),
+                    Ok(user) => user.nickname.unwrap_or(reply_from.full_name()),
+                    Err(_) => reply_from.full_name(),
                 };
 
-                let me_link = text::make_link(me_nickname, msg.from().unwrap().id.0);
-                let reply_link = text::make_link(reply_nickname, reply.from().unwrap().id.0);
+                let me_link = text::make_link(me_nickname, user_from_id as u64);
+                let reply_link = text::make_link(reply_nickname, reply_from_id as u64);
 
                 bot.send_message(
                     msg.chat.id,

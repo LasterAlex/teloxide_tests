@@ -3,7 +3,7 @@ use crate::{MockLocation, MockMessageVenue};
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup};
+use teloxide::types::{Me, ReplyMarkup, ReplyParameters};
 
 use crate::server::routes::check_if_message_exists;
 
@@ -24,8 +24,9 @@ pub struct SendMessageVenueBody {
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
+    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }
 
 pub async fn send_venue(
@@ -48,9 +49,10 @@ pub async fn send_venue(
     message.google_place_id = body.google_place_id.clone();
     message.google_place_type = body.google_place_type.clone();
 
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);
@@ -61,12 +63,10 @@ pub async fn send_venue(
 
     let mut responses_lock = RESPONSES.lock().unwrap();
     responses_lock.sent_messages.push(message.clone());
-    responses_lock
-        .sent_messages_venue
-        .push(SentMessageVenue {
-            message: message.clone(),
-            bot_request: body.into_inner(),
-        });
+    responses_lock.sent_messages_venue.push(SentMessageVenue {
+        message: message.clone(),
+        bot_request: body.into_inner(),
+    });
 
     make_telegram_result(message)
 }

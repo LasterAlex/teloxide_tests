@@ -1,6 +1,6 @@
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup};
 
 use crate::server::{routes::make_telegram_result, EditedMessageText, MESSAGES, RESPONSES};
 
@@ -14,7 +14,8 @@ pub struct EditMessageTextBody {
     pub text: String,
     pub parse_mode: Option<ParseMode>,
     pub entities: Option<Vec<MessageEntity>>,
-    pub disable_web_page_preview: Option<bool>,
+    pub link_preview_options: Option<LinkPreviewOptions>,
+    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }
 

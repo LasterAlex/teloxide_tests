@@ -4,12 +4,15 @@ use serde::{Deserialize, Serialize};
 use teloxide::dispatching::{HandlerExt, UpdateHandler};
 use teloxide::dptree::case;
 use teloxide::net::Download;
-use teloxide::payloads::{BanChatMemberSetters, CopyMessageSetters, SendPollSetters};
+use teloxide::payloads::{
+    BanChatMemberSetters, CopyMessageSetters, SendPhotoSetters, SendPollSetters,
+};
 use teloxide::requests::Requester;
 use teloxide::types::{
     ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile,
-    InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message,
-    MessageEntity, PollOption, PollType, Update,
+    InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
+    LinkPreviewOptions, Message, MessageEntity, PollOption, PollType, ReplyParameters, Seconds,
+    Update,
 };
 use teloxide::{
     dispatching::{
@@ -161,11 +164,20 @@ async fn handler(
     cmd: AllCommands,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     let sent_message = bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
-    assert!(msg.text().unwrap() == sent_message.text().unwrap()); // The message actually made it through!
+    assert_eq!(msg.text().unwrap(), sent_message.text().unwrap()); // The message actually made it through!
+    let reply_options = ReplyParameters::new(msg.id);
+    let link_preview_options = LinkPreviewOptions {
+        is_disabled: true,
+        url: None,
+        prefer_small_media: false,
+        prefer_large_media: false,
+        show_above_text: false,
+    };
     match cmd {
         AllCommands::Echo => {}
         AllCommands::Edit => {
             bot.edit_message_text(msg.chat.id, sent_message.id, "edited")
+                .link_preview_options(link_preview_options)
                 .await?;
         }
         AllCommands::Delete => {
@@ -183,7 +195,7 @@ async fn handler(
             bot.send_photo(msg.chat.id, photo)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::Video => {
@@ -191,7 +203,8 @@ async fn handler(
             bot.send_video(msg.chat.id, video)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
-                .reply_to_message_id(msg.id)
+                .has_spoiler(true)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::Audio => {
@@ -199,7 +212,7 @@ async fn handler(
             bot.send_audio(msg.chat.id, audio)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::Voice => {
@@ -207,13 +220,13 @@ async fn handler(
             bot.send_voice(msg.chat.id, voice)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::VideoNote => {
             let video_note = InputFile::memory("somedata".to_string()).file_name("test.mp4");
             bot.send_video_note(msg.chat.id, video_note)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::EditCaption => {
@@ -224,13 +237,12 @@ async fn handler(
                 .await?;
         }
         AllCommands::Document => {
-            let document =
-                InputFile::memory("somedata".to_string()).file_name("test.txt");
+            let document = InputFile::memory("somedata".to_string()).file_name("test.txt");
             let document_message = bot
                 .send_document(msg.chat.id, document)
                 .caption("test")
                 .caption_entities(vec![MessageEntity::bold(0, 3)])
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
             let gotten_document = bot
                 .get_file(document_message.document().unwrap().file.id.clone())
@@ -252,17 +264,17 @@ async fn handler(
         AllCommands::Location => {
             bot.send_location(msg.chat.id, 1.0, 1.0)
                 .live_period(60)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::Venue => {
             bot.send_venue(msg.chat.id, 1.0, 1.0, "test", "test")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::Contact => {
             bot.send_contact(msg.chat.id, "123456789", "test")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::Dice => {
@@ -275,7 +287,7 @@ async fn handler(
                 vec!["test".to_string(), "not test".to_string()],
             )
             .type_(PollType::Quiz)
-            .reply_to_message_id(msg.id)
+            .reply_parameters(reply_options)
             .explanation("because test")
             .correct_option_id(0)
             .await?;
@@ -283,7 +295,7 @@ async fn handler(
         AllCommands::Sticker => {
             let sticker = InputFile::memory("somedata".to_string()).file_name("test.webp");
             bot.send_sticker(msg.chat.id, sticker)
-                .reply_to_message_id(msg.id.0)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::MediaGroup => {
@@ -294,7 +306,7 @@ async fn handler(
                 InputMedia::Audio(InputMediaAudio::new(audio2.clone())),
             ];
             bot.send_media_group(msg.chat.id, media_group)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options.clone())
                 .await?;
 
             let document1 = InputFile::memory("somedata".to_string()).file_name("document1.txt");
@@ -304,7 +316,7 @@ async fn handler(
                 InputMedia::Document(InputMediaDocument::new(document2.clone())),
             ];
             bot.send_media_group(msg.chat.id, media_group)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options.clone())
                 .await?;
 
             let photo1 = InputFile::memory("somedata".to_string());
@@ -314,7 +326,7 @@ async fn handler(
                 InputMedia::Photo(InputMediaPhoto::new(photo2.clone())),
             ];
             bot.send_media_group(msg.chat.id, media_group)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options.clone())
                 .await?;
 
             let video1 = InputFile::memory("somedata".to_string()).file_name("video1.mp4");
@@ -324,7 +336,7 @@ async fn handler(
                 InputMedia::Video(InputMediaVideo::new(video2.clone())),
             ];
             bot.send_media_group(msg.chat.id, media_group)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(reply_options)
                 .await?;
         }
         AllCommands::PinMessage => {
@@ -337,8 +349,7 @@ async fn handler(
                 .await?;
         }
         AllCommands::CopyMessage => {
-            let document =
-                InputFile::memory("somedata".to_string()).file_name("test.txt");
+            let document = InputFile::memory("somedata".to_string()).file_name("test.txt");
             let document_message = bot.send_document(msg.chat.id, document).await?;
             bot.copy_message(msg.chat.id, msg.chat.id, document_message.id)
                 .caption("test")
@@ -348,22 +359,18 @@ async fn handler(
                 .await?;
         }
         AllCommands::Ban => {
-            bot.ban_chat_member(msg.chat.id, msg.from().unwrap().id)
+            bot.ban_chat_member(msg.chat.id, msg.from.clone().unwrap().id)
                 .revoke_messages(true)
                 .await?;
             // Test revoking messages
             let result = bot.delete_message(msg.chat.id, msg.id).await;
             assert!(result.is_err());
-            bot.unban_chat_member(msg.chat.id, msg.from().unwrap().id)
+            bot.unban_chat_member(msg.chat.id, msg.from.unwrap().id)
                 .await?;
         }
         AllCommands::Restrict => {
-            bot.restrict_chat_member(
-                msg.chat.id,
-                msg.from().unwrap().id,
-                ChatPermissions::empty(),
-            )
-            .await?;
+            bot.restrict_chat_member(msg.chat.id, msg.from.unwrap().id, ChatPermissions::empty())
+                .await?;
         }
         AllCommands::ChatAction => {
             bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -669,7 +676,10 @@ async fn test_send_location() {
     );
     assert_eq!(last_sent_message.location().unwrap().latitude, 1.0);
     assert_eq!(last_sent_message.location().unwrap().longitude, 1.0);
-    assert_eq!(last_sent_location.bot_request.live_period, Some(60));
+    assert_eq!(
+        last_sent_location.bot_request.live_period,
+        Some(Seconds::from_seconds(60))
+    );
 }
 
 #[tokio::test]
@@ -781,6 +791,14 @@ async fn test_edit_message() {
 
     assert_eq!(last_sent_message.text(), Some("/edit"));
     assert_eq!(last_edited_response.message.text(), Some("edited"));
+    assert_eq!(
+        last_edited_response
+            .bot_request
+            .link_preview_options
+            .unwrap()
+            .is_disabled,
+        true
+    );
 }
 
 #[tokio::test]

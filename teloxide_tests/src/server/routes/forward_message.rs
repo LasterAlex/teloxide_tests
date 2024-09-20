@@ -1,8 +1,7 @@
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
-use teloxide::types::{ChatKind, Forward, ForwardedFrom, Me, MessageId, MessageKind};
-
+use teloxide::types::{ChatKind, Me, MessageId, MessageKind, MessageOrigin, PublicChatKind};
 use crate::server::ForwardedMessage;
 use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
 
@@ -31,34 +30,42 @@ pub async fn forward_message(
 
     let message_clone = message.clone();
     if let MessageKind::Common(ref mut common) = message.kind {
-        common.forward = Some(Forward {
-            date: message.date,
-            signature: match message_clone.author_signature() {
-                Some(signature) => Some(signature.to_string()),
-                None => None,
-            },
-            message_id: if message.chat.is_channel() {
-                Some(message.id.0)
-            } else {
-                None
-            },
-            from: match message.chat.kind {
-                ChatKind::Private(_) => match message_clone.from() {
-                    Some(from) => ForwardedFrom::User(from.clone()),
-                    None => ForwardedFrom::SenderName(
-                        message.chat.first_name().unwrap_or("").to_string(),
-                    ),
+        common.forward_origin = Some(match message.chat.kind {
+            ChatKind::Private(_) => match message.from {
+                Some(ref user) => MessageOrigin::User {
+                    date: message_clone.date,
+                    sender_user: user.clone(),
                 },
-                ChatKind::Public(_) => ForwardedFrom::Chat(message_clone.chat.clone()),
+                None => MessageOrigin::HiddenUser {
+                    date: message_clone.date,
+                    sender_user_name: message_clone
+                        .chat
+                        .username()
+                        .unwrap_or("no_username")
+                        .to_string(),
+                },
+            },
+            ChatKind::Public(public_chat) => match public_chat.kind {
+                PublicChatKind::Group(_) => MessageOrigin::Chat {
+                    date: message_clone.date,
+                    sender_chat: message_clone.chat,
+                    author_signature: None,
+                },
+                _ => MessageOrigin::Channel {
+                    date: message_clone.date,
+                    chat: message_clone.chat,
+                    message_id: message_clone.id,
+                    author_signature: None,
+                },
             },
         });
-        common.from = Some(me.user.clone());
         common.has_protected_content = body.protect_content.unwrap_or(false);
     }
 
     let last_id = MESSAGES.max_message_id();
     message.id = MessageId(last_id + 1);
     message.chat = body.chat_id.chat();
+    message.from = Some(me.user.clone());
     let message = MESSAGES.add_message(message);
 
     let mut responses_lock = RESPONSES.lock().unwrap();

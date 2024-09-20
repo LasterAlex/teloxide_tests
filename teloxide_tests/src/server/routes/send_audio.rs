@@ -15,7 +15,7 @@ use actix_web::{error::ErrorBadRequest, web};
 use mime::Mime;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
-use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
 
 use crate::server::{routes::check_if_message_exists, FILES, MESSAGES, RESPONSES};
 
@@ -33,9 +33,10 @@ pub async fn send_audio(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
     message.caption = body.caption.clone();
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
 
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);
@@ -48,7 +49,7 @@ pub async fn send_audio(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
     message.file_unique_id = file_unique_id.clone();
     message.performer = body.performer.clone();
     message.title = body.title.clone();
-    message.duration = body.duration.unwrap_or(100);
+    message.duration = body.duration.unwrap_or(Seconds::from_seconds(0));
     message.file_size = body.file_data.bytes().len() as u32;
     message.mime_type = Some(Mime::from_str("audio/mp3").unwrap());
     message.file_name = Some(body.file_name.clone());
@@ -76,7 +77,7 @@ pub struct SendMessageAudioBody {
     pub message_thread_id: Option<i64>,
     pub file_name: String,
     pub file_data: String,
-    pub duration: Option<u32>,
+    pub duration: Option<Seconds>,
     pub caption: Option<String>,
     pub parse_mode: Option<ParseMode>,
     pub caption_entities: Option<Vec<MessageEntity>>,
@@ -85,6 +86,7 @@ pub struct SendMessageAudioBody {
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
+    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }

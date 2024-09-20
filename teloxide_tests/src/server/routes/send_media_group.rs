@@ -11,7 +11,7 @@ use actix_web::{error::ErrorBadRequest, web};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use serde_json::Value;
-use teloxide::types::{Me, Message, MessageEntity, MessageId, ParseMode};
+use teloxide::types::{Me, Message, MessageEntity, MessageId, ParseMode, ReplyParameters, Seconds};
 
 use crate::server::routes::check_if_message_exists;
 
@@ -31,12 +31,11 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
     }
     let chat = body.chat_id.chat();
     let protect_content = body.protect_content;
-    let reply_to_message_id = body.reply_to_message_id;
     let mut reply_to_message = None;
-    if let Some(id) = reply_to_message_id {
-        check_if_message_exists!(id);
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
         // All of messages in the media group are replying to the same message
-        reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+        reply_to_message = Some(Box::new(MESSAGES.get_message(reply_parameters.message_id.0).unwrap()));
     }
     let media_group_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
 
@@ -60,7 +59,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.media_group_id = Some(media_group_id.clone());
                 mock_message.performer = audio.performer.clone();
                 mock_message.title = audio.title.clone();
-                mock_message.duration = audio.duration.unwrap_or(100);
+                mock_message.duration = audio.duration.unwrap_or(Seconds::from_seconds(1));
 
                 mock_message.file_name = Some(audio.file_name.clone());
                 mock_message.file_id = file_id.clone();
@@ -145,7 +144,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_video.mime_type = mime_guess::from_path(&video.file_name).first();
                 mock_video.width = video.width.unwrap_or(100);
                 mock_video.height = video.height.unwrap_or(100);
-                mock_video.duration = video.duration.unwrap_or(100);
+                mock_video.duration = video.duration.unwrap_or(Seconds::from_seconds(1));
                 mock_video.file_id = file_id.clone();
                 mock_video.file_unique_id = file_unique_id.clone();
                 mock_video.file_size = video.file_data.bytes().len() as u32;
@@ -184,7 +183,7 @@ pub struct SendMediaGroupBody {
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }
 
 impl SendMediaGroupBody {
@@ -221,7 +220,7 @@ impl SendMediaGroupBody {
             let caption_entities: Option<Vec<MessageEntity>> = raw_media_item
                 .get("caption_entities")
                 .map(|s| serde_json::from_value(s.clone()).unwrap());
-            let duration: Option<u32> = raw_media_item
+            let duration: Option<Seconds> = raw_media_item
                 .get("duration")
                 .map(|s| serde_json::from_value(s.clone()).unwrap());
             let performer = raw_media_item
@@ -319,9 +318,9 @@ impl SendMediaGroupBody {
                 .map(|s| s.parse().unwrap()),
             protect_content: fields.get("protect_content").map(|s| s.parse().unwrap()),
             message_effect_id: fields.get("message_effect_id").map(|s| s.to_string()),
-            reply_to_message_id: fields
-                .get("reply_to_message_id")
-                .map(|s| s.parse().unwrap()),
+            reply_parameters: fields
+                .get("reply_parameters")
+                .map(|s| serde_json::from_str(s).unwrap()),
         })
     }
 }

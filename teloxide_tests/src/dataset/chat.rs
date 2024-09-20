@@ -1,10 +1,11 @@
 use crate::proc_macros::Changeable;
+use teloxide::types::*;
 use teloxide::types::{
     Chat, ChatId, ChatKind, ChatLocation, ChatPermissions, ChatPhoto, ChatPrivate, ChatPublic,
     Message, PublicChatChannel, PublicChatGroup, PublicChatKind, PublicChatSupergroup, True,
 };
 
-use super::MockUser;
+use super::{MockChatFullInfo, MockUser};
 
 macro_rules! Chat {
     (
@@ -17,10 +18,12 @@ macro_rules! Chat {
         $pub struct $name {  // This is basically a template
             pub id: ChatId,
             pub photo: Option<ChatPhoto>,
+            pub available_reactions: Option<Vec<ReactionType>>,
             pub pinned_message: Option<Box<Message>>,
-            pub message_auto_delete_time: Option<u32>,
+            pub message_auto_delete_time: Option<Seconds>,
             pub has_hidden_members: bool,
             pub has_aggressive_anti_spam_enabled: bool,
+            pub chat_full_info: ChatFullInfo,
             $($fpub $field : $type,)*
         }
         impl $name {
@@ -32,10 +35,12 @@ macro_rules! Chat {
                 Self {  // To not repeat this over and over again
                     id: ChatId(Self::ID),
                     photo: None,
+                    available_reactions: None,
                     pinned_message: None,
                     message_auto_delete_time: None,
                     has_hidden_members: Self::HAS_HIDDEN_MEMBERS,
                     has_aggressive_anti_spam_enabled: Self::AGGRESSIVE_ANTI_SPAM_ENABLED,
+                    chat_full_info: MockChatFullInfo::new().build(),
                     $($field,)*
                 }
             }
@@ -44,11 +49,13 @@ macro_rules! Chat {
                 Chat {
                     id: self.id,
                     kind: chat_kind,
+                    available_reactions: self.available_reactions,
                     photo: self.photo,
                     pinned_message: self.pinned_message,
                     message_auto_delete_time: self.message_auto_delete_time,
                     has_hidden_members: self.has_hidden_members,
                     has_aggressive_anti_spam_enabled: self.has_aggressive_anti_spam_enabled,
+                    chat_full_info: self.chat_full_info,
                 }
             }
         }
@@ -188,7 +195,7 @@ PublicChat! {
         pub sticker_set_name: Option<String>,
         pub can_set_sticker_set: Option<bool>,
         pub permissions: Option<ChatPermissions>,
-        pub slow_mode_delay: Option<u32>,
+        pub slow_mode_delay: Option<Seconds>,
         pub linked_chat_id: Option<i64>,
         pub location: Option<ChatLocation>,
         pub join_to_send_messages: Option<True>,
@@ -261,7 +268,6 @@ Chat! {
         pub bio: Option<String>,
         pub has_private_forwards: Option<True>,
         pub has_restricted_voice_and_video_messages: Option<True>,
-        pub emoji_status_custom_emoji_id: Option<String>,
     }
 }
 
@@ -277,7 +283,7 @@ impl MockPrivateChat {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_chat(None, None, None, None, None, None, None).id(MockUser::ID as i64)
+        Self::new_chat(None, None, None, None, None, None).id(MockUser::ID as i64)
     }
 
     /// Builds the private chat
@@ -297,7 +303,6 @@ impl MockPrivateChat {
             bio: self.bio,
             has_private_forwards: self.has_private_forwards,
             has_restricted_voice_and_video_messages: self.has_restricted_voice_and_video_messages,
-            emoji_status_custom_emoji_id: self.emoji_status_custom_emoji_id,
         }))
     }
 }

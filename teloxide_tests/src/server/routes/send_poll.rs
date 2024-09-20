@@ -4,7 +4,7 @@ use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use chrono::DateTime;
 use serde::Deserialize;
-use teloxide::types::{Me, MessageEntity, ParseMode, PollOption, PollType, ReplyMarkup};
+use teloxide::types::{Me, MessageEntity, ParseMode, PollOption, PollType, ReplyMarkup, ReplyParameters, Seconds};
 
 use crate::server::routes::check_if_message_exists;
 
@@ -25,14 +25,15 @@ pub struct SendMessagePollBody {
     pub explanation: Option<String>,
     pub explanation_parse_mode: Option<ParseMode>,
     pub explanation_entities: Option<Vec<MessageEntity>>,
-    pub open_period: Option<u16>,
+    pub open_period: Option<Seconds>,
     pub close_date: Option<u16>,
     pub is_closed: Option<bool>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
+    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }
 
 pub async fn send_poll(body: web::Json<SendMessagePollBody>, me: web::Data<Me>) -> impl Responder {
@@ -60,9 +61,10 @@ pub async fn send_poll(body: web::Json<SendMessagePollBody>, me: web::Data<Me>) 
     message.open_period = body.open_period;
     message.close_date = DateTime::from_timestamp(body.close_date.unwrap_or(0) as i64, 0);
 
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);

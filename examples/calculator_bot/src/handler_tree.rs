@@ -19,12 +19,7 @@ async fn check_if_the_state_is_ok(update: Update) -> bool {
     // state, it just errors out, softlocking the user. Very bad.
     let chat_id = match update.chat_id() {
         Some(chat_id) => chat_id,
-        None => {
-            match update.user() {
-                Some(user) => ChatId(user.id.0 as i64),
-                None => return true,
-            }
-        },
+        None => return true,
     };
     let dialogue = MyDialogue::new(get_bot_storage().await, chat_id);
     match dialogue.get().await {

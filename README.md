@@ -10,6 +10,9 @@
   <a href="https://crates.io/crates/teloxide_tests">
     <img src="https://img.shields.io/crates/v/teloxide_tests.svg">
   </a>
+  <a href="https://github.com/teloxide/teloxide">
+    <img src="https://img.shields.io/badge/teloxide%20version-0.13.0-green">
+  </a>
   <a href="https://t.me/teloxide_tests">
     <img src="https://img.shields.io/badge/support-t.me%2Fteloxide__tests-blueviolet">
   </a>

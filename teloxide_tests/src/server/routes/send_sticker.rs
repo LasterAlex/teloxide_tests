@@ -9,7 +9,7 @@ use actix_multipart::Multipart;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup};
+use teloxide::types::{Me, ReplyMarkup, ReplyParameters};
 
 use crate::server::{routes::check_if_message_exists, FILES, MESSAGES, RESPONSES};
 
@@ -30,9 +30,10 @@ pub async fn send_sticker(mut payload: Multipart, me: web::Data<Me>) -> impl Res
     // Idk how to get sticker kind and sticker format from this, sooooooooooo im not doing it,
     // ain't nobody testing that
 
-    if let Some(id) = body.reply_to_message_id {
-        check_if_message_exists!(id);
-        message.reply_to_message = Some(Box::new(MESSAGES.get_message(id).unwrap()))
+    if let Some(reply_parameters) = &body.reply_parameters {
+        check_if_message_exists!(reply_parameters.message_id.0);
+        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
         message.reply_markup = Some(markup);
@@ -67,6 +68,7 @@ pub struct SendMessageStickerBody {
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
+    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
-    pub reply_to_message_id: Option<i32>,
+    pub reply_parameters: Option<ReplyParameters>,
 }

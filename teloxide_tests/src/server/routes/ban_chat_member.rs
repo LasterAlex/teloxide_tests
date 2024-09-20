@@ -20,8 +20,8 @@ pub async fn ban_chat_member(body: web::Json<BanChatMemberBody>) -> impl Respond
     if body.revoke_messages.is_some() && body.revoke_messages.unwrap() {
         for message in messages {
             if message.chat.id.0 == chat_id
-                && message.from().is_some()
-                && message.from().unwrap().id.0 == body.user_id
+                && message.from.is_some()
+                && message.from.unwrap().id.0 == body.user_id
             {
                 MESSAGES.delete_message(message.id.0);
             }
