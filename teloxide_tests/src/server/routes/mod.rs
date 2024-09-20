@@ -7,8 +7,11 @@ use futures_util::stream::StreamExt as _;
 use futures_util::TryStreamExt;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use teloxide::types::{Chat, MessageEntity, ParseMode, Seconds};
+use serde_json::{json, Value};
+use teloxide::types::{
+    Chat, ForceReply, KeyboardMarkup, KeyboardRemove, MessageEntity, ParseMode, ReplyMarkup,
+    Seconds, True,
+};
 
 pub mod answer_callback_query;
 pub mod ban_chat_member;
@@ -251,4 +254,112 @@ where
         })
         .to_string(),
     )
+}
+
+pub fn deserialize_reply_markup(value: Value) -> Option<ReplyMarkup> {
+    let selective = value
+        .get("selective")
+        .map(|x| serde_json::from_value(x.clone()).ok())
+        .flatten()
+        == Some(true);
+    let input_field_placeholder: Option<String> = value
+        .get("input_field_placeholder")
+        .map(|x| serde_json::from_value(x.clone()).ok())
+        .flatten();
+    if value.get("keyboard").is_some() {
+        let is_persistent: bool = value
+            .get("is_persistent")
+            .map(|x| serde_json::from_value(x.clone()).ok())
+            .flatten()
+            == Some(true);
+        let one_time_keyboard = value
+            .get("one_time_keyboard")
+            .map(|x| serde_json::from_value(x.clone()).ok())
+            .flatten()
+            == Some(true);
+        let resize_keyboard = value
+            .get("resize_keyboard")
+            .map(|x| serde_json::from_value(x.clone()).ok())
+            .flatten()
+            == Some(true);
+
+        return Some(ReplyMarkup::Keyboard(KeyboardMarkup {
+            keyboard: serde_json::from_value(value["keyboard"].clone()).unwrap(),
+            is_persistent,
+            selective,
+            input_field_placeholder: input_field_placeholder.unwrap_or("".to_string()),
+            one_time_keyboard,
+            resize_keyboard,
+        }));
+    } else if value.get("inline_keyboard").is_some() {
+        return serde_json::from_value(value).ok();
+    } else if value.get("remove_keyboard").is_some() {
+        return Some(ReplyMarkup::KeyboardRemove(KeyboardRemove {
+            remove_keyboard: True,
+            selective,
+        }));
+    } else if value.get("force_reply").is_some() {
+        return Some(ReplyMarkup::ForceReply(ForceReply {
+            force_reply: True,
+            input_field_placeholder,
+            selective,
+        }));
+    }
+
+    return None;
+}
+
+pub(crate) mod reply_markup_deserialize {
+    use super::deserialize_reply_markup;
+    use serde::{Deserialize, Deserializer};
+    use serde_json::Value;
+    use teloxide::types::ReplyMarkup;
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<ReplyMarkup>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value: Option<Value> = Option::deserialize(deserializer)?;
+        match value {
+            Some(value) => {
+                if !value.is_null() {
+                    Ok(deserialize_reply_markup(value))
+                } else {
+                    Ok(None)
+                }
+            }
+            None => {
+                Ok(None)
+            }
+        }
+    }
+
+    #[test]
+    fn test() {
+        use teloxide::types::KeyboardRemove;
+        #[derive(serde::Deserialize, Debug, PartialEq)]
+        struct Struct {
+            #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
+            reply_markup: Option<ReplyMarkup>,
+        }
+
+        {
+            let s: Struct =
+                serde_json::from_str("{\"reply_markup\": {\"remove_keyboard\":\"True\"}}").unwrap();
+            assert_eq!(
+                s,
+                Struct {
+                    reply_markup: Some(ReplyMarkup::KeyboardRemove(KeyboardRemove {
+                        remove_keyboard: teloxide::types::True,
+                        selective: false
+                    }))
+                }
+            );
+        }
+
+        {
+            let s: Struct = serde_json::from_str("{}").unwrap();
+            assert_eq!(s, Struct { reply_markup: None })
+        }
+    }
 }

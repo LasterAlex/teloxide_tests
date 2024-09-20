@@ -368,6 +368,12 @@ pub async fn ping() -> impl Responder {
     "pong"
 }
 
+#[allow(dead_code)]
+pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
+    dbg!(body);
+    HttpResponse::Ok()
+}
+
 #[derive(Default)]
 struct StopHandle {
     inner: parking_lot::Mutex<Option<ServerHandle>>,
@@ -401,17 +407,17 @@ pub async fn main(port: Mutex<u16>, me: Me) {
     // If it errored, no server is running, we need to start it
     {
         let stop_handle = web::Data::new(StopHandle::default());
-        let _ = env_logger::builder()
-            .filter_level(log::LevelFilter::Info)
-            .format_target(false)
-            .format_timestamp(None)
-            .try_init();
+        // let _ = env_logger::builder()
+        //     .filter_level(log::LevelFilter::Info)
+        //     .format_target(false)
+        //     .format_timestamp(None)
+        //     .try_init();
         let server = HttpServer::new({
             let stop_handle = stop_handle.clone();
 
             move || {
                 App::new()
-                    .wrap(actix_web::middleware::Logger::default())
+                    // .wrap(actix_web::middleware::Logger::default())
                     .app_data(stop_handle.clone())
                     .app_data(web::Data::new(me.clone()))
                     .route("/ping", web::get().to(ping))

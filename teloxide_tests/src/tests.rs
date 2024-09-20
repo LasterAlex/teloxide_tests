@@ -791,7 +791,14 @@ async fn test_edit_message() {
 
     assert_eq!(last_sent_message.text(), Some("/edit"));
     assert_eq!(last_edited_response.message.text(), Some("edited"));
-    assert_eq!(last_edited_response.bot_request.link_preview_options.unwrap().is_disabled, true);
+    assert_eq!(
+        last_edited_response
+            .bot_request
+            .link_preview_options
+            .unwrap()
+            .is_disabled,
+        true
+    );
 }
 
 #[tokio::test]

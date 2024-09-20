@@ -2,7 +2,9 @@ use crate::dataset::message_common::MockMessageText;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
-use teloxide::types::{LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters};
+use teloxide::types::{
+    LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters,
+};
 
 use crate::server::{routes::check_if_message_exists, SentMessageText, MESSAGES, RESPONSES};
 
@@ -19,6 +21,7 @@ pub struct SendMessageTextBody {
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
+    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
 }

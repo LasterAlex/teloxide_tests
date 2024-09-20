@@ -2534,7 +2534,7 @@ dependencies = [
 
 [[package]]
 name = "teloxide_tests"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
  "actix-multipart",
  "actix-web",

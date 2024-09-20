@@ -1,7 +1,7 @@
 use crate::server::routes::check_if_message_exists;
-use actix_web::error::ErrorBadRequest;
 use crate::server::{SentMessageDice, MESSAGES, RESPONSES};
 use crate::MockMessageDice;
+use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
 use teloxide::types::{DiceEmoji, ReplyMarkup, ReplyParameters};
@@ -16,6 +16,7 @@ pub struct SendMessageDiceBody {
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
+    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
 }
