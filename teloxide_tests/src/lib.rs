@@ -86,6 +86,7 @@
 //! - /BanChatMember
 //! - /UnbanChatMember
 //! - /RestrictChatMember
+//! - /SetMessageReaction
 //!
 //! More endpoints will be added as time goes on!
 //!

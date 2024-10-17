@@ -44,6 +44,7 @@ pub mod send_voice;
 pub mod unban_chat_member;
 pub mod unpin_all_chat_messages;
 pub mod unpin_chat_message;
+pub mod set_message_reaction;
 
 /// Telegram accepts both `i64` and `String` for chat_id,
 /// so it is a wrapper for both

@@ -11,8 +11,8 @@ use teloxide::requests::Requester;
 use teloxide::types::{
     ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile,
     InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
-    LinkPreviewOptions, Message, MessageEntity, PollOption, PollType, ReplyParameters, Seconds,
-    Update,
+    LinkPreviewOptions, Message, MessageEntity, PollOption, PollType, ReactionType,
+    ReplyParameters, Seconds, Update,
 };
 use teloxide::{
     dispatching::{
@@ -154,6 +154,8 @@ pub enum AllCommands {
     Restrict,
     #[command()]
     ChatAction,
+    #[command()]
+    SetMessageReaction,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -374,6 +376,13 @@ async fn handler(
         }
         AllCommands::ChatAction => {
             bot.send_chat_action(msg.chat.id, ChatAction::Typing)
+                .await?;
+        }
+        AllCommands::SetMessageReaction => {
+            bot.set_message_reaction(msg.chat.id, msg.id)
+                .reaction(vec![ReactionType::Emoji {
+                    emoji: "👍".to_owned(),
+                }])
                 .await?;
         }
     }
@@ -954,4 +963,24 @@ async fn test_send_chat_action() {
     let last_chat_action = responses.sent_chat_actions.last().unwrap();
 
     assert_eq!(last_chat_action.action, "typing");
+}
+
+#[tokio::test]
+async fn test_set_message_reaction() {
+    let bot = MockBot::new(
+        MockMessageText::new().text("/setmessagereaction"),
+        get_schema(),
+    );
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let last_reaction = responses.set_message_reaction.last().unwrap();
+
+    assert_eq!(
+        last_reaction.bot_request.reaction.clone().unwrap()[0],
+        ReactionType::Emoji {
+            emoji: "👍".to_owned()
+        }
+    );
 }
