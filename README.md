@@ -96,17 +96,17 @@ Hopefully it is as easy as doing what happens in `./examples`
 3. Create a mocked bot with something that can be turned into an update, like MockMessageText or MockMessagePhoto
 4. Add dependencies and/or a different bot using .dependencies(deps![]) and .me(MockedMe::new().build())
 5. Dispatch it with .dispatch().await
-6. Get the responces with .get_responces()
-7. Do the testing with the gotten responces
+6. Get the responses with .get_responses()
+7. Do the testing with the gotten responses
 8. If you want to re-use the current bot and state with a new update, just call .update(MockMessageText::new()) and follow from the 5th step!
 
 **Do NOT** use raw MockBot fields like bot.updates or bot.me to mutate the bot, unless you know what you are doing. Use given abstractions, and if some feature is missing, you can mention it in the github repo (or write it in the telegram group [@teloxide_tests](https://t.me/teloxide_tests))
 
 ## Pitfalls
 
-1. Race conditions. They are, to my knoledge, the most difficult.
+1. Race conditions. They are, to my knowledge, the most difficult.
 
-2. And also when you use a method that is still not supported by this crate. Please reffer to the docs to see, what endpoints are implemented in the latest release (or look at [server/routes](https://github.com/LasterAlex/teloxide_tests/tree/master/teloxide_tests/src/server/routes) files to look at the current endpoints)
+2. And also when you use a method that is still not supported by this crate. Please refer to the docs to see, what endpoints are implemented in the latest release (or look at [server/routes](https://github.com/LasterAlex/teloxide_tests/tree/master/teloxide_tests/src/server/routes) files to look at the current endpoints)
 
 3. Maybe also the fact that the fake server actually checks the messages and files that are present, and it starts with a clean state. You can't just send a file by file_id or forward a message by an arbitrary message_id that was sent long ago, the bot wouldn't know what to do with it, so you need to separately add it by dispatching the bot with that update, so that it gets added as the user message to memory (you can change file_id and message_id in the mocked structs to anything you need).
 
