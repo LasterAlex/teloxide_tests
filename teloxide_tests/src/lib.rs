@@ -1,6 +1,6 @@
 //! This crate aims to make a mocked bot for unit testing teloxide bots with an actual fake server!
 //!
-//! [[`examples/hello_world`](https://github.com/LasterAlex/teloxide_tests/tree/master/examples/hello_world)]
+//! [[`examples/hello_world`](https://github.com/LasterAlex/teloxide_tests/tree/master/examples/hello_world_bot)]
 //! ```no_run
 //! use teloxide::{
 //!     dispatching::{UpdateFilterExt, UpdateHandler},
