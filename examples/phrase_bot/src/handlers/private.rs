@@ -246,9 +246,9 @@ mod tests {
 
         bot.dispatch_and_check_last_text_and_state(text::START, State::Start)
             .await;
-        let responces = bot.get_responses();
+        let responses = bot.get_responses();
         assert_eq!(
-            responces
+            responses
                 .sent_messages_text
                 .last()
                 .unwrap()
@@ -269,9 +269,9 @@ mod tests {
 
         bot.dispatch_and_check_last_text_and_state(text::MENU, State::Start)
             .await;
-        let responces = bot.get_responses();
+        let responses = bot.get_responses();
         assert_eq!(
-            responces
+            responses
                 .sent_messages_text
                 .last()
                 .unwrap()
@@ -281,7 +281,7 @@ mod tests {
         );
 
         assert_eq!(
-            responces.sent_messages.first().unwrap().text(),
+            responses.sent_messages.first().unwrap().text(),
             Some(text::CANCELED)
         );
     }
@@ -338,9 +338,9 @@ mod tests {
             .await;
 
         let user = db::get_user(MockUser::ID as i64).unwrap();
-        let responces = bot.get_responses();
+        let responses = bot.get_responses();
         assert_eq!(
-            responces
+            responses
                 .sent_messages_text
                 .last()
                 .unwrap()
@@ -349,7 +349,7 @@ mod tests {
             Some(ReplyMarkup::Keyboard(keyboards::menu_keyboard()))
         );
         assert_eq!(
-            responces.sent_messages.first().unwrap().text(),
+            responses.sent_messages.first().unwrap().text(),
             Some(text::CHANGED_NICKNAME.to_owned() + "nickname").as_deref()
         );
         assert_eq!(user.nickname, Some("nickname".to_string()));
@@ -429,9 +429,9 @@ mod tests {
             .await;
 
         let new_all_phrases = db::get_user_phrases(MockUser::ID as i64).unwrap();
-        let responces = bot.get_responses();
+        let responses = bot.get_responses();
         assert_eq!(
-            responces.sent_messages.first().unwrap().text(),
+            responses.sent_messages.first().unwrap().text(),
             Some(text::DELETED_PHRASE)
         );
 
@@ -513,9 +513,9 @@ mod tests {
         bot.dispatch_and_check_last_text_and_state(text::MENU, State::Start)
             .await;
 
-        let responces = bot.get_responses();
+        let responses = bot.get_responses();
         assert_eq!(
-            responces.sent_messages.first().unwrap().text(),
+            responses.sent_messages.first().unwrap().text(),
             Some(text::added_phrase("🤗", "hug", "(me) hugged (reply)")).as_deref()
         );
         // It is better to make the tests regarding the database __before__ the bot goes out of

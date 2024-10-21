@@ -282,7 +282,7 @@ impl MockBot {
 
     /// Actually dispatches the bot, calling the update through the handler tree.
     /// All the requests made through the bot will be stored in `responses`, and can be retrieved
-    /// with `get_responses`. All the responces are unique to that dispatch, and will be erased for
+    /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&self) {
         let runtime = tokio::runtime::Handle::current();
