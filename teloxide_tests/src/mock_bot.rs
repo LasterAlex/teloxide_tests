@@ -508,8 +508,8 @@ impl MockBot {
                 .expect("Failed to update dialogue");
         } else {
             self.close_bot().await;
-            log::error!("No storage was getected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
-            panic!("No storage was getected!");
+            log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
+            panic!("No storage was detected!");
         }
     }
 
@@ -551,8 +551,8 @@ impl MockBot {
                 .expect("Error getting dialogue")
                 .expect("State is None")
         } else {
-            log::error!("No storage was getected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
-            panic!("No storage was getected!");
+            log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
+            panic!("No storage was detected!");
         }
     }
 
