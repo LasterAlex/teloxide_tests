@@ -242,7 +242,9 @@ impl MockBot {
                     update_lock.kind = UpdateKind::Message(message.clone());
                 }
                 UpdateKind::CallbackQuery(mut callback) => {
-                    if let Some(MaybeInaccessibleMessage::Regular(ref mut message)) = callback.message {
+                    if let Some(MaybeInaccessibleMessage::Regular(ref mut message)) =
+                        callback.message
+                    {
                         add_message(message);
                     }
                     update_lock.kind = UpdateKind::CallbackQuery(callback.clone());
@@ -418,6 +420,11 @@ impl MockBot {
 
     /// Sets the state of the dialogue, if the storage exists in dependencies
     /// Panics if no storage was found
+    ///
+    /// The only supported storages are `InMemStorage` and `ErasedStorage`,
+    /// using raw storages without `.erase()` is not supported.
+    ///
+    /// For example on how to make `ErasedStorage` from `RedisStorage` or `SqliteStorage` go to [this teloxide example](https://github.com/teloxide/teloxide/blob/master/crates/teloxide/examples/db_remember.rs#L41)
     ///
     /// # Example
     /// ```no_run
