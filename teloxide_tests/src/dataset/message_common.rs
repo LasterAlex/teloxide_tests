@@ -7,7 +7,7 @@ use core::sync::atomic::{AtomicI32, Ordering};
 use mime::Mime;
 use teloxide::types::*;
 
-macro_rules! MessageCommon {  // Rust was supposed to be used withot inheritance, and yet here i am, reinventing it...
+macro_rules! MessageCommon {  // Rust was supposed to be used without inheritance, and yet here i am, reinventing it...
     (
         #[derive($($derive:meta),*)]
         $pub:vis struct $name:ident {
