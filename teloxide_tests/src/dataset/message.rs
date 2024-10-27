@@ -1,9 +1,9 @@
 use super::chat::MockPrivateChat;
 use crate::proc_macros::Changeable;
+use crate::MockUser;
 use chrono::{DateTime, Utc};
 use core::sync::atomic::{AtomicI32, Ordering};
 use teloxide::types::*;
-use crate::MockUser;
 
 macro_rules! Message {
     (
@@ -22,6 +22,7 @@ macro_rules! Message {
             pub chat: Chat,
             pub is_topic_message: bool,
             pub via_bot: Option<User>,
+            pub sender_business_bot: Option<User>,
             $($fpub $field : $type,)*
         }
         impl $name {
@@ -36,6 +37,7 @@ macro_rules! Message {
                     chat: MockPrivateChat::new().build(),
                     is_topic_message: false,
                     via_bot: None,
+                    sender_business_bot: None,
                     $($field,)*
                 }
             }
@@ -51,6 +53,7 @@ macro_rules! Message {
                     is_topic_message: self.is_topic_message,
                     via_bot: self.via_bot,
                     kind: message_kind,
+                    sender_business_bot: self.sender_business_bot,
                 }
             }
         }
