@@ -26,12 +26,18 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
                 pub reply_markup: Option<InlineKeyboardMarkup>,
                 pub is_automatic_forward: bool,
                 pub has_protected_content: bool,
+                pub is_from_offline: bool,
+                pub business_connection_id: Option<BusinessConnectionId>,
+                pub reply_to_story: Option<Story>,
+                pub sender_boost_count: Option<u16>,
+
                 $($fpub $field : $type,)*  // Just all of the other fields, nothig too scary here
             }
         }
         impl $name {  // Implements common functions
             pub const IS_AUTOMATIC_FORWARD: bool = false;
             pub const HAS_PROTECTED_CONTENT: bool = false;
+            pub const IS_FROM_OFFLINE: bool = false;
 
             pub(crate) fn new_message_common($($field:$type,)*) -> Self {
                  $name::new_message(
@@ -44,6 +50,10 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
                      None,
                      $name::IS_AUTOMATIC_FORWARD,
                      $name::HAS_PROTECTED_CONTENT,
+                     $name::IS_FROM_OFFLINE,
+                     None,
+                     None,
+                     None,
                      $($field,)*  // All of the other fields from the child struct
                  )
             }
@@ -60,6 +70,10 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
                     media_kind,
                     is_automatic_forward: self.is_automatic_forward,
                     has_protected_content: self.has_protected_content,
+                    business_connection_id: self.business_connection_id,
+                    is_from_offline: self.is_from_offline,
+                    reply_to_story: self.reply_to_story,
+                    sender_boost_count: self.sender_boost_count,
                 }))
             }
         }
