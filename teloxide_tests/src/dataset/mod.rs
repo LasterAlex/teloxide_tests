@@ -5,7 +5,8 @@ use chrono::{DateTime, Utc};
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    ChatFullInfo, ChatPhoto, FileMeta, LinkPreviewOptions, Location, Me, PhotoSize, Seconds, Update, User, UserId, Video
+    ChatFullInfo, ChatPhoto, FileMeta, LinkPreviewOptions, Location, Me, PhotoSize, Seconds,
+    Update, User, UserId, Video,
 };
 pub mod chat;
 
@@ -117,6 +118,7 @@ pub struct MockMe {
     pub can_join_groups: bool,
     pub can_read_all_group_messages: bool,
     pub supports_inline_queries: bool,
+    pub can_connect_to_business: bool,
 }
 
 impl MockMe {
@@ -129,6 +131,7 @@ impl MockMe {
     pub const CAN_JOIN_GROUPS: bool = false;
     pub const CAN_READ_ALL_GROUP_MESSAGES: bool = false;
     pub const SUPPORTS_INLINE_QUERIES: bool = false;
+    pub const CAN_CONNECT_TO_BUSINESS: bool = false;
 
     /// Creates a new easily changable me builder
     ///
@@ -151,6 +154,7 @@ impl MockMe {
             can_join_groups: Self::CAN_JOIN_GROUPS,
             can_read_all_group_messages: Self::CAN_READ_ALL_GROUP_MESSAGES,
             supports_inline_queries: Self::SUPPORTS_INLINE_QUERIES,
+            can_connect_to_business: Self::CAN_CONNECT_TO_BUSINESS,
         }
     }
 
@@ -178,6 +182,7 @@ impl MockMe {
             can_join_groups: self.can_join_groups,
             can_read_all_group_messages: self.can_read_all_group_messages,
             supports_inline_queries: self.supports_inline_queries,
+            can_connect_to_business: self.can_connect_to_business,
         }
     }
 }
