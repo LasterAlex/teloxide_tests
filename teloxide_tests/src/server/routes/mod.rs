@@ -42,6 +42,7 @@ pub mod send_video;
 pub mod send_video_note;
 pub mod send_voice;
 pub mod set_message_reaction;
+pub mod set_my_commands;
 pub mod unban_chat_member;
 pub mod unpin_all_chat_messages;
 pub mod unpin_chat_message;

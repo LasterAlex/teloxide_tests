@@ -10,8 +10,8 @@ use routes::{
     restrict_chat_member::*, send_animation::*, send_audio::*, send_chat_action::*,
     send_contact::*, send_dice::*, send_document::*, send_location::*, send_media_group::*,
     send_message::*, send_photo::*, send_poll::*, send_sticker::*, send_venue::*, send_video::*,
-    send_video_note::*, send_voice::*, set_message_reaction::*, unban_chat_member::*,
-    unpin_all_chat_messages::*, unpin_chat_message::*,
+    send_video_note::*, send_voice::*, set_message_reaction::*, set_my_commands::*,
+    unban_chat_member::*, unpin_all_chat_messages::*, unpin_chat_message::*,
 };
 use serde::Serialize;
 use std::sync::{
