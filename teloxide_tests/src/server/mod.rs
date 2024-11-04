@@ -502,6 +502,7 @@ pub async fn main(port: Mutex<u16>, me: Me) {
                         "/bot{token}/SetMessageReaction",
                         web::post().to(set_message_reaction),
                     )
+                    .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands))
                     .route("/file/bot{token}/{file_name}", web::get().to(download_file))
             }
         })
