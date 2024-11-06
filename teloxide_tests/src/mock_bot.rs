@@ -269,25 +269,29 @@ impl MockBot {
 
             // To fix the stack overflow, a new thread with a new runtime is needed
             let builder = std::thread::Builder::new().stack_size(stack_size);
-            handles.push(builder.spawn(move || {
-                let runtime = tokio::runtime::Builder::new_multi_thread()
-                    .thread_stack_size(stack_size)  // Not needed, but just in case
-                    .enable_all()
-                    .build()
-                    .unwrap();
+            handles.push(
+                builder
+                    .spawn(move || {
+                        let runtime = tokio::runtime::Builder::new_multi_thread()
+                            .thread_stack_size(stack_size) // Not needed, but just in case
+                            .enable_all()
+                            .build()
+                            .unwrap();
 
-                runtime.block_on(async move {
-                    let result = handler_tree.dispatch(deps.clone()).await;
-                    if let ControlFlow::Break(result) = result {
-                        // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
-                        // handler didn't error out
-                        assert!(result.is_ok(), "Error in handler: {:?}", result);
-                    } else {
-                        log::error!("Update didn't get handled!");
-                        panic!("Unhandled update!");
-                    }
-                })
-            }).unwrap());
+                        runtime.block_on(async move {
+                            let result = handler_tree.dispatch(deps.clone()).await;
+                            if let ControlFlow::Break(result) = result {
+                                // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
+                                // handler didn't error out
+                                assert!(result.is_ok(), "Error in handler: {:?}", result);
+                            } else {
+                                log::error!("Update didn't get handled!");
+                                panic!("Unhandled update!");
+                            }
+                        })
+                    })
+                    .unwrap(),
+            );
         }
     }
 

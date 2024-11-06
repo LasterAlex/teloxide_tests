@@ -9,7 +9,9 @@ use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
-use teloxide::types::{LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters};
+use teloxide::types::{
+    LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters,
+};
 
 use crate::server::{
     routes::check_if_message_exists, SentMessagePhoto, FILES, MESSAGES, RESPONSES,
