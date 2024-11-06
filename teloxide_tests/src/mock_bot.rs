@@ -14,8 +14,11 @@ use teloxide::{
 };
 use teloxide::{dptree::deps, types::UpdateKind};
 
-use crate::dataset::{IntoUpdate, MockMe};
 use crate::server::{self, Responses, FILES, MESSAGES};
+use crate::{
+    dataset::{IntoUpdate, MockMe},
+    server::Server,
+};
 use teloxide::{
     dispatching::{
         dialogue::{GetChatId, InMemStorage, Storage},
@@ -120,6 +123,7 @@ pub struct MockBot {
     pub responses: Mutex<Option<Responses>>,
     /// Stack size used for dispatching
     pub stack_size: Mutex<usize>,
+    server: Server,
     bot_lock: Mutex<Option<MutexGuard<'static, ()>>>, // Maybe in the future ill make something like an atomic
                                                       // bool that says if the bot is locked or not, and implement a custom Drop trait
 }
@@ -200,8 +204,10 @@ impl MockBot {
             .unwrap(),
         );
         let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let server = Server::start();
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
         Self {
+            server,
             bot,
             me: Mutex::new(MockMe::new().build()),
             updates: Mutex::new(update.into_update(Self::CURRENT_UPDATE_ID)),
