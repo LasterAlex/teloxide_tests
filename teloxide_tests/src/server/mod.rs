@@ -134,6 +134,10 @@ impl Server {
 
         Self { listener }
     }
+
+    pub fn addr(&self) -> SocketAddr {
+        self.listener.local_addr().unwrap()
+    }
 }
 
 pub async fn main(port: Mutex<u16>, me: Me) {
