@@ -10,7 +10,10 @@ use teloxide::payloads::{
 use teloxide::requests::Requester;
 use teloxide::sugar::request::RequestReplyExt;
 use teloxide::types::{
-    ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, LinkPreviewOptions, Message, MessageEntity, MessageId, PollOption, PollType, ReactionType, ReplyParameters, Seconds, Update
+    ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile,
+    InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
+    LinkPreviewOptions, Message, MessageEntity, MessageId, PollOption, PollType, ReactionType,
+    ReplyParameters, Seconds, Update,
 };
 use teloxide::{
     dispatching::{
@@ -387,7 +390,9 @@ async fn handler(
         }
         AllCommands::Panic => {
             // This message id does not exist
-            bot.send_message(msg.chat.id, "test").reply_to(MessageId(344382918)).await?;
+            bot.send_message(msg.chat.id, "test")
+                .reply_to(MessageId(344382918))
+                .await?;
         }
     }
     Ok(())

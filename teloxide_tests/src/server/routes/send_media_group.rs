@@ -35,7 +35,9 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
     if let Some(reply_parameters) = &body.reply_parameters {
         check_if_message_exists!(reply_parameters.message_id.0);
         // All of messages in the media group are replying to the same message
-        reply_to_message = Some(Box::new(MESSAGES.get_message(reply_parameters.message_id.0).unwrap()));
+        reply_to_message = Some(Box::new(
+            MESSAGES.get_message(reply_parameters.message_id.0).unwrap(),
+        ));
     }
     let media_group_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
 

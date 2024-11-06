@@ -4,7 +4,9 @@ use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use chrono::DateTime;
 use serde::Deserialize;
-use teloxide::types::{Me, MessageEntity, ParseMode, PollOption, PollType, ReplyMarkup, ReplyParameters, Seconds};
+use teloxide::types::{
+    Me, MessageEntity, ParseMode, PollOption, PollType, ReplyMarkup, ReplyParameters, Seconds,
+};
 
 use crate::server::routes::check_if_message_exists;
 
