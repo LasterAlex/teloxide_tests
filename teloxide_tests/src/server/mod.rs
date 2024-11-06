@@ -15,9 +15,12 @@ use routes::{
     unban_chat_member::*, unpin_all_chat_messages::*, unpin_chat_message::*,
 };
 use serde::Serialize;
-use std::sync::{
-    atomic::{AtomicI32, Ordering},
-    Mutex,
+use std::{
+    net::{SocketAddr, TcpListener},
+    sync::{
+        atomic::{AtomicI32, Ordering},
+        Mutex,
+    },
 };
 use teloxide::types::{File, Me, Message, ReplyMarkup};
 
@@ -119,6 +122,18 @@ impl StopHandle {
 async fn stop(Path(graceful): Path<bool>, stop_handle: web::Data<StopHandle>) -> HttpResponse {
     stop_handle.stop(graceful);
     HttpResponse::NoContent().finish()
+}
+
+pub struct Server {
+    listener: TcpListener,
+}
+
+impl Server {
+    pub fn start() -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+
+        Self { listener }
+    }
 }
 
 pub async fn main(port: Mutex<u16>, me: Me) {
