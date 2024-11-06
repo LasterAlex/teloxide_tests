@@ -130,7 +130,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn start() -> Self {
+    pub fn new() -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
 
         Self { listener }

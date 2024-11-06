@@ -204,7 +204,7 @@ impl MockBot {
             .unwrap(),
         );
         let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
-        let server = Server::start();
+        let server = Server::new();
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
         Self {
             server,
