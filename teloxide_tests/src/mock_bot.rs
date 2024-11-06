@@ -13,7 +13,6 @@ use teloxide::{
     types::{File, FileMeta, MaybeInaccessibleMessage, MessageId, MessageKind},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
-use tokio::task::JoinHandle;
 
 use crate::dataset::{IntoUpdate, MockMe};
 use crate::server::{self, Responses, FILES, MESSAGES};
@@ -119,6 +118,8 @@ pub struct MockBot {
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
     pub responses: Mutex<Option<Responses>>,
+    /// Stack size used for dispatching
+    pub stack_size: Mutex<usize>,
     bot_lock: Mutex<Option<MutexGuard<'static, ()>>>, // Maybe in the future ill make something like an atomic
                                                       // bool that says if the bot is locked or not, and implement a custom Drop trait
 }
@@ -126,6 +127,7 @@ pub struct MockBot {
 impl MockBot {
     const CURRENT_UPDATE_ID: AtomicI32 = AtomicI32::new(0); // So that every update is different
     const PORT: Mutex<u16> = Mutex::new(6504);
+    const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 
     /// Creates a new MockBot, using something that can be turned into Updates, and a handler tree.
     /// You can't create a new bot while you have another bot in scope. Otherwise you will have a
@@ -206,6 +208,7 @@ impl MockBot {
             handler_tree,
             responses: Mutex::new(None),
             dependencies: Mutex::new(DependencyMap::new()),
+            stack_size: Mutex::new(Self::DEFAULT_STACK_SIZE),
             bot_lock: Mutex::new(Some(lock)), // This makes a lock that forbids the creation of
                                               // other bots until this one goes out of scope. That way there will be no race
                                               // conditions!
@@ -231,7 +234,7 @@ impl MockBot {
         *self.updates.lock().unwrap() = update.into_update(Self::CURRENT_UPDATE_ID);
     }
 
-    fn collect_handles(&self, handles: &mut Vec<JoinHandle<()>>) {
+    fn collect_handles(&self, handles: &mut Vec<std::thread::JoinHandle<()>>) {
         let updates_lock = self.updates.lock().unwrap().clone();
         let self_deps = self.dependencies.lock().unwrap().clone();
         for mut update_lock in updates_lock {
@@ -257,23 +260,34 @@ impl MockBot {
                 self.me.lock().unwrap().clone(),
                 update_lock.clone() // This actually makes an update go through the dptree
             ];
+            let stack_size = self.stack_size.lock().unwrap().clone();
 
             deps.insert_container(self_deps.clone()); // These are nessessary for the dispatch
 
             // This, too, will need to be redone in the ideal world, but it just waits until the server is up
             let handler_tree = self.handler_tree.clone();
 
-            handles.push(tokio::spawn(async move {
-                let result = handler_tree.dispatch(deps.clone()).await;
-                if let ControlFlow::Break(result) = result {
-                    // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
-                    // handler didn't error out
-                    assert!(result.is_ok(), "Error in handler: {:?}", result);
-                } else {
-                    log::error!("Update didn't get handled!");
-                    panic!("Unhandled update!");
-                }
-            }));
+            // To fix the stack overflow, a new thread with a new runtime is needed
+            let builder = std::thread::Builder::new().stack_size(stack_size);
+            handles.push(builder.spawn(move || {
+                let runtime = tokio::runtime::Builder::new_multi_thread()
+                    .thread_stack_size(stack_size)  // Not needed, but just in case
+                    .enable_all()
+                    .build()
+                    .unwrap();
+
+                runtime.block_on(async move {
+                    let result = handler_tree.dispatch(deps.clone()).await;
+                    if let ControlFlow::Break(result) = result {
+                        // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
+                        // handler didn't error out
+                        assert!(result.is_ok(), "Error in handler: {:?}", result);
+                    } else {
+                        log::error!("Update didn't get handled!");
+                        panic!("Unhandled update!");
+                    }
+                })
+            }).unwrap());
         }
     }
 
@@ -342,7 +356,7 @@ impl MockBot {
 
         for handle in handles {
             // Waits until every update has been sent
-            match handle.await {
+            match handle.join() {
                 Ok(_) => {}
                 Err(_) => {
                     // Something panicked, we need to free the bot lock and exit

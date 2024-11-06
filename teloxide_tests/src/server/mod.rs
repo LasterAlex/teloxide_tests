@@ -10,8 +10,8 @@ use routes::{
     restrict_chat_member::*, send_animation::*, send_audio::*, send_chat_action::*,
     send_contact::*, send_dice::*, send_document::*, send_location::*, send_media_group::*,
     send_message::*, send_photo::*, send_poll::*, send_sticker::*, send_venue::*, send_video::*,
-    send_video_note::*, send_voice::*, unban_chat_member::*, unpin_all_chat_messages::*,
-    unpin_chat_message::*, set_message_reaction::*,
+    send_video_note::*, send_voice::*, set_message_reaction::*, set_my_commands::*,
+    unban_chat_member::*, unpin_all_chat_messages::*, unpin_chat_message::*,
 };
 use serde::Serialize;
 use std::sync::{
@@ -302,7 +302,7 @@ pub struct Responses {
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
     pub sent_chat_actions: Vec<SendChatActionBody>,
-    
+
     /// This has only the requests that were sent to the fake server to set message reactions.
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
@@ -502,6 +502,7 @@ pub async fn main(port: Mutex<u16>, me: Me) {
                         "/bot{token}/SetMessageReaction",
                         web::post().to(set_message_reaction),
                     )
+                    .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands))
                     .route("/file/bot{token}/{file_name}", web::get().to(download_file))
             }
         })

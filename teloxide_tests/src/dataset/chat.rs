@@ -91,13 +91,13 @@ macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat my
             }
 
             pub(crate) fn build_public_chat(self, public_chat_kind: PublicChatKind) -> Chat {
-                self.clone().build_chat(ChatKind::Public(ChatPublic {
+                self.clone().build_chat(ChatKind::Public(Box::new(ChatPublic {
                     title: self.title,
                     kind: public_chat_kind,
                     description: self.description,
                     invite_link: self.invite_link,
                     has_protected_content: self.has_protected_content,
-                }))
+                })))
             }
         }
     }
@@ -200,6 +200,8 @@ PublicChat! {
         pub location: Option<ChatLocation>,
         pub join_to_send_messages: Option<True>,
         pub join_by_request: Option<True>,
+        pub custom_emoji_sticker_set_name: Option<String>,
+        pub unrestrict_boost_count: Option<u16>,
     }
 }
 
@@ -221,6 +223,8 @@ impl MockSupergroupChat {
             None,
             None,
             Self::IS_FORUM,
+            None,
+            None,
             None,
             None,
             None,
@@ -255,6 +259,8 @@ impl MockSupergroupChat {
                 location: self.location,
                 join_to_send_messages: self.join_to_send_messages,
                 join_by_request: self.join_by_request,
+                custom_emoji_sticker_set_name: self.custom_emoji_sticker_set_name,
+                unrestrict_boost_count: self.unrestrict_boost_count,
             }))
     }
 }
@@ -268,6 +274,11 @@ Chat! {
         pub bio: Option<String>,
         pub has_private_forwards: Option<True>,
         pub has_restricted_voice_and_video_messages: Option<True>,
+        pub birthdate: Option<Birthdate>,
+        pub business_intro: Option<BusinessIntro>,
+        pub business_location: Option<BusinessLocation>,
+        pub business_opening_hours: Option<BusinessOpeningHours>,
+        pub personal_chat: Option<Box<Chat>>,
     }
 }
 
@@ -283,7 +294,10 @@ impl MockPrivateChat {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_chat(None, None, None, None, None, None).id(MockUser::ID as i64)
+        Self::new_chat(
+            None, None, None, None, None, None, None, None, None, None, None,
+        )
+        .id(MockUser::ID as i64)
     }
 
     /// Builds the private chat
@@ -303,6 +317,11 @@ impl MockPrivateChat {
             bio: self.bio,
             has_private_forwards: self.has_private_forwards,
             has_restricted_voice_and_video_messages: self.has_restricted_voice_and_video_messages,
+            birthdate: self.birthdate,
+            business_intro: self.business_intro,
+            business_location: self.business_location,
+            business_opening_hours: self.business_opening_hours,
+            personal_chat: self.personal_chat,
         }))
     }
 }

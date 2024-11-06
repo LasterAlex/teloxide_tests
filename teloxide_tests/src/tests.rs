@@ -8,11 +8,9 @@ use teloxide::payloads::{
     BanChatMemberSetters, CopyMessageSetters, SendPhotoSetters, SendPollSetters,
 };
 use teloxide::requests::Requester;
+use teloxide::sugar::request::RequestReplyExt;
 use teloxide::types::{
-    ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile,
-    InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
-    LinkPreviewOptions, Message, MessageEntity, PollOption, PollType, ReactionType,
-    ReplyParameters, Seconds, Update,
+    ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, LinkPreviewOptions, Message, MessageEntity, MessageId, PollOption, PollType, ReactionType, ReplyParameters, Seconds, Update
 };
 use teloxide::{
     dispatching::{
@@ -156,6 +154,8 @@ pub enum AllCommands {
     ChatAction,
     #[command()]
     SetMessageReaction,
+    #[command()]
+    Panic,
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
@@ -385,6 +385,10 @@ async fn handler(
                 }])
                 .await?;
         }
+        AllCommands::Panic => {
+            // This message id does not exist
+            bot.send_message(msg.chat.id, "test").reply_to(MessageId(344382918)).await?;
+        }
     }
     Ok(())
 }
@@ -425,14 +429,9 @@ async fn test_echo() {
 #[should_panic]
 async fn test_panic() {
     // Nothing else should fail because it panics
-    let bot = MockBot::new(MockMessageText::new().text("/echo echo"), get_schema());
+    let bot = MockBot::new(MockMessageText::new().text("/panic"), get_schema());
 
     bot.dispatch().await;
-
-    let last_response = bot.get_responses().sent_messages.pop().unwrap();
-    if last_response.text() == Some("/echo echo") {
-        panic!("panic!");
-    }
 
     drop(bot);
 }
