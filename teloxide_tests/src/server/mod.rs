@@ -16,6 +16,7 @@ use routes::{
 };
 use serde::Serialize;
 use std::{
+    io,
     net::{SocketAddr, TcpListener},
     sync::{
         atomic::{AtomicI32, Ordering},
@@ -135,8 +136,8 @@ impl Server {
         Self { listener }
     }
 
-    pub fn addr(&self) -> SocketAddr {
-        self.listener.local_addr().unwrap()
+    pub fn addr(&self) -> io::Result<SocketAddr> {
+        self.listener.local_addr()
     }
 }
 
