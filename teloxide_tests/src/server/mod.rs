@@ -15,7 +15,7 @@ use routes::{
 };
 use serde::Serialize;
 use std::{
-    io,
+    error::Error,
     net::TcpListener,
     sync::{
         atomic::{AtomicI32, Ordering},
@@ -112,7 +112,7 @@ pub struct Server {
 
 #[allow(dead_code)]
 impl Server {
-    pub async fn start(me: Me) -> io::Result<Self> {
+    pub async fn start(me: Me) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let port = listener.local_addr()?.port();
 
@@ -126,16 +126,10 @@ impl Server {
 
         let server = tokio::spawn(main(listener, me, cancel_token.clone()));
 
-        let mut left_tries = 200;
-        while reqwest::get(format!("http://127.0.0.1:{}/ping", port))
-            .await
-            .is_err()
-        {
-            left_tries -= 1;
-            if left_tries == 0 {
-                cancel_token.cancel();
-                panic!("Failed to get the server on the port {}!", port);
-            }
+        if let Err(err) = Self::wait_for_server(port).await {
+            cancel_token.cancel();
+            server.await?;
+            return Err(err.into());
         }
 
         Ok(Self {
@@ -148,6 +142,19 @@ impl Server {
     pub async fn stop(self) -> Result<(), JoinError> {
         self.cancel_token.cancel();
         self.server.await
+    }
+
+    async fn wait_for_server(port: u16) -> Result<(), String> {
+        let url = format!("http://127.0.0.1:{}/ping", port);
+        let max_tries = 200;
+
+        for _ in 0..max_tries {
+            if reqwest::get(&url).await.is_ok() {
+                return Ok(());
+            }
+        }
+
+        Err(format!("Failed to get the server on the port {}!", port))
     }
 }
 
