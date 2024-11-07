@@ -115,8 +115,8 @@ impl Server {
         Self { listener }
     }
 
-    pub fn addr(&self) -> io::Result<SocketAddr> {
-        self.listener.local_addr()
+    pub fn port(&self) -> io::Result<u16> {
+        Ok(self.listener.local_addr()?.port())
     }
 }
 
