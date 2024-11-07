@@ -380,7 +380,6 @@ impl MockBot {
                                                                                            // before they are erased
 
         cancel_token.cancel();
-        stop_server().await;
         server.await.unwrap(); // Waits before the server is shut down
     }
 
