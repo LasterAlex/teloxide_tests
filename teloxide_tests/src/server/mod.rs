@@ -187,6 +187,7 @@ impl ServerManager {
 
 fn set_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/ping", web::get().to(ping))
+        .route("/file/bot{token}/{file_name}", web::get().to(download_file))
         .route("/bot{token}/GetFile", web::post().to(get_file))
         .route("/bot{token}/SendMessage", web::post().to(send_message))
         .route("/bot{token}/SendPhoto", web::post().to(send_photo))
@@ -257,8 +258,7 @@ fn set_routes(cfg: &mut web::ServiceConfig) {
             "/bot{token}/SetMessageReaction",
             web::post().to(set_message_reaction),
         )
-        .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands))
-        .route("/file/bot{token}/{file_name}", web::get().to(download_file));
+        .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands));
 }
 
 #[cfg(test)]
