@@ -1,7 +1,7 @@
 //! A fake telegram bot API for testing purposes. Read more in teloxide_tests crate.
 pub mod routes;
 use actix_web::{
-    web::{self, scope},
+    web::{get, post, scope, Data, Json, ServiceConfig},
     App, HttpResponse, HttpServer, Responder,
 };
 use lazy_static::lazy_static;
@@ -101,7 +101,7 @@ pub async fn ping() -> impl Responder {
 }
 
 #[allow(dead_code)]
-pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
+pub async fn log_request(body: Json<serde_json::Value>) -> impl Responder {
     dbg!(body);
     HttpResponse::Ok()
 }
@@ -169,7 +169,7 @@ async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationTok
         move || {
             App::new()
                 // .wrap(actix_web::middleware::Logger::default())
-                .app_data(web::Data::new(me.clone()))
+                .app_data(Data::new(me.clone()))
                 .configure(set_routes)
         }
     })
@@ -188,54 +188,48 @@ async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationTok
     server.await.unwrap();
 }
 
-fn set_routes(cfg: &mut web::ServiceConfig) {
-    cfg.route("/ping", web::get().to(ping))
-        .route("/file/bot{token}/{file_name}", web::get().to(download_file))
+fn set_routes(cfg: &mut ServiceConfig) {
+    cfg.route("/ping", get().to(ping))
+        .route("/file/bot{token}/{file_name}", get().to(download_file))
         .service(scope("/bot{token}").configure(set_bot_routes));
 }
 
-fn set_bot_routes(cfg: &mut web::ServiceConfig) {
-    cfg.route("/GetFile", web::post().to(get_file))
-        .route("/SendMessage", web::post().to(send_message))
-        .route("/SendPhoto", web::post().to(send_photo))
-        .route("/SendVideo", web::post().to(send_video))
-        .route("/SendVoice", web::post().to(send_voice))
-        .route("/SendAudio", web::post().to(send_audio))
-        .route("/SendVideoNote", web::post().to(send_video_note))
-        .route("/SendDocument", web::post().to(send_document))
-        .route("/SendAnimation", web::post().to(send_animation))
-        .route("/SendLocation", web::post().to(send_location))
-        .route("/SendVenue", web::post().to(send_venue))
-        .route("/SendContact", web::post().to(send_contact))
-        .route("/SendSticker", web::post().to(send_sticker))
-        .route("/SendChatAction", web::post().to(send_chat_action))
-        .route("/SendDice", web::post().to(send_dice))
-        .route("/SendPoll", web::post().to(send_poll))
-        .route("/SendMediaGroup", web::post().to(send_media_group))
-        .route("/EditMessageText", web::post().to(edit_message_text))
-        .route("/EditMessageCaption", web::post().to(edit_message_caption))
+fn set_bot_routes(cfg: &mut ServiceConfig) {
+    cfg.route("/GetFile", post().to(get_file))
+        .route("/SendMessage", post().to(send_message))
+        .route("/SendPhoto", post().to(send_photo))
+        .route("/SendVideo", post().to(send_video))
+        .route("/SendVoice", post().to(send_voice))
+        .route("/SendAudio", post().to(send_audio))
+        .route("/SendVideoNote", post().to(send_video_note))
+        .route("/SendDocument", post().to(send_document))
+        .route("/SendAnimation", post().to(send_animation))
+        .route("/SendLocation", post().to(send_location))
+        .route("/SendVenue", post().to(send_venue))
+        .route("/SendContact", post().to(send_contact))
+        .route("/SendSticker", post().to(send_sticker))
+        .route("/SendChatAction", post().to(send_chat_action))
+        .route("/SendDice", post().to(send_dice))
+        .route("/SendPoll", post().to(send_poll))
+        .route("/SendMediaGroup", post().to(send_media_group))
+        .route("/EditMessageText", post().to(edit_message_text))
+        .route("/EditMessageCaption", post().to(edit_message_caption))
         .route(
             "/EditMessageReplyMarkup",
-            web::post().to(edit_message_reply_markup),
+            post().to(edit_message_reply_markup),
         )
-        .route("/DeleteMessage", web::post().to(delete_message))
-        .route("/ForwardMessage", web::post().to(forward_message))
-        .route("/CopyMessage", web::post().to(copy_message))
-        .route(
-            "/AnswerCallbackQuery",
-            web::post().to(answer_callback_query),
-        )
-        .route("/PinChatMessage", web::post().to(pin_chat_message))
-        .route("/UnpinChatMessage", web::post().to(unpin_chat_message))
-        .route(
-            "/UnpinAllChatMessages",
-            web::post().to(unpin_all_chat_messages),
-        )
-        .route("/BanChatMember", web::post().to(ban_chat_member))
-        .route("/UnbanChatMember", web::post().to(unban_chat_member))
-        .route("/RestrictChatMember", web::post().to(restrict_chat_member))
-        .route("/SetMessageReaction", web::post().to(set_message_reaction))
-        .route("/SetMyCommands", web::post().to(set_my_commands));
+        .route("/DeleteMessage", post().to(delete_message))
+        .route("/ForwardMessage", post().to(forward_message))
+        .route("/CopyMessage", post().to(copy_message))
+        .route("/AnswerCallbackQuery", post().to(answer_callback_query))
+        .route("/PinChatMessage", post().to(pin_chat_message))
+        .route("/UnpinChatMessage", post().to(unpin_chat_message))
+        .route("/UnpinAllChatMessages", post().to(unpin_all_chat_messages))
+        .route("/BanChatMember", post().to(ban_chat_member))
+        .route("/UnbanChatMember", post().to(unban_chat_member))
+        .route("/RestrictChatMember", post().to(restrict_chat_member))
+        .route("/SetMessageReaction", post().to(set_message_reaction))
+        .route("/SetMyCommands", post().to(set_my_commands));
 }
 
 #[cfg(test)]
