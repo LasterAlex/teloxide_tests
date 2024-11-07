@@ -65,7 +65,7 @@ fn find_chat_id(value: Value) -> Option<i64> {
     if let Value::Object(map) = value {
         for (k, v) in map {
             if k == "chat" {
-                return Some(v["id"].as_i64()?);
+                return v["id"].as_i64();
             } else if let Some(found) = find_chat_id(v) {
                 return Some(found);
             }
