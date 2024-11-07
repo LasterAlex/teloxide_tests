@@ -433,10 +433,10 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
-        let update_lock = self.updates.first().expect("No updates were detected!");
-        let chat_id = match update_lock.chat_id() {
+        let first_update = self.updates.first().expect("No updates were detected!");
+        let chat_id = match first_update.chat_id() {
             Some(chat_id) => chat_id,
-            None => match find_chat_id(serde_json::to_value(update_lock).unwrap()) {
+            None => match find_chat_id(serde_json::to_value(first_update).unwrap()) {
                 Some(id) => ChatId(id),
                 None => {
                     log::error!("No chat id was detected in the update! Did you send an update without a chat identifier? Like MockCallbackQuery without an attached message?");
@@ -473,10 +473,10 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
-        let update_lock = self.updates.first().expect("No updates were detected!");
-        let chat_id = match update_lock.chat_id() {
+        let first_update = self.updates.first().expect("No updates were detected!");
+        let chat_id = match first_update.chat_id() {
             Some(chat_id) => chat_id,
-            None => match find_chat_id(serde_json::to_value(update_lock).unwrap()) {
+            None => match find_chat_id(serde_json::to_value(first_update).unwrap()) {
                 Some(id) => ChatId(id),
                 None => {
                     panic!("No chat id was detected!");
