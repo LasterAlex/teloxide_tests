@@ -91,17 +91,6 @@ fn add_message(message: &mut Message) {
     MESSAGES.add_message(message.clone());
 }
 
-async fn stop_server() {
-    let client = reqwest::Client::new();
-    let _ = client
-        .post(format!(
-            "http://127.0.0.1:{}/stop/false",
-            MockBot::PORT.lock().unwrap().clone()
-        ))
-        .send()
-        .await;
-}
-
 /// A mocked bot that sends requests to the fake server
 /// Please check the `new` function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
 #[allow(dead_code)]
@@ -297,7 +286,6 @@ impl MockBot {
     }
 
     async fn close_bot(&self) {
-        stop_server().await;
         *self.bot_lock.lock().unwrap() = None;
     }
 
@@ -331,6 +319,7 @@ impl MockBot {
         {
             left_tries -= 1;
             if left_tries == 0 {
+                cancel_token.cancel();
                 self.close_bot().await;
                 panic!(
                     "Failed to get the server on the port {}!",
@@ -349,6 +338,8 @@ impl MockBot {
                 Ok(_) => {}
                 Err(_) => {
                     // Something panicked, we need to free the bot lock and exit
+                    cancel_token.cancel();
+                    server.await.unwrap();
                     self.close_bot().await;
                     panic!("Something went wrong and the bot panicked!");
                 }
