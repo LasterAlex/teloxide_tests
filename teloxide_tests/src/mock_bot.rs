@@ -114,8 +114,6 @@ pub struct MockBot {
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
     pub responses: Option<Responses>,
-    /// Stack size used for dispatching
-    pub stack_size: Mutex<usize>,
     server: Server,
     bot_lock: MutexGuard<'static, ()>,
 }
@@ -196,7 +194,6 @@ impl MockBot {
             handler_tree,
             responses: None,
             dependencies: Mutex::new(DependencyMap::new()),
-            stack_size: Mutex::new(Self::DEFAULT_STACK_SIZE),
             bot_lock: lock,
         }
     }
@@ -246,7 +243,6 @@ impl MockBot {
                 self.me.lock().unwrap().clone(),
                 update_lock.clone() // This actually makes an update go through the dptree
             ];
-            let stack_size = *self.stack_size.lock().unwrap();
 
             deps.insert_container(self_deps.clone()); // These are nessessary for the dispatch
 
@@ -254,12 +250,12 @@ impl MockBot {
             let handler_tree = self.handler_tree.clone();
 
             // To fix the stack overflow, a new thread with a new runtime is needed
-            let builder = std::thread::Builder::new().stack_size(stack_size);
+            let builder = std::thread::Builder::new().stack_size(Self::DEFAULT_STACK_SIZE);
             handles.push(
                 builder
                     .spawn(move || {
                         let runtime = tokio::runtime::Builder::new_multi_thread()
-                            .thread_stack_size(stack_size) // Not needed, but just in case
+                            .thread_stack_size(Self::DEFAULT_STACK_SIZE) // Not needed, but just in case
                             .enable_all()
                             .build()
                             .unwrap();
