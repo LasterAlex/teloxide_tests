@@ -182,10 +182,12 @@ impl MockBot {
 
         let bot = Bot::new(token)
             .set_api_url(reqwest::Url::parse(&format!("http://localhost:{}", Self::PORT)).unwrap());
-        let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
         let server = Server::new();
         let current_update_id = AtomicI32::new(42);
+
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
+        let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+
         Self {
             server,
             bot,
