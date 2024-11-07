@@ -110,6 +110,7 @@ pub struct Server {
     cancel_token: CancellationToken,
 }
 
+#[warn(clippy::unwrap_used)]
 impl Server {
     pub async fn start(me: Me) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
