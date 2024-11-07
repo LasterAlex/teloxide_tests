@@ -291,10 +291,6 @@ impl MockBot {
         }
     }
 
-    async fn close_bot(&self) {
-        *self.bot_lock.lock().unwrap() = None;
-    }
-
     /// Actually dispatches the bot, calling the update through the handler tree.
     /// All the requests made through the bot will be stored in `responses`, and can be retrieved
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
@@ -326,7 +322,6 @@ impl MockBot {
             left_tries -= 1;
             if left_tries == 0 {
                 cancel_token.cancel();
-                self.close_bot().await;
                 panic!(
                     "Failed to get the server on the port {}!",
                     Self::PORT.lock().unwrap().clone()
@@ -346,7 +341,6 @@ impl MockBot {
                     // Something panicked, we need to free the bot lock and exit
                     cancel_token.cancel();
                     server.await.unwrap();
-                    self.close_bot().await;
                     panic!("Something went wrong and the bot panicked!");
                 }
             };
@@ -494,7 +488,6 @@ impl MockBot {
                 Some(id) => ChatId(id),
                 None => {
                     log::error!("No chat id was detected in the update! Did you send an update without a chat identifier? Like MockCallbackQuery without an attached message?");
-                    self.close_bot().await;
                     panic!("No chat id was detected!");
                 }
             },
@@ -514,7 +507,6 @@ impl MockBot {
                 .await
                 .expect("Failed to update dialogue");
         } else {
-            self.close_bot().await;
             log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
             panic!("No storage was detected!");
         }
