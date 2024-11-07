@@ -102,10 +102,12 @@ pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
     HttpResponse::Ok()
 }
 
+#[allow(dead_code)]
 pub struct Server {
     listener: TcpListener,
 }
 
+#[allow(dead_code)]
 impl Server {
     pub fn new() -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
