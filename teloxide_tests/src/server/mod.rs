@@ -47,7 +47,7 @@ impl MESSAGES {
         let message = messages.iter().find(|m| m.id.0 == message_id)?; // Find the message
                                                                        // (return None if not found)
 
-        let mut json = serde_json::to_value(&message).ok()?; // Convert the message to JSON
+        let mut json = serde_json::to_value(message).ok()?; // Convert the message to JSON
         json[field] = serde_json::to_value(value).ok()?; // Edit the field
         let new_message: Message = serde_json::from_value(json).ok()?; // Convert back to Message
 
@@ -208,7 +208,7 @@ pub async fn main(port: Mutex<u16>, me: Me, cancel_token: CancellationToken) {
                 .route("/file/bot{token}/{file_name}", web::get().to(download_file))
         }
     })
-    .bind(format!("127.0.0.1:{}", port.lock().unwrap().to_string()))
+    .bind(format!("127.0.0.1:{}", port.lock().unwrap()))
     .unwrap()
     .workers(1)
     .run();
