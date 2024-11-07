@@ -306,14 +306,15 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&self) {
-        let runtime = tokio::runtime::Handle::current();
+        let cancel_token = CancellationToken::new();
+
         // If the user presses ctrl-c, the server will be shut down
+        let cancel_token_clone = cancel_token.clone();
         let _ = ctrlc::set_handler(move || {
-            runtime.block_on(stop_server());
+            cancel_token_clone.cancel();
             std::process::exit(1);
         });
 
-        let cancel_token = CancellationToken::new();
         let server = tokio::spawn(server::main(
             Self::PORT,
             self.me.lock().unwrap().clone(),
