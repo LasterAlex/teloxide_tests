@@ -105,9 +105,8 @@ pub struct MockBot {
     pub bot: Bot,
     /// The thing that dptree::entry() returns
     pub handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>,
-    // Mutexes is here to not worry about mut references, its easier for the user without them
     /// Updates to send as user
-    pub updates: Mutex<Vec<Update>>,
+    pub updates: Vec<Update>,
     /// Bot parameters are here
     pub me: Mutex<Me>,
     /// If you have something like a state, you should add the storage here using .dependencies()
@@ -190,7 +189,7 @@ impl MockBot {
             server,
             bot,
             me: Mutex::new(MockMe::new().build()),
-            updates: Mutex::new(update.into_update(Self::CURRENT_UPDATE_ID)),
+            updates: update.into_update(Self::CURRENT_UPDATE_ID),
             handler_tree,
             responses: None,
             dependencies: Mutex::new(DependencyMap::new()),
@@ -213,19 +212,18 @@ impl MockBot {
 
     /// Sets the updates. Useful for reusing the same mocked bot instance in different tests
     /// Reminder: You can pass in vec![MockMessagePhoto] or something else!
-    pub fn update<T: IntoUpdate>(&self, update: T) {
-        *self.updates.lock().unwrap() = update.into_update(Self::CURRENT_UPDATE_ID);
+    pub fn update<T: IntoUpdate>(&mut self, update: T) {
+        self.updates = update.into_update(Self::CURRENT_UPDATE_ID);
     }
 
     fn collect_handles(&self, handles: &mut Vec<std::thread::JoinHandle<()>>) {
-        let updates_lock = self.updates.lock().unwrap().clone();
         let self_deps = self.dependencies.lock().unwrap().clone();
-        for mut update_lock in updates_lock {
-            match update_lock.kind.clone() {
+        for mut update in self.updates.clone() {
+            match update.kind.clone() {
                 UpdateKind::Message(mut message) => {
                     // Add the message to the list of messages, so the bot can interact with it
                     add_message(&mut message);
-                    update_lock.kind = UpdateKind::Message(message.clone());
+                    update.kind = UpdateKind::Message(message.clone());
                 }
                 UpdateKind::CallbackQuery(mut callback) => {
                     if let Some(MaybeInaccessibleMessage::Regular(ref mut message)) =
@@ -233,7 +231,7 @@ impl MockBot {
                     {
                         add_message(message);
                     }
-                    update_lock.kind = UpdateKind::CallbackQuery(callback.clone());
+                    update.kind = UpdateKind::CallbackQuery(callback.clone());
                 }
                 _ => {}
             }
@@ -241,7 +239,7 @@ impl MockBot {
             let mut deps = deps![
                 self.bot.clone(),
                 self.me.lock().unwrap().clone(),
-                update_lock.clone() // This actually makes an update go through the dptree
+                update.clone() // This actually makes an update go through the dptree
             ];
 
             deps.insert_container(self_deps.clone()); // These are nessessary for the dispatch
@@ -459,8 +457,7 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
-        let updates = self.updates.lock().unwrap().clone();
-        let update_lock = updates.first().expect("No updates were detected!");
+        let update_lock = self.updates.first().expect("No updates were detected!");
         let chat_id = match update_lock.chat_id() {
             Some(chat_id) => chat_id,
             None => match find_chat_id(serde_json::to_value(update_lock).unwrap()) {
@@ -500,8 +497,7 @@ impl MockBot {
         S: Send + 'static + Clone,
     {
         let (in_mem_storage, erased_storage) = self.get_potential_storages().await;
-        let updates = self.updates.lock().unwrap().clone();
-        let update_lock = updates.first().expect("No updates were detected!");
+        let update_lock = self.updates.first().expect("No updates were detected!");
         let chat_id = match update_lock.chat_id() {
             Some(chat_id) => chat_id,
             None => match find_chat_id(serde_json::to_value(update_lock).unwrap()) {
