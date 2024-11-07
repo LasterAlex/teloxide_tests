@@ -120,7 +120,7 @@ impl Server {
     }
 }
 
-pub async fn main(port: u16, me: Me, cancel_token: CancellationToken) {
+pub async fn main(listener: TcpListener, me: Me, cancel_token: CancellationToken) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
@@ -210,7 +210,7 @@ pub async fn main(port: u16, me: Me, cancel_token: CancellationToken) {
                 .route("/file/bot{token}/{file_name}", web::get().to(download_file))
         }
     })
-    .bind(format!("127.0.0.1:{}", port))
+    .listen(listener)
     .unwrap()
     .workers(1)
     .run();

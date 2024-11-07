@@ -3,6 +3,7 @@ use gag::Gag;
 use serde_json::Value;
 use std::{
     mem::discriminant,
+    net::TcpListener,
     panic,
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
 };
@@ -119,7 +120,6 @@ pub struct MockBot {
 }
 
 impl MockBot {
-    const PORT: u16 = 6504;
     const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 
     /// Creates a new MockBot, using something that can be turned into Updates, and a handler tree.
@@ -283,10 +283,11 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
-        let bot = self
-            .bot
-            .clone()
-            .set_api_url(reqwest::Url::parse(&format!("http://localhost:{}", Self::PORT)).unwrap());
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", port)).unwrap();
+
+        let bot = self.bot.clone().set_api_url(api_url);
 
         let cancel_token = CancellationToken::new();
 
@@ -298,20 +299,20 @@ impl MockBot {
         });
 
         let server = tokio::spawn(server::main(
-            Self::PORT,
+            listener,
             self.me.lock().unwrap().clone(),
             cancel_token.clone(),
         )); // This starts the server in the background
 
         let mut left_tries = 200;
-        while reqwest::get(format!("http://127.0.0.1:{}/ping", Self::PORT))
+        while reqwest::get(format!("http://127.0.0.1:{}/ping", port))
             .await
             .is_err()
         {
             left_tries -= 1;
             if left_tries == 0 {
                 cancel_token.cancel();
-                panic!("Failed to get the server on the port {}!", Self::PORT);
+                panic!("Failed to get the server on the port {}!", port);
             }
         }
 
