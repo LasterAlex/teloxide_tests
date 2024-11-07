@@ -50,10 +50,10 @@ fn find_file(value: Value) -> Option<FileMeta> {
             }
         }
     }
-    if file_id.is_some() && file_unique_id.is_some() {
+    if let (Some(id), Some(unique_id)) = (file_id, file_unique_id) {
         return Some(FileMeta {
-            id: file_id.unwrap(),
-            unique_id: file_unique_id.unwrap(),
+            id,
+            unique_id,
             size: file_size.unwrap_or(0),
         });
     }
