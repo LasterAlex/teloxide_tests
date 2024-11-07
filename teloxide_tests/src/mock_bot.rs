@@ -112,6 +112,7 @@ pub struct MockBot {
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
     pub responses: Option<Responses>,
+
     bot_lock: MutexGuard<'static, ()>,
     current_update_id: AtomicI32,
     stack_size: usize,
