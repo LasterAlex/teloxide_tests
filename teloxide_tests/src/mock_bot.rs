@@ -256,7 +256,7 @@ impl MockBot {
                 self.me.lock().unwrap().clone(),
                 update_lock.clone() // This actually makes an update go through the dptree
             ];
-            let stack_size = self.stack_size.lock().unwrap().clone();
+            let stack_size = *self.stack_size.lock().unwrap();
 
             deps.insert_container(self_deps.clone()); // These are nessessary for the dispatch
 
