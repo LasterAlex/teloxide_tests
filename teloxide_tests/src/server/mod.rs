@@ -1,7 +1,6 @@
 //! A fake telegram bot API for testing purposes. Read more in teloxide_tests crate.
 pub mod routes;
-use actix_web::{dev::ServerHandle, web, App, HttpResponse, HttpServer, Responder};
-use actix_web_lab::extract::Path;
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use lazy_static::lazy_static;
 use routes::{
     answer_callback_query::*, ban_chat_member::*, copy_message::*, delete_message::*,
