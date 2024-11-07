@@ -109,7 +109,7 @@ pub struct MockBot {
     /// Updates to send as user
     pub updates: Vec<Update>,
     /// Bot parameters are here
-    pub me: Mutex<Me>,
+    pub me: Me,
     /// If you have something like a state, you should add the storage here using .dependencies()
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
@@ -186,7 +186,7 @@ impl MockBot {
 
         Self {
             bot,
-            me: Mutex::new(MockMe::new().build()),
+            me: MockMe::new().build(),
             updates: update.into_update(&current_update_id),
             handler_tree,
             responses: None,
@@ -205,8 +205,8 @@ impl MockBot {
     }
 
     /// Sets the bot parameters, like supports_inline_queries, first_name, etc.
-    pub fn me(&self, me: MockMe) {
-        *self.me.lock().unwrap() = me.build();
+    pub fn me(&mut self, me: MockMe) {
+        self.me = me.build();
     }
 
     /// Sets the updates. Useful for reusing the same mocked bot instance in different tests
@@ -237,7 +237,7 @@ impl MockBot {
 
             let mut deps = deps![
                 bot.clone(),
-                self.me.lock().unwrap().clone(),
+                self.me.clone(),
                 update.clone() // This actually makes an update go through the dptree
             ];
 
@@ -298,7 +298,7 @@ impl MockBot {
 
         let server = tokio::spawn(server::main(
             listener,
-            self.me.lock().unwrap().clone(),
+            self.me.clone(),
             cancel_token.clone(),
         )); // This starts the server in the background
 
