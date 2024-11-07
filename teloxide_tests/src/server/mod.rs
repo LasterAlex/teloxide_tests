@@ -166,79 +166,7 @@ impl ServerManager {
                 App::new()
                     // .wrap(actix_web::middleware::Logger::default())
                     .app_data(web::Data::new(me.clone()))
-                    .route("/ping", web::get().to(ping))
-                    .route("/bot{token}/GetFile", web::post().to(get_file))
-                    .route("/bot{token}/SendMessage", web::post().to(send_message))
-                    .route("/bot{token}/SendPhoto", web::post().to(send_photo))
-                    .route("/bot{token}/SendVideo", web::post().to(send_video))
-                    .route("/bot{token}/SendVoice", web::post().to(send_voice))
-                    .route("/bot{token}/SendAudio", web::post().to(send_audio))
-                    .route("/bot{token}/SendVideoNote", web::post().to(send_video_note))
-                    .route("/bot{token}/SendDocument", web::post().to(send_document))
-                    .route("/bot{token}/SendAnimation", web::post().to(send_animation))
-                    .route("/bot{token}/SendLocation", web::post().to(send_location))
-                    .route("/bot{token}/SendVenue", web::post().to(send_venue))
-                    .route("/bot{token}/SendContact", web::post().to(send_contact))
-                    .route("/bot{token}/SendSticker", web::post().to(send_sticker))
-                    .route(
-                        "/bot{token}/SendChatAction",
-                        web::post().to(send_chat_action),
-                    )
-                    .route("/bot{token}/SendDice", web::post().to(send_dice))
-                    .route("/bot{token}/SendPoll", web::post().to(send_poll))
-                    .route(
-                        "/bot{token}/SendMediaGroup",
-                        web::post().to(send_media_group),
-                    )
-                    .route(
-                        "/bot{token}/EditMessageText",
-                        web::post().to(edit_message_text),
-                    )
-                    .route(
-                        "/bot{token}/EditMessageCaption",
-                        web::post().to(edit_message_caption),
-                    )
-                    .route(
-                        "/bot{token}/EditMessageReplyMarkup",
-                        web::post().to(edit_message_reply_markup),
-                    )
-                    .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
-                    .route(
-                        "/bot{token}/ForwardMessage",
-                        web::post().to(forward_message),
-                    )
-                    .route("/bot{token}/CopyMessage", web::post().to(copy_message))
-                    .route(
-                        "/bot{token}/AnswerCallbackQuery",
-                        web::post().to(answer_callback_query),
-                    )
-                    .route(
-                        "/bot{token}/PinChatMessage",
-                        web::post().to(pin_chat_message),
-                    )
-                    .route(
-                        "/bot{token}/UnpinChatMessage",
-                        web::post().to(unpin_chat_message),
-                    )
-                    .route(
-                        "/bot{token}/UnpinAllChatMessages",
-                        web::post().to(unpin_all_chat_messages),
-                    )
-                    .route("/bot{token}/BanChatMember", web::post().to(ban_chat_member))
-                    .route(
-                        "/bot{token}/UnbanChatMember",
-                        web::post().to(unban_chat_member),
-                    )
-                    .route(
-                        "/bot{token}/RestrictChatMember",
-                        web::post().to(restrict_chat_member),
-                    )
-                    .route(
-                        "/bot{token}/SetMessageReaction",
-                        web::post().to(set_message_reaction),
-                    )
-                    .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands))
-                    .route("/file/bot{token}/{file_name}", web::get().to(download_file))
+                    .configure(set_routes)
             }
         })
         .listen(listener)
@@ -255,6 +183,82 @@ impl ServerManager {
 
         server.await.unwrap();
     }
+}
+
+fn set_routes(cfg: &mut web::ServiceConfig) {
+    cfg.route("/ping", web::get().to(ping))
+        .route("/bot{token}/GetFile", web::post().to(get_file))
+        .route("/bot{token}/SendMessage", web::post().to(send_message))
+        .route("/bot{token}/SendPhoto", web::post().to(send_photo))
+        .route("/bot{token}/SendVideo", web::post().to(send_video))
+        .route("/bot{token}/SendVoice", web::post().to(send_voice))
+        .route("/bot{token}/SendAudio", web::post().to(send_audio))
+        .route("/bot{token}/SendVideoNote", web::post().to(send_video_note))
+        .route("/bot{token}/SendDocument", web::post().to(send_document))
+        .route("/bot{token}/SendAnimation", web::post().to(send_animation))
+        .route("/bot{token}/SendLocation", web::post().to(send_location))
+        .route("/bot{token}/SendVenue", web::post().to(send_venue))
+        .route("/bot{token}/SendContact", web::post().to(send_contact))
+        .route("/bot{token}/SendSticker", web::post().to(send_sticker))
+        .route(
+            "/bot{token}/SendChatAction",
+            web::post().to(send_chat_action),
+        )
+        .route("/bot{token}/SendDice", web::post().to(send_dice))
+        .route("/bot{token}/SendPoll", web::post().to(send_poll))
+        .route(
+            "/bot{token}/SendMediaGroup",
+            web::post().to(send_media_group),
+        )
+        .route(
+            "/bot{token}/EditMessageText",
+            web::post().to(edit_message_text),
+        )
+        .route(
+            "/bot{token}/EditMessageCaption",
+            web::post().to(edit_message_caption),
+        )
+        .route(
+            "/bot{token}/EditMessageReplyMarkup",
+            web::post().to(edit_message_reply_markup),
+        )
+        .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
+        .route(
+            "/bot{token}/ForwardMessage",
+            web::post().to(forward_message),
+        )
+        .route("/bot{token}/CopyMessage", web::post().to(copy_message))
+        .route(
+            "/bot{token}/AnswerCallbackQuery",
+            web::post().to(answer_callback_query),
+        )
+        .route(
+            "/bot{token}/PinChatMessage",
+            web::post().to(pin_chat_message),
+        )
+        .route(
+            "/bot{token}/UnpinChatMessage",
+            web::post().to(unpin_chat_message),
+        )
+        .route(
+            "/bot{token}/UnpinAllChatMessages",
+            web::post().to(unpin_all_chat_messages),
+        )
+        .route("/bot{token}/BanChatMember", web::post().to(ban_chat_member))
+        .route(
+            "/bot{token}/UnbanChatMember",
+            web::post().to(unban_chat_member),
+        )
+        .route(
+            "/bot{token}/RestrictChatMember",
+            web::post().to(restrict_chat_member),
+        )
+        .route(
+            "/bot{token}/SetMessageReaction",
+            web::post().to(set_message_reaction),
+        )
+        .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands))
+        .route("/file/bot{token}/{file_name}", web::get().to(download_file));
 }
 
 #[cfg(test)]
