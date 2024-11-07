@@ -533,7 +533,7 @@ impl MockBot {
         let update_lock = updates.first().expect("No updates were detected!");
         let chat_id = match update_lock.chat_id() {
             Some(chat_id) => chat_id,
-            None => match find_chat_id(serde_json::to_value(&update_lock).unwrap()) {
+            None => match find_chat_id(serde_json::to_value(update_lock).unwrap()) {
                 Some(id) => ChatId(id),
                 None => {
                     *self.bot_lock.lock().unwrap() = None;
