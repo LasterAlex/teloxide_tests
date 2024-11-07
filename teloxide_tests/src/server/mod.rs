@@ -124,7 +124,7 @@ impl ServerManager {
             std::process::exit(1);
         });
 
-        let server = tokio::spawn(Self::run_server(listener, me, cancel_token.clone()));
+        let server = tokio::spawn(run_server(listener, me, cancel_token.clone()));
 
         if let Err(err) = Self::wait_for_server(port).await {
             cancel_token.cancel();
@@ -156,33 +156,33 @@ impl ServerManager {
 
         Err(format!("Failed to get the server on the port {}!", port))
     }
+}
 
-    async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationToken) {
-        // MESSAGES don't care if they are cleaned or not
-        *RESPONSES.lock().unwrap() = Responses::default();
+async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationToken) {
+    // MESSAGES don't care if they are cleaned or not
+    *RESPONSES.lock().unwrap() = Responses::default();
 
-        let server = HttpServer::new({
-            move || {
-                App::new()
-                    // .wrap(actix_web::middleware::Logger::default())
-                    .app_data(web::Data::new(me.clone()))
-                    .configure(set_routes)
-            }
-        })
-        .listen(listener)
-        .unwrap()
-        .workers(1)
-        .run();
+    let server = HttpServer::new({
+        move || {
+            App::new()
+                // .wrap(actix_web::middleware::Logger::default())
+                .app_data(web::Data::new(me.clone()))
+                .configure(set_routes)
+        }
+    })
+    .listen(listener)
+    .unwrap()
+    .workers(1)
+    .run();
 
-        let server_handle = server.handle();
+    let server_handle = server.handle();
 
-        tokio::spawn(async move {
-            cancel_token.cancelled().await;
-            server_handle.stop(false).await;
-        });
+    tokio::spawn(async move {
+        cancel_token.cancelled().await;
+        server_handle.stop(false).await;
+    });
 
-        server.await.unwrap();
-    }
+    server.await.unwrap();
 }
 
 fn set_routes(cfg: &mut web::ServiceConfig) {
