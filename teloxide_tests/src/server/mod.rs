@@ -109,10 +109,10 @@ pub struct Server {
 
 #[allow(dead_code)]
 impl Server {
-    pub fn new() -> Self {
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    pub async fn start() -> io::Result<Self> {
+        let listener = TcpListener::bind("127.0.0.1:0")?;
 
-        Self { listener }
+        Ok(Self { listener })
     }
 
     pub fn port(&self) -> io::Result<u16> {

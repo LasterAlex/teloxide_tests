@@ -279,7 +279,7 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
-        let server = Server::new();
+        let server = Server::start().await.unwrap();
 
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
