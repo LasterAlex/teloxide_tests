@@ -109,7 +109,7 @@ pub struct MockBot {
     /// Bot parameters are here
     pub me: Me,
     /// If you have something like a state, you should add the storage here using .dependencies()
-    pub dependencies: Mutex<DependencyMap>,
+    pub dependencies: DependencyMap,
     /// Caught responses from the server
     pub responses: Option<Responses>,
 
@@ -190,7 +190,7 @@ impl MockBot {
             updates: update.into_update(&current_update_id),
             handler_tree,
             responses: None,
-            dependencies: Mutex::new(DependencyMap::new()),
+            dependencies: DependencyMap::new(),
             bot_lock: lock,
             current_update_id,
             stack_size: Self::DEFAULT_STACK_SIZE,
@@ -201,8 +201,8 @@ impl MockBot {
     /// Just like in this teloxide example: <https://github.com/teloxide/teloxide/blob/master/crates/teloxide/examples/dialogue.rs>
     /// You can use it to add dependencies to your handler tree.
     /// For more examples - look into `get_state` method documentation
-    pub fn dependencies(&self, deps: DependencyMap) {
-        *self.dependencies.lock().unwrap() = deps;
+    pub fn dependencies(&mut self, deps: DependencyMap) {
+        self.dependencies = deps;
     }
 
     /// Sets the bot parameters, like supports_inline_queries, first_name, etc.
@@ -217,7 +217,7 @@ impl MockBot {
     }
 
     fn collect_handles(&self, handles: &mut Vec<std::thread::JoinHandle<()>>, bot: Bot) {
-        let self_deps = self.dependencies.lock().unwrap().clone();
+        let self_deps = self.dependencies.clone();
         for mut update in self.updates.clone() {
             match update.kind.clone() {
                 UpdateKind::Message(mut message) => {
@@ -337,7 +337,7 @@ impl MockBot {
         let in_mem_storage: Option<Arc<Arc<InMemStorage<S>>>>;
         let erased_storage: Option<Arc<Arc<ErasedStorage<S>>>>;
         // No trace storage cuz who uses it
-        let dependencies = Arc::new(self.dependencies.lock().unwrap().clone());
+        let dependencies = Arc::new(self.dependencies.clone());
         // Get dependencies into Arc cuz otherwise it complaints about &self being moved
 
         panic::set_hook(Box::new(|_| {
@@ -351,7 +351,7 @@ impl MockBot {
         .join()
         .ok();
 
-        let dependencies = Arc::new(self.dependencies.lock().unwrap().clone());
+        let dependencies = Arc::new(self.dependencies.clone());
         // Dependencies were moved to a prev. thread, so create a new one
         erased_storage = std::thread::spawn(move || {
             // The same for ErasedStorage
