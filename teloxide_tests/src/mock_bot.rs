@@ -114,7 +114,6 @@ pub struct MockBot {
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
     pub responses: Option<Responses>,
-    server: Server,
     bot_lock: MutexGuard<'static, ()>,
     current_update_id: AtomicI32,
 }
@@ -179,16 +178,13 @@ impl MockBot {
         let _ = pretty_env_logger::try_init();
 
         let token = "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO";
-
         let bot = Bot::new(token);
-        let server = Server::new();
         let current_update_id = AtomicI32::new(42);
 
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
         let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
 
         Self {
-            server,
             bot,
             me: Mutex::new(MockMe::new().build()),
             updates: update.into_update(&current_update_id),
@@ -283,6 +279,8 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
+        let server = Server::new();
+
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
         let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", port)).unwrap();
