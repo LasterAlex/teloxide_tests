@@ -113,7 +113,7 @@ pub struct MockBot {
     /// If you have something like a state, you should add the storage here using .dependencies()
     pub dependencies: Mutex<DependencyMap>,
     /// Caught responses from the server
-    pub responses: Mutex<Option<Responses>>,
+    pub responses: Option<Responses>,
     /// Stack size used for dispatching
     pub stack_size: Mutex<usize>,
     server: Server,
@@ -160,7 +160,7 @@ impl MockBot {
     ///
     /// #[tokio::main]  // Change for tokio::test in your implementation
     /// async fn main() {
-    ///     let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+    ///     let mut bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
     ///     bot.dispatch().await;
     ///     let responses = bot.get_responses();
     ///     let message = responses
@@ -194,7 +194,7 @@ impl MockBot {
             me: Mutex::new(MockMe::new().build()),
             updates: Mutex::new(update.into_update(Self::CURRENT_UPDATE_ID)),
             handler_tree,
-            responses: Mutex::new(None),
+            responses: None,
             dependencies: Mutex::new(DependencyMap::new()),
             stack_size: Mutex::new(Self::DEFAULT_STACK_SIZE),
             bot_lock: lock,
@@ -285,7 +285,7 @@ impl MockBot {
     /// All the requests made through the bot will be stored in `responses`, and can be retrieved
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
-    pub async fn dispatch(&self) {
+    pub async fn dispatch(&mut self) {
         let cancel_token = CancellationToken::new();
 
         // If the user presses ctrl-c, the server will be shut down
@@ -330,8 +330,7 @@ impl MockBot {
             };
         }
 
-        *self.responses.lock().unwrap() = Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses
-                                                                                           // before they are erased
+        self.responses = Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses before they are erased
 
         cancel_token.cancel();
         server.await.unwrap(); // Waits before the server is shut down
@@ -341,7 +340,7 @@ impl MockBot {
     /// Panics if no dispatching was done.
     /// Should be treated as a variable, because it kinda is
     pub fn get_responses(&self) -> server::Responses {
-        let responses = self.responses.lock().unwrap().clone();
+        let responses = self.responses.clone();
         match responses {
             Some(responses) => responses,
             None => {
@@ -439,7 +438,7 @@ impl MockBot {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+    ///     let mut bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
     ///     bot.dependencies(deps![InMemStorage::<State>::new()]);
     ///     bot.set_state(State::Start).await;
     ///     // Yes, Start is the default state, but this just shows how it works
@@ -544,7 +543,7 @@ impl MockBot {
 
     /// Dispatches and checks the last sent message text or caption. Pass in an empty string if you
     /// want the text or caption to be None
-    pub async fn dispatch_and_check_last_text(&self, text_or_caption: &str) {
+    pub async fn dispatch_and_check_last_text(&mut self, text_or_caption: &str) {
         self.dispatch().await;
 
         let responses = self.get_responses();
@@ -564,8 +563,11 @@ impl MockBot {
 
     /// Same as `dispatch_and_check_last_text`, but also checks the state. You need to derive
     /// PartialEq, Clone and Debug for the state like in `set_state` example
-    pub async fn dispatch_and_check_last_text_and_state<S>(&self, text_or_caption: &str, state: S)
-    where
+    pub async fn dispatch_and_check_last_text_and_state<S>(
+        &mut self,
+        text_or_caption: &str,
+        state: S,
+    ) where
         S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
     {
         self.dispatch().await;
@@ -592,7 +594,7 @@ impl MockBot {
     ///
     /// For example, `State::Start { some_field: "value" }` and `State::Start { some_field: "other value" }` are the same in this function
     pub async fn dispatch_and_check_last_text_and_state_discriminant<S>(
-        &self,
+        &mut self,
         text_or_caption: &str,
         state: S,
     ) where
@@ -623,7 +625,7 @@ impl MockBot {
     }
 
     /// Just checks the state after dispathing the update, like `dispatch_and_check_last_text_and_state`
-    pub async fn dispatch_and_check_state<S>(&self, state: S)
+    pub async fn dispatch_and_check_state<S>(&mut self, state: S)
     where
         S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
     {
@@ -633,7 +635,7 @@ impl MockBot {
     }
 
     /// Just checks the state discriminant after dispathing the update, like `dispatch_and_check_last_text_and_state_discriminant`
-    pub async fn dispatch_and_check_state_discriminant<S>(&self, state: S)
+    pub async fn dispatch_and_check_state_discriminant<S>(&mut self, state: S)
     where
         S: Send + 'static + Clone,
     {
