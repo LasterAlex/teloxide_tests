@@ -385,49 +385,22 @@ pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
     HttpResponse::Ok()
 }
 
-#[derive(Default)]
-struct StopHandle {
-    inner: parking_lot::Mutex<Option<ServerHandle>>,
-}
-
-impl StopHandle {
-    /// Sets the server handle to stop.
-    pub(crate) fn register(&self, handle: ServerHandle) {
-        *self.inner.lock() = Some(handle);
-    }
-
-    /// Sends stop signal through contained server handle.
-    pub(crate) fn stop(&self, graceful: bool) {
-        #[allow(clippy::let_underscore_future)]
-        let _ = self.inner.lock().as_ref().unwrap().stop(graceful);
-    }
-}
-
-async fn stop(Path(graceful): Path<bool>, stop_handle: web::Data<StopHandle>) -> HttpResponse {
-    stop_handle.stop(graceful);
-    HttpResponse::NoContent().finish()
-}
-
 pub async fn main(port: Mutex<u16>, me: Me, cancel_token: CancellationToken) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
-    let stop_handle = web::Data::new(StopHandle::default());
     // let _ = env_logger::builder()
     //     .filter_level(log::LevelFilter::Info)
     //     .format_target(false)
     //     .format_timestamp(None)
     //     .try_init();
-    let server = HttpServer::new({
-        let stop_handle = stop_handle.clone();
 
+    let server = HttpServer::new({
         move || {
             App::new()
                 // .wrap(actix_web::middleware::Logger::default())
-                .app_data(stop_handle.clone())
                 .app_data(web::Data::new(me.clone()))
                 .route("/ping", web::get().to(ping))
-                .route("/stop/{graceful}", web::post().to(stop))
                 .route("/bot{token}/GetFile", web::post().to(get_file))
                 .route("/bot{token}/SendMessage", web::post().to(send_message))
                 .route("/bot{token}/SendPhoto", web::post().to(send_photo))
@@ -506,8 +479,6 @@ pub async fn main(port: Mutex<u16>, me: Me, cancel_token: CancellationToken) {
     .unwrap()
     .workers(1)
     .run();
-
-    stop_handle.register(server.handle());
 
     let server_handle = server.handle();
 
