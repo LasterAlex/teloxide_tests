@@ -188,7 +188,11 @@ async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationTok
 fn set_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/ping", web::get().to(ping))
         .route("/file/bot{token}/{file_name}", web::get().to(download_file))
-        .route("/bot{token}/GetFile", web::post().to(get_file))
+        .configure(set_bot_routes);
+}
+
+fn set_bot_routes(cfg: &mut web::ServiceConfig) {
+    cfg.route("/bot{token}/GetFile", web::post().to(get_file))
         .route("/bot{token}/SendMessage", web::post().to(send_message))
         .route("/bot{token}/SendPhoto", web::post().to(send_photo))
         .route("/bot{token}/SendVideo", web::post().to(send_video))
