@@ -16,7 +16,7 @@ use routes::{
 use serde::Serialize;
 use std::{
     io,
-    net::{SocketAddr, TcpListener},
+    net::TcpListener,
     sync::{
         atomic::{AtomicI32, Ordering},
         Mutex,
