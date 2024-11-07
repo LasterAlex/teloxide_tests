@@ -2,7 +2,6 @@
 use gag::Gag;
 use serde_json::Value;
 use std::{
-    env,
     mem::discriminant,
     panic,
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
@@ -180,16 +179,11 @@ impl MockBot {
     where
         T: IntoUpdate, // And that code just "proves" that it can be turned into an update
     {
-        unsafe {
-            env::set_var(
-                // So that teloxide bot doesn't complain
-                "TELOXIDE_TOKEN",
-                "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO",
-            );
-        }
         let _ = pretty_env_logger::try_init();
 
-        let bot = Bot::from_env().set_api_url(
+        let token = "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO";
+
+        let bot = Bot::new(token).set_api_url(
             reqwest::Url::parse(&format!(
                 "http://localhost:{}",
                 Self::PORT.lock().unwrap().clone()
