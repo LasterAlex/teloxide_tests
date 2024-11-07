@@ -20,6 +20,7 @@ use crate::{
     dataset::{IntoUpdate, MockMe},
     server::Server,
 };
+use lazy_static::lazy_static;
 use teloxide::{
     dispatching::{
         dialogue::{GetChatId, InMemStorage, Storage},
@@ -29,8 +30,11 @@ use teloxide::{
     types::Me,
 };
 
+lazy_static! {
+    static ref BOT_LOCK: Arc<Mutex<()>> = Arc::new(Mutex::new(()));
+}
+
 static GET_POTENTIAL_STORAGE_LOCK: Mutex<()> = Mutex::new(());
-static BOT_LOCK: Mutex<()> = Mutex::new(());
 
 fn find_file(value: Value) -> Option<FileMeta> {
     // Recursively searches for file meta
@@ -114,8 +118,7 @@ pub struct MockBot {
     /// Stack size used for dispatching
     pub stack_size: Mutex<usize>,
     server: Server,
-    bot_lock: Mutex<Option<MutexGuard<'static, ()>>>, // Maybe in the future ill make something like an atomic
-                                                      // bool that says if the bot is locked or not, and implement a custom Drop trait
+    bot_lock: MutexGuard<'static, ()>,
 }
 
 impl MockBot {
@@ -205,9 +208,7 @@ impl MockBot {
             responses: Mutex::new(None),
             dependencies: Mutex::new(DependencyMap::new()),
             stack_size: Mutex::new(Self::DEFAULT_STACK_SIZE),
-            bot_lock: Mutex::new(Some(lock)), // This makes a lock that forbids the creation of
-                                              // other bots until this one goes out of scope. That way there will be no race
-                                              // conditions!
+            bot_lock: lock,
         }
     }
 
@@ -528,7 +529,6 @@ impl MockBot {
             None => match find_chat_id(serde_json::to_value(update_lock).unwrap()) {
                 Some(id) => ChatId(id),
                 None => {
-                    *self.bot_lock.lock().unwrap() = None;
                     panic!("No chat id was detected!");
                 }
             },
