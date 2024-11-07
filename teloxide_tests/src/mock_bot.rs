@@ -180,8 +180,7 @@ impl MockBot {
 
         let token = "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO";
 
-        let bot = Bot::new(token)
-            .set_api_url(reqwest::Url::parse(&format!("http://localhost:{}", Self::PORT)).unwrap());
+        let bot = Bot::new(token);
         let server = Server::new();
         let current_update_id = AtomicI32::new(42);
 
@@ -220,7 +219,7 @@ impl MockBot {
         self.updates = update.into_update(&self.current_update_id);
     }
 
-    fn collect_handles(&self, handles: &mut Vec<std::thread::JoinHandle<()>>) {
+    fn collect_handles(&self, handles: &mut Vec<std::thread::JoinHandle<()>>, bot: Bot) {
         let self_deps = self.dependencies.lock().unwrap().clone();
         for mut update in self.updates.clone() {
             match update.kind.clone() {
@@ -241,7 +240,7 @@ impl MockBot {
             }
 
             let mut deps = deps![
-                self.bot.clone(),
+                bot.clone(),
                 self.me.lock().unwrap().clone(),
                 update.clone() // This actually makes an update go through the dptree
             ];
@@ -284,6 +283,11 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
+        let bot = self
+            .bot
+            .clone()
+            .set_api_url(reqwest::Url::parse(&format!("http://localhost:{}", Self::PORT)).unwrap());
+
         let cancel_token = CancellationToken::new();
 
         // If the user presses ctrl-c, the server will be shut down
@@ -313,7 +317,7 @@ impl MockBot {
 
         // Gets all of the updates to send
         let mut handles = vec![];
-        self.collect_handles(&mut handles);
+        self.collect_handles(&mut handles, bot.clone());
 
         for handle in handles {
             // Waits until every update has been sent
