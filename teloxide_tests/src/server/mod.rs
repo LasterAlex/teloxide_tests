@@ -161,12 +161,6 @@ impl Server {
         // MESSAGES don't care if they are cleaned or not
         *RESPONSES.lock().unwrap() = Responses::default();
 
-        // let _ = env_logger::builder()
-        //     .filter_level(log::LevelFilter::Info)
-        //     .format_target(false)
-        //     .format_timestamp(None)
-        //     .try_init();
-
         let server = HttpServer::new({
             move || {
                 App::new()
