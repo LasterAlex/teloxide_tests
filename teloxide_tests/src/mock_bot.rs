@@ -313,28 +313,6 @@ impl MockBot {
             std::process::exit(1);
         });
 
-        // In the future, this will need to be redone nicely, but right now it works.
-        // It prevents a race condition for different bot instances to try to use the same server
-        // (like in docstring)
-        stop_server().await;
-        let mut left_tries = 200;
-        while reqwest::get(format!(
-            "http://127.0.0.1:{}/ping",
-            Self::PORT.lock().unwrap().clone()
-        ))
-        .await
-        .is_ok()
-        {
-            left_tries -= 1;
-            if left_tries == 0 {
-                self.close_bot().await;
-                panic!(
-                    "Failed to unbind the server on the port {}!",
-                    Self::PORT.lock().unwrap().clone()
-                );
-            }
-        }
-
         let cancel_token = CancellationToken::new();
         let server = tokio::spawn(server::main(
             Self::PORT,
