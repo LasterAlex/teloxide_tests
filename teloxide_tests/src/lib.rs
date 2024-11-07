@@ -154,6 +154,7 @@
 #![allow(clippy::unwrap_or_default)]
 #![allow(clippy::enum_variant_names)]
 #![allow(clippy::needless_return)]
+#![allow(clippy::bool_assert_comparison)]
 
 mod dataset;
 pub mod mock_bot;
