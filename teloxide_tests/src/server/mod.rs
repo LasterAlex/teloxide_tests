@@ -130,7 +130,7 @@ impl ServerManager {
 
         let server = tokio::spawn(run_server(listener, me, cancel_token.clone()));
 
-        if let Err(err) = Self::wait_for_server(port).await {
+        if let Err(err) = wait_for_server(port).await {
             cancel_token.cancel();
             server.await?;
             return Err(err.into());
@@ -147,19 +147,19 @@ impl ServerManager {
         self.cancel_token.cancel();
         self.server.await
     }
+}
 
-    async fn wait_for_server(port: u16) -> Result<(), String> {
-        let url = format!("http://127.0.0.1:{}/ping", port);
-        let max_tries = 200;
+async fn wait_for_server(port: u16) -> Result<(), String> {
+    let url = format!("http://127.0.0.1:{}/ping", port);
+    let max_tries = 200;
 
-        for _ in 0..max_tries {
-            if reqwest::get(&url).await.is_ok() {
-                return Ok(());
-            }
+    for _ in 0..max_tries {
+        if reqwest::get(&url).await.is_ok() {
+            return Ok(());
         }
-
-        Err(format!("Failed to get the server on the port {}!", port))
     }
+
+    Err(format!("Failed to get the server on the port {}!", port))
 }
 
 async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationToken) {
