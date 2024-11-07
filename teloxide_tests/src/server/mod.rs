@@ -122,11 +122,13 @@ impl ServerManager {
 
         let cancel_token = CancellationToken::new();
 
-        let cancel_token_clone = cancel_token.clone();
-        let _ = ctrlc::set_handler(move || {
-            cancel_token_clone.cancel();
-            std::process::exit(1);
-        });
+        {
+            let cancel_token = cancel_token.clone();
+            ctrlc::set_handler(move || {
+                cancel_token.cancel();
+                std::process::exit(1);
+            })?;
+        }
 
         let server = tokio::spawn(run_server(listener, me, cancel_token.clone()));
 
