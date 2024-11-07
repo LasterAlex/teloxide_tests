@@ -19,6 +19,7 @@ use routes::{
 use serde::Serialize;
 use std::{
     error::Error,
+    io,
     net::TcpListener,
     sync::{
         atomic::{AtomicI32, Ordering},
@@ -165,19 +166,7 @@ async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationTok
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
-    let server = HttpServer::new({
-        move || {
-            App::new()
-                // .wrap(actix_web::middleware::Logger::default())
-                .app_data(Data::new(me.clone()))
-                .configure(set_routes)
-        }
-    })
-    .listen(listener)
-    .unwrap()
-    .workers(1)
-    .run();
-
+    let server = create_server(listener, me).unwrap();
     let server_handle = server.handle();
 
     tokio::spawn(async move {
@@ -186,6 +175,17 @@ async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationTok
     });
 
     server.await.unwrap();
+}
+
+fn create_server(listener: TcpListener, me: Me) -> io::Result<actix_web::dev::Server> {
+    Ok(HttpServer::new(move || {
+        App::new()
+            .app_data(Data::new(me.clone()))
+            .configure(set_routes)
+    })
+    .listen(listener)?
+    .workers(1)
+    .run())
 }
 
 fn set_routes(cfg: &mut ServiceConfig) {
