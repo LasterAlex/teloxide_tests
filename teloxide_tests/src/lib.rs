@@ -141,8 +141,6 @@
     html_favicon_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040"
 )]
 #![allow(clippy::to_string_in_format_args)]
-#![allow(clippy::match_single_binding)]
-#![allow(clippy::to_string_in_format_args)]
 #![allow(clippy::new_without_default)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::map_flatten)]
