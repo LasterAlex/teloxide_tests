@@ -1,7 +1,6 @@
 //! A fake telegram bot API for testing purposes. Read more in teloxide_tests crate.
 pub mod routes;
-use actix_web::{dev::ServerHandle, web, App, HttpResponse, HttpServer, Responder};
-use actix_web_lab::extract::Path;
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use lazy_static::lazy_static;
 pub use responses::*;
 use routes::{
@@ -24,6 +23,7 @@ use std::{
     },
 };
 use teloxide::types::{File, Me, Message, ReplyMarkup};
+use tokio_util::sync::CancellationToken;
 
 pub mod responses;
 
@@ -102,29 +102,6 @@ pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
     HttpResponse::Ok()
 }
 
-#[derive(Default)]
-struct StopHandle {
-    inner: parking_lot::Mutex<Option<ServerHandle>>,
-}
-
-impl StopHandle {
-    /// Sets the server handle to stop.
-    pub(crate) fn register(&self, handle: ServerHandle) {
-        *self.inner.lock() = Some(handle);
-    }
-
-    /// Sends stop signal through contained server handle.
-    pub(crate) fn stop(&self, graceful: bool) {
-        #[allow(clippy::let_underscore_future)]
-        let _ = self.inner.lock().as_ref().unwrap().stop(graceful);
-    }
-}
-
-async fn stop(Path(graceful): Path<bool>, stop_handle: web::Data<StopHandle>) -> HttpResponse {
-    stop_handle.stop(graceful);
-    HttpResponse::NoContent().finish()
-}
-
 pub struct Server {
     listener: TcpListener,
 }
@@ -141,114 +118,109 @@ impl Server {
     }
 }
 
-pub async fn main(port: Mutex<u16>, me: Me) {
+pub async fn main(port: Mutex<u16>, me: Me, cancel_token: CancellationToken) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
-    let pong = reqwest::get(format!("http://127.0.0.1:{}/ping", port.lock().unwrap())).await;
+    // let _ = env_logger::builder()
+    //     .filter_level(log::LevelFilter::Info)
+    //     .format_target(false)
+    //     .format_timestamp(None)
+    //     .try_init();
 
-    if pong.is_err()
-    // If it errored, no server is running, we need to start it
-    {
-        let stop_handle = web::Data::new(StopHandle::default());
-        // let _ = env_logger::builder()
-        //     .filter_level(log::LevelFilter::Info)
-        //     .format_target(false)
-        //     .format_timestamp(None)
-        //     .try_init();
-        let server = HttpServer::new({
-            let stop_handle = stop_handle.clone();
+    let server = HttpServer::new({
+        move || {
+            App::new()
+                // .wrap(actix_web::middleware::Logger::default())
+                .app_data(web::Data::new(me.clone()))
+                .route("/ping", web::get().to(ping))
+                .route("/bot{token}/GetFile", web::post().to(get_file))
+                .route("/bot{token}/SendMessage", web::post().to(send_message))
+                .route("/bot{token}/SendPhoto", web::post().to(send_photo))
+                .route("/bot{token}/SendVideo", web::post().to(send_video))
+                .route("/bot{token}/SendVoice", web::post().to(send_voice))
+                .route("/bot{token}/SendAudio", web::post().to(send_audio))
+                .route("/bot{token}/SendVideoNote", web::post().to(send_video_note))
+                .route("/bot{token}/SendDocument", web::post().to(send_document))
+                .route("/bot{token}/SendAnimation", web::post().to(send_animation))
+                .route("/bot{token}/SendLocation", web::post().to(send_location))
+                .route("/bot{token}/SendVenue", web::post().to(send_venue))
+                .route("/bot{token}/SendContact", web::post().to(send_contact))
+                .route("/bot{token}/SendSticker", web::post().to(send_sticker))
+                .route(
+                    "/bot{token}/SendChatAction",
+                    web::post().to(send_chat_action),
+                )
+                .route("/bot{token}/SendDice", web::post().to(send_dice))
+                .route("/bot{token}/SendPoll", web::post().to(send_poll))
+                .route(
+                    "/bot{token}/SendMediaGroup",
+                    web::post().to(send_media_group),
+                )
+                .route(
+                    "/bot{token}/EditMessageText",
+                    web::post().to(edit_message_text),
+                )
+                .route(
+                    "/bot{token}/EditMessageCaption",
+                    web::post().to(edit_message_caption),
+                )
+                .route(
+                    "/bot{token}/EditMessageReplyMarkup",
+                    web::post().to(edit_message_reply_markup),
+                )
+                .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
+                .route(
+                    "/bot{token}/ForwardMessage",
+                    web::post().to(forward_message),
+                )
+                .route("/bot{token}/CopyMessage", web::post().to(copy_message))
+                .route(
+                    "/bot{token}/AnswerCallbackQuery",
+                    web::post().to(answer_callback_query),
+                )
+                .route(
+                    "/bot{token}/PinChatMessage",
+                    web::post().to(pin_chat_message),
+                )
+                .route(
+                    "/bot{token}/UnpinChatMessage",
+                    web::post().to(unpin_chat_message),
+                )
+                .route(
+                    "/bot{token}/UnpinAllChatMessages",
+                    web::post().to(unpin_all_chat_messages),
+                )
+                .route("/bot{token}/BanChatMember", web::post().to(ban_chat_member))
+                .route(
+                    "/bot{token}/UnbanChatMember",
+                    web::post().to(unban_chat_member),
+                )
+                .route(
+                    "/bot{token}/RestrictChatMember",
+                    web::post().to(restrict_chat_member),
+                )
+                .route(
+                    "/bot{token}/SetMessageReaction",
+                    web::post().to(set_message_reaction),
+                )
+                .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands))
+                .route("/file/bot{token}/{file_name}", web::get().to(download_file))
+        }
+    })
+    .bind(format!("127.0.0.1:{}", port.lock().unwrap().to_string()))
+    .unwrap()
+    .workers(1)
+    .run();
 
-            move || {
-                App::new()
-                    // .wrap(actix_web::middleware::Logger::default())
-                    .app_data(stop_handle.clone())
-                    .app_data(web::Data::new(me.clone()))
-                    .route("/ping", web::get().to(ping))
-                    .route("/stop/{graceful}", web::post().to(stop))
-                    .route("/bot{token}/GetFile", web::post().to(get_file))
-                    .route("/bot{token}/SendMessage", web::post().to(send_message))
-                    .route("/bot{token}/SendPhoto", web::post().to(send_photo))
-                    .route("/bot{token}/SendVideo", web::post().to(send_video))
-                    .route("/bot{token}/SendVoice", web::post().to(send_voice))
-                    .route("/bot{token}/SendAudio", web::post().to(send_audio))
-                    .route("/bot{token}/SendVideoNote", web::post().to(send_video_note))
-                    .route("/bot{token}/SendDocument", web::post().to(send_document))
-                    .route("/bot{token}/SendAnimation", web::post().to(send_animation))
-                    .route("/bot{token}/SendLocation", web::post().to(send_location))
-                    .route("/bot{token}/SendVenue", web::post().to(send_venue))
-                    .route("/bot{token}/SendContact", web::post().to(send_contact))
-                    .route("/bot{token}/SendSticker", web::post().to(send_sticker))
-                    .route(
-                        "/bot{token}/SendChatAction",
-                        web::post().to(send_chat_action),
-                    )
-                    .route("/bot{token}/SendDice", web::post().to(send_dice))
-                    .route("/bot{token}/SendPoll", web::post().to(send_poll))
-                    .route(
-                        "/bot{token}/SendMediaGroup",
-                        web::post().to(send_media_group),
-                    )
-                    .route(
-                        "/bot{token}/EditMessageText",
-                        web::post().to(edit_message_text),
-                    )
-                    .route(
-                        "/bot{token}/EditMessageCaption",
-                        web::post().to(edit_message_caption),
-                    )
-                    .route(
-                        "/bot{token}/EditMessageReplyMarkup",
-                        web::post().to(edit_message_reply_markup),
-                    )
-                    .route("/bot{token}/DeleteMessage", web::post().to(delete_message))
-                    .route(
-                        "/bot{token}/ForwardMessage",
-                        web::post().to(forward_message),
-                    )
-                    .route("/bot{token}/CopyMessage", web::post().to(copy_message))
-                    .route(
-                        "/bot{token}/AnswerCallbackQuery",
-                        web::post().to(answer_callback_query),
-                    )
-                    .route(
-                        "/bot{token}/PinChatMessage",
-                        web::post().to(pin_chat_message),
-                    )
-                    .route(
-                        "/bot{token}/UnpinChatMessage",
-                        web::post().to(unpin_chat_message),
-                    )
-                    .route(
-                        "/bot{token}/UnpinAllChatMessages",
-                        web::post().to(unpin_all_chat_messages),
-                    )
-                    .route("/bot{token}/BanChatMember", web::post().to(ban_chat_member))
-                    .route(
-                        "/bot{token}/UnbanChatMember",
-                        web::post().to(unban_chat_member),
-                    )
-                    .route(
-                        "/bot{token}/RestrictChatMember",
-                        web::post().to(restrict_chat_member),
-                    )
-                    .route(
-                        "/bot{token}/SetMessageReaction",
-                        web::post().to(set_message_reaction),
-                    )
-                    .route("/bot{token}/SetMyCommands", web::post().to(set_my_commands))
-                    .route("/file/bot{token}/{file_name}", web::get().to(download_file))
-            }
-        })
-        .bind(format!("127.0.0.1:{}", port.lock().unwrap().to_string()))
-        .unwrap()
-        .workers(1)
-        .run();
+    let server_handle = server.handle();
 
-        stop_handle.register(server.handle());
+    tokio::spawn(async move {
+        cancel_token.cancelled().await;
+        server_handle.stop(false).await;
+    });
 
-        server.await.unwrap();
-    };
+    server.await.unwrap();
 }
 
 #[cfg(test)]

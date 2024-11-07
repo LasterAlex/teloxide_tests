@@ -2545,6 +2545,7 @@ dependencies = [
  "teloxide",
  "teloxide_tests_macros 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
+ "tokio-util",
  "url",
 ]
 

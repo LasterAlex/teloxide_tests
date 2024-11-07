@@ -13,6 +13,7 @@ use teloxide::{
     types::{File, FileMeta, MaybeInaccessibleMessage, MessageId, MessageKind},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
+use tokio_util::sync::CancellationToken;
 
 use crate::server::{self, Responses, FILES, MESSAGES};
 use crate::{
@@ -91,17 +92,6 @@ fn add_message(message: &mut Message) {
         }
     }
     MESSAGES.add_message(message.clone());
-}
-
-async fn stop_server() {
-    let client = reqwest::Client::new();
-    let _ = client
-        .post(format!(
-            "http://127.0.0.1:{}/stop/false",
-            MockBot::PORT.lock().unwrap().clone()
-        ))
-        .send()
-        .await;
 }
 
 /// A mocked bot that sends requests to the fake server
@@ -302,7 +292,6 @@ impl MockBot {
     }
 
     async fn close_bot(&self) {
-        stop_server().await;
         *self.bot_lock.lock().unwrap() = None;
     }
 
@@ -311,36 +300,20 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&self) {
-        let runtime = tokio::runtime::Handle::current();
+        let cancel_token = CancellationToken::new();
+
         // If the user presses ctrl-c, the server will be shut down
+        let cancel_token_clone = cancel_token.clone();
         let _ = ctrlc::set_handler(move || {
-            runtime.block_on(stop_server());
+            cancel_token_clone.cancel();
             std::process::exit(1);
         });
 
-        // In the future, this will need to be redone nicely, but right now it works.
-        // It prevents a race condition for different bot instances to try to use the same server
-        // (like in docstring)
-        stop_server().await;
-        let mut left_tries = 200;
-        while reqwest::get(format!(
-            "http://127.0.0.1:{}/ping",
-            Self::PORT.lock().unwrap().clone()
-        ))
-        .await
-        .is_ok()
-        {
-            left_tries -= 1;
-            if left_tries == 0 {
-                self.close_bot().await;
-                panic!(
-                    "Failed to unbind the server on the port {}!",
-                    Self::PORT.lock().unwrap().clone()
-                );
-            }
-        }
-
-        let server = tokio::spawn(server::main(Self::PORT, self.me.lock().unwrap().clone())); // This starts the server in the background
+        let server = tokio::spawn(server::main(
+            Self::PORT,
+            self.me.lock().unwrap().clone(),
+            cancel_token.clone(),
+        )); // This starts the server in the background
 
         let mut left_tries = 200;
         while reqwest::get(format!(
@@ -352,6 +325,7 @@ impl MockBot {
         {
             left_tries -= 1;
             if left_tries == 0 {
+                cancel_token.cancel();
                 self.close_bot().await;
                 panic!(
                     "Failed to get the server on the port {}!",
@@ -370,6 +344,8 @@ impl MockBot {
                 Ok(_) => {}
                 Err(_) => {
                     // Something panicked, we need to free the bot lock and exit
+                    cancel_token.cancel();
+                    server.await.unwrap();
                     self.close_bot().await;
                     panic!("Something went wrong and the bot panicked!");
                 }
@@ -379,7 +355,7 @@ impl MockBot {
         *self.responses.lock().unwrap() = Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses
                                                                                            // before they are erased
 
-        stop_server().await;
+        cancel_token.cancel();
         server.await.unwrap(); // Waits before the server is shut down
     }
 
