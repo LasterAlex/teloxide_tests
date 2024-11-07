@@ -114,6 +114,7 @@ pub struct MockBot {
     pub responses: Option<Responses>,
     bot_lock: MutexGuard<'static, ()>,
     current_update_id: AtomicI32,
+    stack_size: usize,
 }
 
 impl MockBot {
@@ -191,6 +192,7 @@ impl MockBot {
             dependencies: Mutex::new(DependencyMap::new()),
             bot_lock: lock,
             current_update_id,
+            stack_size: Self::DEFAULT_STACK_SIZE,
         }
     }
 
@@ -244,13 +246,15 @@ impl MockBot {
             // This, too, will need to be redone in the ideal world, but it just waits until the server is up
             let handler_tree = self.handler_tree.clone();
 
+            let stack_size = self.stack_size;
+
             // To fix the stack overflow, a new thread with a new runtime is needed
-            let builder = std::thread::Builder::new().stack_size(Self::DEFAULT_STACK_SIZE);
+            let builder = std::thread::Builder::new().stack_size(self.stack_size);
             handles.push(
                 builder
                     .spawn(move || {
                         let runtime = tokio::runtime::Builder::new_multi_thread()
-                            .thread_stack_size(Self::DEFAULT_STACK_SIZE) // Not needed, but just in case
+                            .thread_stack_size(stack_size) // Not needed, but just in case
                             .enable_all()
                             .build()
                             .unwrap();
