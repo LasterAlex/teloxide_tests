@@ -122,7 +122,7 @@ pub struct MockBot {
 
 impl MockBot {
     const CURRENT_UPDATE_ID: AtomicI32 = AtomicI32::new(0); // So that every update is different
-    const PORT: Mutex<u16> = Mutex::new(6504);
+    const PORT: u16 = 6504;
     const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 
     /// Creates a new MockBot, using something that can be turned into Updates, and a handler tree.
@@ -183,13 +183,8 @@ impl MockBot {
 
         let token = "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO";
 
-        let bot = Bot::new(token).set_api_url(
-            reqwest::Url::parse(&format!(
-                "http://localhost:{}",
-                Self::PORT.lock().unwrap().clone()
-            ))
-            .unwrap(),
-        );
+        let bot = Bot::new(token)
+            .set_api_url(reqwest::Url::parse(&format!("http://localhost:{}", Self::PORT)).unwrap());
         let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
         let server = Server::new();
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
@@ -307,20 +302,14 @@ impl MockBot {
         )); // This starts the server in the background
 
         let mut left_tries = 200;
-        while reqwest::get(format!(
-            "http://127.0.0.1:{}/ping",
-            Self::PORT.lock().unwrap().clone()
-        ))
-        .await
-        .is_err()
+        while reqwest::get(format!("http://127.0.0.1:{}/ping", Self::PORT))
+            .await
+            .is_err()
         {
             left_tries -= 1;
             if left_tries == 0 {
                 cancel_token.cancel();
-                panic!(
-                    "Failed to get the server on the port {}!",
-                    Self::PORT.lock().unwrap().clone()
-                );
+                panic!("Failed to get the server on the port {}!", Self::PORT);
             }
         }
 
