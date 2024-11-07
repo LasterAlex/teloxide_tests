@@ -104,19 +104,16 @@ pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
 
 #[allow(dead_code)]
 pub struct Server {
-    listener: TcpListener,
+    pub port: u16,
 }
 
 #[allow(dead_code)]
 impl Server {
     pub async fn start() -> io::Result<Self> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
+        let port = listener.local_addr()?.port();
 
-        Ok(Self { listener })
-    }
-
-    pub fn port(&self) -> io::Result<u16> {
-        Ok(self.listener.local_addr()?.port())
+        Ok(Self { port })
     }
 }
 
