@@ -110,7 +110,6 @@ pub struct Server {
     cancel_token: CancellationToken,
 }
 
-#[allow(dead_code)]
 impl Server {
     pub async fn start(me: Me) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
