@@ -60,3 +60,15 @@ jobs:
 
       - name: Check examples
         run: cargo check --manifest-path=./examples/Cargo.toml
+
+  check-formatting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
