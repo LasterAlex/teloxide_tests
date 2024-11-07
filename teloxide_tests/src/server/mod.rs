@@ -23,6 +23,7 @@ use std::{
     },
 };
 use teloxide::types::{File, Me, Message, ReplyMarkup};
+use tokio::task::{JoinError, JoinHandle};
 use tokio_util::sync::CancellationToken;
 
 pub mod responses;
@@ -105,15 +106,48 @@ pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
 #[allow(dead_code)]
 pub struct Server {
     pub port: u16,
+    server: JoinHandle<()>,
+    cancel_token: CancellationToken,
 }
 
 #[allow(dead_code)]
 impl Server {
-    pub async fn start() -> io::Result<Self> {
+    pub async fn start(me: Me) -> io::Result<Self> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let port = listener.local_addr()?.port();
 
-        Ok(Self { port })
+        let cancel_token = CancellationToken::new();
+
+        let cancel_token_clone = cancel_token.clone();
+        let _ = ctrlc::set_handler(move || {
+            cancel_token_clone.cancel();
+            std::process::exit(1);
+        });
+
+        let server = tokio::spawn(main(listener, me, cancel_token.clone()));
+
+        let mut left_tries = 200;
+        while reqwest::get(format!("http://127.0.0.1:{}/ping", port))
+            .await
+            .is_err()
+        {
+            left_tries -= 1;
+            if left_tries == 0 {
+                cancel_token.cancel();
+                panic!("Failed to get the server on the port {}!", port);
+            }
+        }
+
+        Ok(Self {
+            port,
+            cancel_token,
+            server,
+        })
+    }
+
+    pub async fn stop(self) -> Result<(), JoinError> {
+        self.cancel_token.cancel();
+        self.server.await
     }
 }
 

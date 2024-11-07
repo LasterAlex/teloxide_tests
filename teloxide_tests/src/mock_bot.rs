@@ -3,7 +3,6 @@ use gag::Gag;
 use serde_json::Value;
 use std::{
     mem::discriminant,
-    net::TcpListener,
     panic,
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
 };
@@ -13,7 +12,6 @@ use teloxide::{
     types::{File, FileMeta, MaybeInaccessibleMessage, MessageId, MessageKind},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
-use tokio_util::sync::CancellationToken;
 
 use crate::server::{self, Responses, FILES, MESSAGES};
 use crate::{
@@ -279,40 +277,10 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
-        let server = Server::start().await.unwrap();
+        let server = Server::start(self.me.clone()).await.unwrap();
 
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        let port = listener.local_addr().unwrap().port();
-        let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", port)).unwrap();
-
+        let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", server.port)).unwrap();
         let bot = self.bot.clone().set_api_url(api_url);
-
-        let cancel_token = CancellationToken::new();
-
-        // If the user presses ctrl-c, the server will be shut down
-        let cancel_token_clone = cancel_token.clone();
-        let _ = ctrlc::set_handler(move || {
-            cancel_token_clone.cancel();
-            std::process::exit(1);
-        });
-
-        let server = tokio::spawn(server::main(
-            listener,
-            self.me.clone(),
-            cancel_token.clone(),
-        )); // This starts the server in the background
-
-        let mut left_tries = 200;
-        while reqwest::get(format!("http://127.0.0.1:{}/ping", port))
-            .await
-            .is_err()
-        {
-            left_tries -= 1;
-            if left_tries == 0 {
-                cancel_token.cancel();
-                panic!("Failed to get the server on the port {}!", port);
-            }
-        }
 
         // Gets all of the updates to send
         let mut handles = vec![];
@@ -323,9 +291,7 @@ impl MockBot {
             match handle.join() {
                 Ok(_) => {}
                 Err(_) => {
-                    // Something panicked, we need to free the bot lock and exit
-                    cancel_token.cancel();
-                    server.await.unwrap();
+                    server.stop().await.unwrap();
                     panic!("Something went wrong and the bot panicked!");
                 }
             };
@@ -333,8 +299,7 @@ impl MockBot {
 
         self.responses = Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses before they are erased
 
-        cancel_token.cancel();
-        server.await.unwrap(); // Waits before the server is shut down
+        server.stop().await.unwrap();
     }
 
     /// Returns the responses stored in `responses`
