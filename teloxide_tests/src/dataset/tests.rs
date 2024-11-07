@@ -150,9 +150,9 @@ fn test_message_common_text() {
 fn test_into_update() {
     let message = MockMessageText::new().text("text");
 
-    let update = message.into_update(1.into())[0].clone();
+    let update = message.into_update(&AtomicI32::new(42))[0].clone();
 
-    assert_eq!(update.id, UpdateId(1));
+    assert_eq!(update.id, UpdateId(42));
     assert_eq!(update.chat_id(), Some(ChatId(MockUser::ID as i64)));
 }
 

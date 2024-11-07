@@ -64,15 +64,17 @@ macro_rules! Message {
             /// # Example
             /// ```
             /// use teloxide_tests::IntoUpdate;
+            /// use teloxide::types::{UpdateId, UpdateKind::Message};
+            /// use std::sync::atomic::AtomicI32;
+            ///
             /// let mock_message = teloxide_tests::MockMessageText::new();
-            /// let update = mock_message.clone().into_update(1.into())[0].clone();
-            /// assert_eq!(update.id, teloxide::types::UpdateId(1));
-            /// assert_eq!(update.kind, teloxide::types::UpdateKind::Message(
-            ///     mock_message.build())
-            /// );
+            /// let update = mock_message.clone().into_update(&AtomicI32::new(42))[0].clone();
+            ///
+            /// assert_eq!(update.id, UpdateId(42));
+            /// assert_eq!(update.kind, Message(mock_message.build()));
             /// ```
             ///
-            fn into_update(self, id: AtomicI32) -> Vec<Update> {
+            fn into_update(self, id: &AtomicI32) -> Vec<Update> {
                 vec![Update {
                     id: UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32),
                     kind: UpdateKind::Message(self.build()),

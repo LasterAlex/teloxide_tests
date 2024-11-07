@@ -115,10 +115,10 @@ pub struct MockBot {
     pub responses: Option<Responses>,
     server: Server,
     bot_lock: MutexGuard<'static, ()>,
+    current_update_id: AtomicI32,
 }
 
 impl MockBot {
-    const CURRENT_UPDATE_ID: AtomicI32 = AtomicI32::new(0); // So that every update is different
     const PORT: u16 = 6504;
     const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 
@@ -184,16 +184,18 @@ impl MockBot {
             .set_api_url(reqwest::Url::parse(&format!("http://localhost:{}", Self::PORT)).unwrap());
         let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
         let server = Server::new();
+        let current_update_id = AtomicI32::new(42);
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
         Self {
             server,
             bot,
             me: Mutex::new(MockMe::new().build()),
-            updates: update.into_update(Self::CURRENT_UPDATE_ID),
+            updates: update.into_update(&current_update_id),
             handler_tree,
             responses: None,
             dependencies: Mutex::new(DependencyMap::new()),
             bot_lock: lock,
+            current_update_id,
         }
     }
 
@@ -213,7 +215,7 @@ impl MockBot {
     /// Sets the updates. Useful for reusing the same mocked bot instance in different tests
     /// Reminder: You can pass in vec![MockMessagePhoto] or something else!
     pub fn update<T: IntoUpdate>(&mut self, update: T) {
-        self.updates = update.into_update(Self::CURRENT_UPDATE_ID);
+        self.updates = update.into_update(&self.current_update_id);
     }
 
     fn collect_handles(&self, handles: &mut Vec<std::thread::JoinHandle<()>>) {

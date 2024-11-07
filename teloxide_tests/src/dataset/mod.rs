@@ -23,16 +23,19 @@ mod tests;
 
 pub trait IntoUpdate {
     /// Converts the mocked struct into an update vector, incrementing the id by 1
-    fn into_update(self, id: AtomicI32) -> Vec<Update>;
+    fn into_update(self, id: &AtomicI32) -> Vec<Update>;
 }
 
 impl<T> IntoUpdate for Vec<T>
 where
     T: IntoUpdate,
 {
-    fn into_update(self, id: AtomicI32) -> Vec<Update> {
+    fn into_update(self, id: &AtomicI32) -> Vec<Update> {
         self.into_iter()
-            .map(|u| u.into_update(id.fetch_add(1, Ordering::Relaxed).into()))
+            .map(|u| {
+                id.fetch_add(1, Ordering::Relaxed);
+                u.into_update(id)
+            })
             .flatten()
             .collect()
     }
