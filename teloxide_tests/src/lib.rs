@@ -140,6 +140,23 @@
     html_logo_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040",
     html_favicon_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040"
 )]
+#![allow(clippy::to_string_in_format_args)]
+#![allow(clippy::match_single_binding)]
+#![allow(clippy::to_string_in_format_args)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::map_flatten)]
+#![allow(clippy::unnecessary_unwrap)]
+#![allow(clippy::needless_question_mark)]
+#![allow(clippy::borrow_interior_mutable_const)]
+#![allow(clippy::declare_interior_mutable_const)]
+#![allow(clippy::clone_on_copy)]
+#![allow(clippy::needless_borrows_for_generic_args)]
+#![allow(clippy::search_is_some)]
+#![allow(clippy::unwrap_or_default)]
+#![allow(clippy::enum_variant_names)]
+#![allow(clippy::needless_return)]
+
 mod dataset;
 pub mod mock_bot;
 mod server;
