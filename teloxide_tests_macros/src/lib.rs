@@ -1,4 +1,8 @@
 //! Proc macros for teloxide_tests crate
+
+#![allow(clippy::match_single_binding)]
+#![allow(clippy::to_string_in_format_args)]
+
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, Data, DeriveInput, Fields, PathArguments, Type, TypeGroup};
