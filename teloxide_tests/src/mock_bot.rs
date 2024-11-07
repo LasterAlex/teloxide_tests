@@ -13,6 +13,7 @@ use teloxide::{
     types::{File, FileMeta, MaybeInaccessibleMessage, MessageId, MessageKind},
 };
 use teloxide::{dptree::deps, types::UpdateKind};
+use tokio_util::sync::CancellationToken;
 
 use crate::dataset::{IntoUpdate, MockMe};
 use crate::server::{self, Responses, FILES, MESSAGES};
@@ -334,7 +335,12 @@ impl MockBot {
             }
         }
 
-        let server = tokio::spawn(server::main(Self::PORT, self.me.lock().unwrap().clone())); // This starts the server in the background
+        let cancel_token = CancellationToken::new();
+        let server = tokio::spawn(server::main(
+            Self::PORT,
+            self.me.lock().unwrap().clone(),
+            cancel_token.clone(),
+        )); // This starts the server in the background
 
         let mut left_tries = 200;
         while reqwest::get(format!(
@@ -373,6 +379,7 @@ impl MockBot {
         *self.responses.lock().unwrap() = Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses
                                                                                            // before they are erased
 
+        cancel_token.cancel();
         stop_server().await;
         server.await.unwrap(); // Waits before the server is shut down
     }

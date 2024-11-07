@@ -19,6 +19,7 @@ use std::sync::{
     Mutex,
 };
 use teloxide::types::{File, Me, Message, MessageId, ReplyMarkup};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug)]
 pub struct SentMessageText {
@@ -407,7 +408,7 @@ async fn stop(Path(graceful): Path<bool>, stop_handle: web::Data<StopHandle>) ->
     HttpResponse::NoContent().finish()
 }
 
-pub async fn main(port: Mutex<u16>, me: Me) {
+pub async fn main(port: Mutex<u16>, me: Me, cancel_token: CancellationToken) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
@@ -507,6 +508,13 @@ pub async fn main(port: Mutex<u16>, me: Me) {
     .run();
 
     stop_handle.register(server.handle());
+
+    let server_handle = server.handle();
+
+    tokio::spawn(async move {
+        cancel_token.cancelled().await;
+        server_handle.stop(false).await;
+    });
 
     server.await.unwrap();
 }
