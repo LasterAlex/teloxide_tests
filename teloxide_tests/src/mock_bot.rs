@@ -16,7 +16,7 @@ use teloxide::{dptree::deps, types::UpdateKind};
 use crate::server::{self, Responses, FILES, MESSAGES};
 use crate::{
     dataset::{IntoUpdate, MockMe},
-    server::Server,
+    server::ServerManager,
 };
 use lazy_static::lazy_static;
 use teloxide::{
@@ -282,7 +282,7 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
-        let server = Server::start(self.me.clone()).await.unwrap();
+        let server = ServerManager::start(self.me.clone()).await.unwrap();
 
         let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", server.port)).unwrap();
         let bot = self.bot.clone().set_api_url(api_url);

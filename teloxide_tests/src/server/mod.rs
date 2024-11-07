@@ -104,14 +104,14 @@ pub async fn log_request(body: web::Json<serde_json::Value>) -> impl Responder {
 }
 
 #[allow(dead_code)]
-pub struct Server {
+pub struct ServerManager {
     pub port: u16,
     server: JoinHandle<()>,
     cancel_token: CancellationToken,
 }
 
 // #[warn(clippy::unwrap_used)]
-impl Server {
+impl ServerManager {
     pub async fn start(me: Me) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let port = listener.local_addr()?.port();
