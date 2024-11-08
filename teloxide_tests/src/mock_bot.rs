@@ -103,7 +103,6 @@ pub struct State {
 
 /// A mocked bot that sends requests to the fake server
 /// Please check the `new` function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
-#[allow(dead_code)]
 pub struct MockBot {
     /// The bot with a fake server url
     pub bot: Bot,
@@ -118,10 +117,10 @@ pub struct MockBot {
     /// Caught responses from the server
     pub responses: Option<Responses>,
 
-    bot_lock: MutexGuard<'static, ()>,
     current_update_id: AtomicI32,
     stack_size: usize,
     state: Arc<State>,
+    _bot_lock: MutexGuard<'static, ()>,
 }
 
 impl MockBot {
@@ -198,7 +197,7 @@ impl MockBot {
             handler_tree,
             responses: None,
             dependencies: DependencyMap::new(),
-            bot_lock: lock,
+            _bot_lock: lock,
             current_update_id,
             stack_size: Self::DEFAULT_STACK_SIZE,
             state,
