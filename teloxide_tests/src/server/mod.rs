@@ -108,7 +108,7 @@ pub async fn log_request(body: Json<serde_json::Value>) -> impl Responder {
 }
 
 #[derive(Default)]
-struct ServerState {
+struct State {
     files: Mutex<Vec<File>>,
 }
 
@@ -117,7 +117,7 @@ pub struct ServerManager {
     pub port: u16,
     server: JoinHandle<()>,
     cancel_token: CancellationToken,
-    state: Arc<ServerState>,
+    state: Arc<State>,
 }
 
 #[warn(clippy::unwrap_used)]
@@ -127,7 +127,7 @@ impl ServerManager {
         let port = listener.local_addr()?.port();
 
         let cancel_token = CancellationToken::new();
-        let state = Arc::new(ServerState::default());
+        let state = Arc::new(State::default());
 
         let server = tokio::spawn(run_server(
             listener,
@@ -172,7 +172,7 @@ async fn wait_for_server(port: u16) -> Result<(), String> {
 async fn run_server(
     listener: TcpListener,
     me: Me,
-    state: Arc<ServerState>,
+    state: Arc<State>,
     cancel_token: CancellationToken,
 ) {
     // MESSAGES don't care if they are cleaned or not
@@ -192,7 +192,7 @@ async fn run_server(
 fn create_server(
     listener: TcpListener,
     me: Me,
-    state: Arc<ServerState>,
+    state: Arc<State>,
 ) -> io::Result<actix_web::dev::Server> {
     Ok(HttpServer::new(move || {
         App::new()
