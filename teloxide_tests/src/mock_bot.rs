@@ -539,6 +539,7 @@ impl MockBot {
         }
     }
 
+    /// Helper function to fetch the state of the dialogue and assert its value
     pub async fn assert_state<S>(&self, state: S)
     where
         S: Send + 'static + Clone + Debug + PartialEq,
