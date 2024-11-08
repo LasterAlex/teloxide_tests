@@ -30,6 +30,8 @@ use teloxide::types::{File, Me, Message, ReplyMarkup};
 use tokio::task::{JoinError, JoinHandle};
 use tokio_util::sync::CancellationToken;
 
+use crate::mock_bot::State;
+
 pub mod responses;
 
 lazy_static! {
@@ -105,11 +107,6 @@ pub async fn ping() -> impl Responder {
 pub async fn log_request(body: Json<serde_json::Value>) -> impl Responder {
     dbg!(body);
     HttpResponse::Ok()
-}
-
-#[derive(Default)]
-struct State {
-    files: Mutex<Vec<File>>,
 }
 
 #[allow(dead_code)]

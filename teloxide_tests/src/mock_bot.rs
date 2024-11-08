@@ -96,6 +96,11 @@ fn add_message(message: &mut Message) {
     MESSAGES.add_message(message.clone());
 }
 
+#[derive(Default)]
+pub struct State {
+    files: Mutex<Vec<File>>,
+}
+
 /// A mocked bot that sends requests to the fake server
 /// Please check the `new` function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
 #[allow(dead_code)]
