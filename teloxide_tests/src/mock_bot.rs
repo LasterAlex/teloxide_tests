@@ -99,6 +99,13 @@ fn add_message(message: &mut Message, state: Arc<Mutex<State>>) {
 #[derive(Default)]
 pub struct State {
     pub files: Vec<File>,
+    pub responses: Responses,
+}
+
+impl State {
+    pub fn reset(&mut self) {
+        self.responses = Responses::default();
+    }
 }
 
 /// A mocked bot that sends requests to the fake server
@@ -114,8 +121,6 @@ pub struct MockBot {
     pub me: Me,
     /// If you have something like a state, you should add the storage here using .dependencies()
     pub dependencies: DependencyMap,
-    /// Caught responses from the server
-    pub responses: Option<Responses>,
 
     current_update_id: AtomicI32,
     stack_size: usize,
@@ -195,7 +200,6 @@ impl MockBot {
             me: MockMe::new().build(),
             updates: update.into_update(&current_update_id),
             handler_tree,
-            responses: None,
             dependencies: DependencyMap::new(),
             _bot_lock: lock,
             current_update_id,
@@ -289,6 +293,8 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
+        self.state.lock().unwrap().reset();
+
         let server = ServerManager::start(self.me.clone(), self.state.clone())
             .await
             .unwrap();
@@ -311,8 +317,6 @@ impl MockBot {
             };
         }
 
-        self.responses = Some(server::RESPONSES.lock().unwrap().clone()); // Store the responses before they are erased
-
         server.stop().await.unwrap();
     }
 
@@ -320,14 +324,7 @@ impl MockBot {
     /// Panics if no dispatching was done.
     /// Should be treated as a variable, because it kinda is
     pub fn get_responses(&self) -> server::Responses {
-        let responses = self.responses.clone();
-        match responses {
-            Some(responses) => responses,
-            None => {
-                log::error!("No responses received! Maybe you forgot to dispatch the mocked bot?");
-                panic!("No responses received! Maybe you forgot to dispatch the mocked bot?")
-            }
-        }
+        self.state.lock().unwrap().responses.clone()
     }
 
     async fn get_potential_storages<S>(

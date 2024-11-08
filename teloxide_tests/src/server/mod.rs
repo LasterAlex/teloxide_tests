@@ -36,7 +36,6 @@ pub mod responses;
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);  // Messages storage, just in case
-    pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses::default());
     pub static ref LAST_MESSAGE_ID: AtomicI32 = AtomicI32::new(0);
 }
 
@@ -168,9 +167,6 @@ async fn run_server(
     state: Arc<Mutex<State>>,
     cancel_token: CancellationToken,
 ) {
-    // MESSAGES don't care if they are cleaned or not
-    *RESPONSES.lock().unwrap() = Responses::default();
-
     let server = create_server(listener, me, state).unwrap();
     let server_handle = server.handle();
 
