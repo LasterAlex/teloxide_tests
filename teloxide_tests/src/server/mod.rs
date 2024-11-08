@@ -114,17 +114,15 @@ pub struct ServerManager {
     pub port: u16,
     server: JoinHandle<()>,
     cancel_token: CancellationToken,
-    state: Arc<State>,
 }
 
 #[warn(clippy::unwrap_used)]
 impl ServerManager {
-    pub async fn start(me: Me) -> Result<Self, Box<dyn Error>> {
+    pub async fn start(me: Me, state: Arc<State>) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let port = listener.local_addr()?.port();
 
         let cancel_token = CancellationToken::new();
-        let state = Arc::new(State::default());
 
         let server = tokio::spawn(run_server(
             listener,
@@ -143,7 +141,6 @@ impl ServerManager {
             port,
             cancel_token,
             server,
-            state,
         })
     }
 

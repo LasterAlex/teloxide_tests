@@ -121,6 +121,7 @@ pub struct MockBot {
     bot_lock: MutexGuard<'static, ()>,
     current_update_id: AtomicI32,
     stack_size: usize,
+    state: Arc<State>,
 }
 
 impl MockBot {
@@ -185,6 +186,7 @@ impl MockBot {
         let token = "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO";
         let bot = Bot::new(token);
         let current_update_id = AtomicI32::new(42);
+        let state = Arc::new(State::default());
 
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
         let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
@@ -199,6 +201,7 @@ impl MockBot {
             bot_lock: lock,
             current_update_id,
             stack_size: Self::DEFAULT_STACK_SIZE,
+            state,
         }
     }
 
@@ -287,7 +290,9 @@ impl MockBot {
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
     pub async fn dispatch(&mut self) {
-        let server = ServerManager::start(self.me.clone()).await.unwrap();
+        let server = ServerManager::start(self.me.clone(), self.state.clone())
+            .await
+            .unwrap();
 
         let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", server.port)).unwrap();
         let bot = self.bot.clone().set_api_url(api_url);
