@@ -32,8 +32,6 @@ lazy_static! {
     static ref BOT_LOCK: Arc<Mutex<()>> = Arc::new(Mutex::new(()));
 }
 
-static GET_POTENTIAL_STORAGE_LOCK: Mutex<()> = Mutex::new(());
-
 fn find_file(value: Value) -> Option<FileMeta> {
     // Recursively searches for file meta
     let mut file_id = None;
@@ -336,9 +334,6 @@ impl MockBot {
     where
         S: Send + 'static + Clone,
     {
-        let get_potential_storage_lock = GET_POTENTIAL_STORAGE_LOCK.lock();
-        // If not this lock, some panic messages will make it to stderr, even with gag, because
-        // race condition.
         let default_panic = panic::take_hook();
         let in_mem_storage: Option<Arc<Arc<InMemStorage<S>>>>;
         let erased_storage: Option<Arc<Arc<ErasedStorage<S>>>>;
@@ -368,7 +363,6 @@ impl MockBot {
 
         panic::set_hook(default_panic); // Restore the default panic hook
         drop(print_gag);
-        drop(get_potential_storage_lock);
         (in_mem_storage, erased_storage)
     }
 
