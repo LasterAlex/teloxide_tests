@@ -13,7 +13,7 @@ use teloxide::{
 };
 use teloxide::{dptree::deps, types::UpdateKind};
 
-use crate::server::{self, Responses, FILES, MESSAGES};
+use crate::server::{self, Responses, MESSAGES};
 use crate::{
     dataset::{IntoUpdate, MockMe},
     server::ServerManager,
@@ -76,7 +76,7 @@ fn find_chat_id(value: Value) -> Option<i64> {
     None
 }
 
-fn add_message(message: &mut Message) {
+fn add_message(message: &mut Message, state: Arc<State>) {
     let max_id = MESSAGES.max_message_id();
     if message.id.0 <= max_id || MESSAGES.get_message(message.id.0).is_some() {
         message.id = MessageId(max_id + 1);
@@ -86,11 +86,11 @@ fn add_message(message: &mut Message) {
             meta: file_meta,
             path: "some_path.txt".to_string(), // This doesn't really matter
         };
-        FILES.lock().unwrap().push(file);
+        state.files.lock().unwrap().push(file);
     }
     if let MessageKind::Common(ref mut message_kind) = message.kind {
         if let Some(ref mut reply_message) = message_kind.reply_to_message {
-            add_message(reply_message);
+            add_message(reply_message, state);
         }
     }
     MESSAGES.add_message(message.clone());
@@ -98,7 +98,7 @@ fn add_message(message: &mut Message) {
 
 #[derive(Default)]
 pub struct State {
-    files: Mutex<Vec<File>>,
+    pub files: Mutex<Vec<File>>,
 }
 
 /// A mocked bot that sends requests to the fake server
@@ -230,14 +230,14 @@ impl MockBot {
             match update.kind.clone() {
                 UpdateKind::Message(mut message) => {
                     // Add the message to the list of messages, so the bot can interact with it
-                    add_message(&mut message);
+                    add_message(&mut message, self.state.clone());
                     update.kind = UpdateKind::Message(message.clone());
                 }
                 UpdateKind::CallbackQuery(mut callback) => {
                     if let Some(MaybeInaccessibleMessage::Regular(ref mut message)) =
                         callback.message
                     {
-                        add_message(message);
+                        add_message(message, self.state.clone());
                     }
                     update.kind = UpdateKind::CallbackQuery(callback.clone());
                 }

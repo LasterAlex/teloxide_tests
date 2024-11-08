@@ -26,7 +26,7 @@ use std::{
         Arc, Mutex,
     },
 };
-use teloxide::types::{File, Me, Message, ReplyMarkup};
+use teloxide::types::{Me, Message, ReplyMarkup};
 use tokio::task::{JoinError, JoinHandle};
 use tokio_util::sync::CancellationToken;
 
@@ -36,8 +36,7 @@ pub mod responses;
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);  // Messages storage, just in case
-    pub static ref FILES: Mutex<Vec<File>> = Mutex::new(vec![]);  // Messages storage, just in case
-    pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses::default());  //
+    pub static ref RESPONSES: Mutex<Responses> = Mutex::new(Responses::default());
     pub static ref LAST_MESSAGE_ID: AtomicI32 = AtomicI32::new(0);
 }
 

@@ -1,4 +1,5 @@
-use crate::server::{SentMediaGroup, FILES, MESSAGES, RESPONSES};
+use crate::mock_bot::State;
+use crate::server::{SentMediaGroup, MESSAGES, RESPONSES};
 use crate::{
     MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
     MockVideo,
@@ -21,7 +22,11 @@ use super::{
     MediaGroupInputMediaVideo,
 };
 
-pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
+pub async fn send_media_group(
+    mut payload: Multipart,
+    me: web::Data<Me>,
+    state: web::Data<State>,
+) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body = SendMediaGroupBody::serialize_raw_fields(&fields, &attachments).unwrap();
     if body.media.len() > 10 {
@@ -72,7 +77,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                state.files.lock().unwrap().push(teloxide::types::File {
                     meta: message.audio().unwrap().file.clone(),
                     path: audio.file_name.clone(),
                 });
@@ -98,7 +103,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                state.files.lock().unwrap().push(teloxide::types::File {
                     meta: message.document().unwrap().file.clone(),
                     path: document.file_name.clone(),
                 });
@@ -125,7 +130,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                state.files.lock().unwrap().push(teloxide::types::File {
                     meta: message.photo().unwrap().first().unwrap().clone().file,
                     path: photo.file_name.clone(),
                 });
@@ -157,7 +162,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                state.files.lock().unwrap().push(teloxide::types::File {
                     meta: message.video().unwrap().file.clone(),
                     path: video.file_name.clone(),
                 });

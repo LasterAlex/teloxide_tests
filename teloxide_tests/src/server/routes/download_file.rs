@@ -7,10 +7,14 @@ use actix_web::{
 };
 use futures_util::{future::ok, stream::once};
 
-use crate::server::FILES;
+use crate::mock_bot::State;
 
-pub async fn download_file(path: web::Path<(String, String)>) -> HttpResponse {
-    if FILES
+pub async fn download_file(
+    path: web::Path<(String, String)>,
+    state: web::Data<State>,
+) -> HttpResponse {
+    if state
+        .files
         .lock()
         .unwrap()
         .clone()

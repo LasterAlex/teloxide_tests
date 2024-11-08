@@ -1,3 +1,4 @@
+use crate::mock_bot::State;
 use crate::server::routes::Attachment;
 use crate::server::routes::{FileType, SerializeRawFields};
 use crate::server::SentMessageAnimation;
@@ -14,11 +15,15 @@ use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
 
-use crate::server::{routes::check_if_message_exists, FILES, MESSAGES, RESPONSES};
+use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
-pub async fn send_animation(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
+pub async fn send_animation(
+    mut payload: Multipart,
+    me: web::Data<Me>,
+    state: web::Data<State>,
+) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body =
         SendMessageAnimationBody::serialize_raw_fields(&fields, &attachments, FileType::Animation)
@@ -61,7 +66,7 @@ pub async fn send_animation(mut payload: Multipart, me: web::Data<Me>) -> impl R
     let last_id = MESSAGES.max_message_id();
     let message = MESSAGES.add_message(message.id(last_id + 1).build());
 
-    FILES.lock().unwrap().push(teloxide::types::File {
+    state.files.lock().unwrap().push(teloxide::types::File {
         meta: message.animation().unwrap().file.clone(),
         path: body.file_name.to_owned(),
     });
