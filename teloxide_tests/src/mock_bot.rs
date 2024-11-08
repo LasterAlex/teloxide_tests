@@ -123,7 +123,7 @@ pub struct MockBot {
     current_update_id: AtomicI32,
     stack_size: usize,
     state: Arc<Mutex<State>>,
-    _bot_lock: MutexGuard<'static, ()>,
+    _bot_lock: Option<MutexGuard<'static, ()>>,
 }
 
 impl MockBot {
@@ -191,7 +191,7 @@ impl MockBot {
         let state = Arc::new(Mutex::new(State::default()));
 
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
-        let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let lock = Some(BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner));
 
         Self {
             bot,
