@@ -121,15 +121,6 @@ impl ServerManager {
         let port = listener.local_addr()?.port();
 
         let cancel_token = CancellationToken::new();
-
-        {
-            let cancel_token = cancel_token.clone();
-            ctrlc::set_handler(move || {
-                cancel_token.cancel();
-                std::process::exit(1);
-            })?;
-        }
-
         let server = tokio::spawn(run_server(listener, me, cancel_token.clone()));
 
         if let Err(err) = wait_for_server(port).await {
