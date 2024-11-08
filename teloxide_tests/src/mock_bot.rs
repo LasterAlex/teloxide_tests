@@ -3,6 +3,7 @@ use gag::Gag;
 use serde_json::Value;
 use std::{
     env,
+    fmt::Debug,
     mem::discriminant,
     panic,
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
@@ -536,6 +537,13 @@ impl MockBot {
             log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
             panic!("No storage was detected!");
         }
+    }
+
+    pub async fn assert_state<S>(&self, state: S)
+    where
+        S: Send + 'static + Clone + Debug + PartialEq,
+    {
+        assert_eq!(self.get_state::<S>().await, state)
     }
 
     /// Gets the state of the dialogue, if the storage exists in dependencies
