@@ -117,7 +117,7 @@ pub struct ServerManager {
 
 #[warn(clippy::unwrap_used)]
 impl ServerManager {
-    pub async fn start(me: Me, state: Arc<State>) -> Result<Self, Box<dyn Error>> {
+    pub async fn start(me: Me, state: Arc<Mutex<State>>) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let port = listener.local_addr()?.port();
 
@@ -165,7 +165,7 @@ async fn wait_for_server(port: u16) -> Result<(), String> {
 async fn run_server(
     listener: TcpListener,
     me: Me,
-    state: Arc<State>,
+    state: Arc<Mutex<State>>,
     cancel_token: CancellationToken,
 ) {
     // MESSAGES don't care if they are cleaned or not
@@ -185,7 +185,7 @@ async fn run_server(
 fn create_server(
     listener: TcpListener,
     me: Me,
-    state: Arc<State>,
+    state: Arc<Mutex<State>>,
 ) -> io::Result<actix_web::dev::Server> {
     Ok(HttpServer::new(move || {
         App::new()

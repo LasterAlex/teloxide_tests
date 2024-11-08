@@ -76,7 +76,7 @@ fn find_chat_id(value: Value) -> Option<i64> {
     None
 }
 
-fn add_message(message: &mut Message, state: Arc<State>) {
+fn add_message(message: &mut Message, state: Arc<Mutex<State>>) {
     let max_id = MESSAGES.max_message_id();
     if message.id.0 <= max_id || MESSAGES.get_message(message.id.0).is_some() {
         message.id = MessageId(max_id + 1);
@@ -86,7 +86,7 @@ fn add_message(message: &mut Message, state: Arc<State>) {
             meta: file_meta,
             path: "some_path.txt".to_string(), // This doesn't really matter
         };
-        state.files.lock().unwrap().push(file);
+        state.lock().unwrap().files.push(file);
     }
     if let MessageKind::Common(ref mut message_kind) = message.kind {
         if let Some(ref mut reply_message) = message_kind.reply_to_message {
@@ -98,7 +98,7 @@ fn add_message(message: &mut Message, state: Arc<State>) {
 
 #[derive(Default)]
 pub struct State {
-    pub files: Mutex<Vec<File>>,
+    pub files: Vec<File>,
 }
 
 /// A mocked bot that sends requests to the fake server
@@ -119,7 +119,7 @@ pub struct MockBot {
 
     current_update_id: AtomicI32,
     stack_size: usize,
-    state: Arc<State>,
+    state: Arc<Mutex<State>>,
     _bot_lock: MutexGuard<'static, ()>,
 }
 
@@ -185,7 +185,7 @@ impl MockBot {
         let token = "1234567890:QWERTYUIOPASDFGHJKLZXCVBNMQWERTYUIO";
         let bot = Bot::new(token);
         let current_update_id = AtomicI32::new(42);
-        let state = Arc::new(State::default());
+        let state = Arc::new(Mutex::new(State::default()));
 
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
         let lock = BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner);

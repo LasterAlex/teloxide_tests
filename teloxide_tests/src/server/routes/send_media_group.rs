@@ -5,6 +5,7 @@ use crate::{
     MockVideo,
 };
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use actix_multipart::Multipart;
 use actix_web::Responder;
@@ -25,7 +26,7 @@ use super::{
 pub async fn send_media_group(
     mut payload: Multipart,
     me: web::Data<Me>,
-    state: web::Data<State>,
+    state: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body = SendMediaGroupBody::serialize_raw_fields(&fields, &attachments).unwrap();
@@ -77,7 +78,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.files.lock().unwrap().push(teloxide::types::File {
+                state.lock().unwrap().files.push(teloxide::types::File {
                     meta: message.audio().unwrap().file.clone(),
                     path: audio.file_name.clone(),
                 });
@@ -103,7 +104,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.files.lock().unwrap().push(teloxide::types::File {
+                state.lock().unwrap().files.push(teloxide::types::File {
                     meta: message.document().unwrap().file.clone(),
                     path: document.file_name.clone(),
                 });
@@ -130,7 +131,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.files.lock().unwrap().push(teloxide::types::File {
+                state.lock().unwrap().files.push(teloxide::types::File {
                     meta: message.photo().unwrap().first().unwrap().clone().file,
                     path: photo.file_name.clone(),
                 });
@@ -162,7 +163,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.files.lock().unwrap().push(teloxide::types::File {
+                state.lock().unwrap().files.push(teloxide::types::File {
                     meta: message.video().unwrap().file.clone(),
                     path: video.file_name.clone(),
                 });

@@ -1,4 +1,4 @@
-use std::fmt::Error;
+use std::{fmt::Error, sync::Mutex};
 
 use actix_web::{
     error::ErrorBadRequest,
@@ -11,12 +11,12 @@ use crate::mock_bot::State;
 
 pub async fn download_file(
     path: web::Path<(String, String)>,
-    state: web::Data<State>,
+    state: web::Data<Mutex<State>>,
 ) -> HttpResponse {
     if state
-        .files
         .lock()
         .unwrap()
+        .files
         .clone()
         .into_iter()
         .find(|f| f.path == path.1)

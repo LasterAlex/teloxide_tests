@@ -3,6 +3,7 @@ use crate::server::routes::Attachment;
 use crate::server::routes::{FileType, SerializeRawFields};
 
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use crate::dataset::{MockMessagePhoto, MockPhotoSize};
 use crate::proc_macros::SerializeRawFields;
@@ -22,7 +23,7 @@ use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 pub async fn send_photo(
     mut payload: Multipart,
     me: web::Data<Me>,
-    state: web::Data<State>,
+    state: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body =
@@ -57,7 +58,7 @@ pub async fn send_photo(
     let last_id = MESSAGES.max_message_id();
     let message = MESSAGES.add_message(message.id(last_id + 1).build());
 
-    state.files.lock().unwrap().push(teloxide::types::File {
+    state.lock().unwrap().files.push(teloxide::types::File {
         meta: message.photo().unwrap()[0].file.clone(),
         path: body.file_name.to_owned(),
     });
