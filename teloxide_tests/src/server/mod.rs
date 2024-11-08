@@ -23,7 +23,7 @@ use std::{
     net::TcpListener,
     sync::{
         atomic::{AtomicI32, Ordering},
-        Mutex,
+        Arc, Mutex,
     },
 };
 use teloxide::types::{File, Me, Message, ReplyMarkup};
@@ -107,11 +107,17 @@ pub async fn log_request(body: Json<serde_json::Value>) -> impl Responder {
     HttpResponse::Ok()
 }
 
+#[derive(Default)]
+struct ServerState {
+    files: Mutex<Vec<File>>,
+}
+
 #[allow(dead_code)]
 pub struct ServerManager {
     pub port: u16,
     server: JoinHandle<()>,
     cancel_token: CancellationToken,
+    state: Arc<ServerState>,
 }
 
 #[warn(clippy::unwrap_used)]
@@ -121,7 +127,14 @@ impl ServerManager {
         let port = listener.local_addr()?.port();
 
         let cancel_token = CancellationToken::new();
-        let server = tokio::spawn(run_server(listener, me, cancel_token.clone()));
+        let state = Arc::new(ServerState::default());
+
+        let server = tokio::spawn(run_server(
+            listener,
+            me,
+            state.clone(),
+            cancel_token.clone(),
+        ));
 
         if let Err(err) = wait_for_server(port).await {
             cancel_token.cancel();
@@ -133,6 +146,7 @@ impl ServerManager {
             port,
             cancel_token,
             server,
+            state,
         })
     }
 
@@ -155,11 +169,16 @@ async fn wait_for_server(port: u16) -> Result<(), String> {
     Err(format!("Failed to get the server on the port {}!", port))
 }
 
-async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationToken) {
+async fn run_server(
+    listener: TcpListener,
+    me: Me,
+    state: Arc<ServerState>,
+    cancel_token: CancellationToken,
+) {
     // MESSAGES don't care if they are cleaned or not
     *RESPONSES.lock().unwrap() = Responses::default();
 
-    let server = create_server(listener, me).unwrap();
+    let server = create_server(listener, me, state).unwrap();
     let server_handle = server.handle();
 
     tokio::spawn(async move {
@@ -170,10 +189,15 @@ async fn run_server(listener: TcpListener, me: Me, cancel_token: CancellationTok
     server.await.unwrap();
 }
 
-fn create_server(listener: TcpListener, me: Me) -> io::Result<actix_web::dev::Server> {
+fn create_server(
+    listener: TcpListener,
+    me: Me,
+    state: Arc<ServerState>,
+) -> io::Result<actix_web::dev::Server> {
     Ok(HttpServer::new(move || {
         App::new()
             .app_data(Data::new(me.clone()))
+            .app_data(Data::from(state.clone()))
             .configure(set_routes)
     })
     .listen(listener)?
