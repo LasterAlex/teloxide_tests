@@ -24,8 +24,8 @@ pub async fn send_video(
     me: web::Data<Me>,
     state: web::Data<Mutex<State>>,
 ) -> impl Responder {
-    let mut lock = state.lock().unwrap();
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
+    let mut lock = state.lock().unwrap();
     let body =
         SendMessageVideoBody::serialize_raw_fields(&fields, &attachments, FileType::Video).unwrap();
     let chat = body.chat_id.chat();
