@@ -18,7 +18,7 @@ use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, ReplyMarkup, ReplyParameters, Seconds};
 
-use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
+use crate::server::{routes::check_if_message_exists, MESSAGES};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
@@ -58,13 +58,13 @@ pub async fn send_video_note(
     let last_id = MESSAGES.max_message_id();
     let message = MESSAGES.add_message(message.id(last_id + 1).build());
 
-    state.lock().unwrap().files.push(teloxide::types::File {
+    let mut lock = state.lock().unwrap();
+    lock.files.push(teloxide::types::File {
         meta: message.video_note().unwrap().file.clone(),
         path: body.file_name.to_owned(),
     });
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses
         .sent_messages_video_note
         .push(SentMessageVideoNote {
             message: message.clone(),

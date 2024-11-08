@@ -1,4 +1,7 @@
-use crate::server::{SentMessageLocation, MESSAGES, RESPONSES};
+use std::sync::Mutex;
+
+use crate::mock_bot::State;
+use crate::server::{SentMessageLocation, MESSAGES};
 use crate::MockMessageLocation;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
@@ -30,6 +33,7 @@ pub struct SendMessageLocationBody {
 pub async fn send_location(
     body: web::Json<SendMessageLocationBody>,
     me: web::Data<Me>,
+    state: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let chat = body.chat_id.chat();
     let mut message = // Creates the message, which will be mutated to fit the needed shape
@@ -53,9 +57,9 @@ pub async fn send_location(
     let last_id = MESSAGES.max_message_id();
     let message = MESSAGES.add_message(message.id(last_id + 1).build());
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock
+    let mut lock = state.lock().unwrap();
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses
         .sent_messages_location
         .push(SentMessageLocation {
             message: message.clone(),

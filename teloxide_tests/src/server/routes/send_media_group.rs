@@ -1,5 +1,5 @@
 use crate::mock_bot::State;
-use crate::server::{SentMediaGroup, MESSAGES, RESPONSES};
+use crate::server::{SentMediaGroup, MESSAGES};
 use crate::{
     MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
     MockVideo,
@@ -174,9 +174,9 @@ pub async fn send_media_group(
         MESSAGES.add_message(message);
     }
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.extend(messages.clone());
-    responses_lock.sent_media_group.push(SentMediaGroup {
+    let mut lock = state.lock().unwrap();
+    lock.responses.sent_messages.extend(messages.clone());
+    lock.responses.sent_media_group.push(SentMediaGroup {
         messages: messages.clone(),
         bot_request: body,
     });

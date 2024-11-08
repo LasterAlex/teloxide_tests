@@ -1,4 +1,7 @@
-use crate::server::{SentMessagePoll, MESSAGES, RESPONSES};
+use std::sync::Mutex;
+
+use crate::mock_bot::State;
+use crate::server::{SentMessagePoll, MESSAGES};
 use crate::MockMessagePoll;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
@@ -38,7 +41,11 @@ pub struct SendMessagePollBody {
     pub reply_parameters: Option<ReplyParameters>,
 }
 
-pub async fn send_poll(body: web::Json<SendMessagePollBody>, me: web::Data<Me>) -> impl Responder {
+pub async fn send_poll(
+    state: web::Data<Mutex<State>>,
+    body: web::Json<SendMessagePollBody>,
+    me: web::Data<Me>,
+) -> impl Responder {
     let chat = body.chat_id.chat();
     let mut message = // Creates the message, which will be mutated to fit the needed shape
         MockMessagePoll::new().chat(chat);
@@ -75,9 +82,9 @@ pub async fn send_poll(body: web::Json<SendMessagePollBody>, me: web::Data<Me>) 
     let last_id = MESSAGES.max_message_id();
     let message = MESSAGES.add_message(message.id(last_id + 1).build());
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock.sent_messages_poll.push(SentMessagePoll {
+    let mut lock = state.lock().unwrap();
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses.sent_messages_poll.push(SentMessagePoll {
         message: message.clone(),
         bot_request: body.into_inner(),
     });

@@ -1,8 +1,13 @@
+use std::sync::Mutex;
+
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::server::{routes::make_telegram_result, EditedMessageText, MESSAGES, RESPONSES};
+use crate::{
+    mock_bot::State,
+    server::{routes::make_telegram_result, EditedMessageText, MESSAGES},
+};
 
 use super::{check_if_message_exists, BodyChatId};
 
@@ -19,7 +24,10 @@ pub struct EditMessageTextBody {
     pub reply_markup: Option<ReplyMarkup>,
 }
 
-pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Responder {
+pub async fn edit_message_text(
+    body: web::Json<EditMessageTextBody>,
+    state: web::Data<Mutex<State>>,
+) -> impl Responder {
     match (
         body.chat_id.clone(),
         body.message_id,
@@ -38,8 +46,8 @@ pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Res
                 .edit_message_reply_markup(message_id, body.reply_markup.clone())
                 .unwrap();
 
-            let mut responses_lock = RESPONSES.lock().unwrap();
-            responses_lock.edited_messages_text.push(EditedMessageText {
+            let mut lock = state.lock().unwrap();
+            lock.responses.edited_messages_text.push(EditedMessageText {
                 message: message.clone(),
                 bot_request: body.into_inner(),
             });

@@ -1,10 +1,13 @@
+use std::sync::Mutex;
+
+use crate::mock_bot::State;
 use crate::server::routes::{check_if_message_exists, make_telegram_result};
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
 use teloxide::types::ReplyMarkup;
 
-use crate::server::{EditedMessageReplyMarkup, MESSAGES, RESPONSES};
+use crate::server::{EditedMessageReplyMarkup, MESSAGES};
 
 use super::BodyChatId;
 
@@ -19,6 +22,7 @@ pub struct EditMessageReplyMarkupBody {
 
 pub async fn edit_message_reply_markup(
     body: web::Json<EditMessageReplyMarkupBody>,
+    state: web::Data<Mutex<State>>,
 ) -> impl Responder {
     match (
         body.chat_id.clone(),
@@ -37,8 +41,8 @@ pub async fn edit_message_reply_markup(
                     .unwrap(),
             };
 
-            let mut response_lock = RESPONSES.lock().unwrap();
-            response_lock
+            let mut lock = state.lock().unwrap();
+            lock.responses
                 .edited_messages_reply_markup
                 .push(EditedMessageReplyMarkup {
                     message: message.clone(),

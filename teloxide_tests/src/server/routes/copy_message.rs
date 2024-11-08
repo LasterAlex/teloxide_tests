@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
@@ -7,8 +9,9 @@ use teloxide::types::{
     MessageEntity, MessageId, MessageKind, ParseMode, ReplyMarkup,
 };
 
+use crate::mock_bot::State;
 use crate::server::CopiedMessage;
-use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
+use crate::server::{routes::check_if_message_exists, MESSAGES};
 
 use super::{make_telegram_result, BodyChatId};
 
@@ -28,7 +31,11 @@ pub struct CopyMessageBody {
     pub reply_markup: Option<ReplyMarkup>,
 }
 
-pub async fn copy_message(body: web::Json<CopyMessageBody>, me: web::Data<Me>) -> impl Responder {
+pub async fn copy_message(
+    body: web::Json<CopyMessageBody>,
+    me: web::Data<Me>,
+    state: web::Data<Mutex<State>>,
+) -> impl Responder {
     let chat = body.chat_id.chat();
     check_if_message_exists!(body.message_id);
     let mut message = MESSAGES.get_message(body.message_id).unwrap();
@@ -85,9 +92,9 @@ pub async fn copy_message(body: web::Json<CopyMessageBody>, me: web::Data<Me>) -
     message.chat = body.chat_id.chat();
     let message = MESSAGES.add_message(message);
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock.copied_messages.push(CopiedMessage {
+    let mut lock = state.lock().unwrap();
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses.copied_messages.push(CopiedMessage {
         message_id: message.id,
         bot_request: body.into_inner(),
     });

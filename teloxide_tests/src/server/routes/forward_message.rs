@@ -1,5 +1,8 @@
+use std::sync::Mutex;
+
+use crate::mock_bot::State;
 use crate::server::ForwardedMessage;
-use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
+use crate::server::{routes::check_if_message_exists, MESSAGES};
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
@@ -20,6 +23,7 @@ pub struct ForwardMessageBody {
 pub async fn forward_message(
     body: web::Json<ForwardMessageBody>,
     me: web::Data<Me>,
+    state: web::Data<Mutex<State>>,
 ) -> impl Responder {
     check_if_message_exists!(body.message_id);
     let mut message = MESSAGES.get_message(body.message_id).unwrap();
@@ -68,9 +72,9 @@ pub async fn forward_message(
     message.from = Some(me.user.clone());
     let message = MESSAGES.add_message(message);
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock.forwarded_messages.push(ForwardedMessage {
+    let mut lock = state.lock().unwrap();
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses.forwarded_messages.push(ForwardedMessage {
         message: message.clone(),
         bot_request: body.into_inner(),
     });
