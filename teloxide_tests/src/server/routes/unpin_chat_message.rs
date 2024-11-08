@@ -6,7 +6,6 @@ use serde::Deserialize;
 
 use crate::mock_bot::State;
 use crate::server::routes::make_telegram_result;
-use crate::server::MESSAGES;
 
 use super::{check_if_message_exists, BodyChatId};
 
@@ -20,10 +19,10 @@ pub async fn unpin_chat_message(
     state: web::Data<Mutex<State>>,
     body: web::Json<UnpinChatMessageBody>,
 ) -> impl Responder {
-    if let Some(message_id) = body.message_id {
-        check_if_message_exists!(message_id);
-    }
     let mut lock = state.lock().unwrap();
+    if let Some(message_id) = body.message_id {
+        check_if_message_exists!(lock, message_id);
+    }
     lock.responses
         .unpinned_chat_messages
         .push(body.into_inner());

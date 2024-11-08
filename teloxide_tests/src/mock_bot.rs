@@ -13,7 +13,7 @@ use teloxide::{
 };
 use teloxide::{dptree::deps, types::UpdateKind};
 
-use crate::server::{self, Responses, MESSAGES};
+use crate::server::{self, messages::Messages, Responses};
 use crate::{
     dataset::{IntoUpdate, MockMe},
     server::ServerManager,
@@ -75,36 +75,36 @@ fn find_chat_id(value: Value) -> Option<i64> {
     }
     None
 }
-
-fn add_message(message: &mut Message, state: Arc<Mutex<State>>) {
-    let max_id = MESSAGES.max_message_id();
-    if message.id.0 <= max_id || MESSAGES.get_message(message.id.0).is_some() {
-        message.id = MessageId(max_id + 1);
-    }
-    if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
-        let file = File {
-            meta: file_meta,
-            path: "some_path.txt".to_string(), // This doesn't really matter
-        };
-        state.lock().unwrap().files.push(file);
-    }
-    if let MessageKind::Common(ref mut message_kind) = message.kind {
-        if let Some(ref mut reply_message) = message_kind.reply_to_message {
-            add_message(reply_message, state);
-        }
-    }
-    MESSAGES.add_message(message.clone());
-}
-
 #[derive(Default)]
 pub struct State {
     pub files: Vec<File>,
     pub responses: Responses,
+    pub messages: Messages,
 }
 
 impl State {
     pub fn reset(&mut self) {
         self.responses = Responses::default();
+    }
+
+    fn add_message(&mut self, message: &mut Message) {
+        let max_id = self.messages.max_message_id();
+        if message.id.0 <= max_id || self.messages.get_message(message.id.0).is_some() {
+            message.id = MessageId(max_id + 1);
+        }
+        if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
+            let file = File {
+                meta: file_meta,
+                path: "some_path.txt".to_string(), // This doesn't really matter
+            };
+            self.files.push(file);
+        }
+        if let MessageKind::Common(ref mut message_kind) = message.kind {
+            if let Some(ref mut reply_message) = message_kind.reply_to_message {
+                self.add_message(reply_message);
+            }
+        }
+        self.messages.add_message(message.clone());
     }
 }
 
@@ -233,14 +233,14 @@ impl MockBot {
             match update.kind.clone() {
                 UpdateKind::Message(mut message) => {
                     // Add the message to the list of messages, so the bot can interact with it
-                    add_message(&mut message, self.state.clone());
+                    self.state.lock().unwrap().add_message(&mut message);
                     update.kind = UpdateKind::Message(message.clone());
                 }
                 UpdateKind::CallbackQuery(mut callback) => {
                     if let Some(MaybeInaccessibleMessage::Regular(ref mut message)) =
                         callback.message
                     {
-                        add_message(message, self.state.clone());
+                        self.state.lock().unwrap().add_message(message);
                     }
                     update.kind = UpdateKind::CallbackQuery(callback.clone());
                 }

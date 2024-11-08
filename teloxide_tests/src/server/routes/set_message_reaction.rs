@@ -7,7 +7,7 @@ use actix_web::{web, Responder};
 use serde::Deserialize;
 use teloxide::types::ReactionType;
 
-use crate::server::{routes::check_if_message_exists, MESSAGES};
+use crate::server::routes::check_if_message_exists;
 
 use super::{make_telegram_result, BodyChatId};
 
@@ -23,9 +23,10 @@ pub async fn set_message_reaction(
     state: web::Data<Mutex<State>>,
     body: web::Json<SetMessageReactionBody>,
 ) -> impl Responder {
-    check_if_message_exists!(body.message_id);
-
     let mut lock = state.lock().unwrap();
+
+    check_if_message_exists!(lock, body.message_id);
+
     lock.responses
         .set_message_reaction
         .push(SetMessageReaction {

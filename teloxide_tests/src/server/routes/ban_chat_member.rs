@@ -5,7 +5,6 @@ use serde::Deserialize;
 
 use crate::mock_bot::State;
 use crate::server::routes::make_telegram_result;
-use crate::server::MESSAGES;
 
 use super::BodyChatId;
 
@@ -21,19 +20,18 @@ pub async fn ban_chat_member(
     state: web::Data<Mutex<State>>,
     body: web::Json<BanChatMemberBody>,
 ) -> impl Responder {
+    let mut lock = state.lock().unwrap();
     let chat_id = body.chat_id.id();
-    let messages = MESSAGES.lock().unwrap().clone();
     if body.revoke_messages.is_some() && body.revoke_messages.unwrap() {
-        for message in messages {
+        for message in lock.messages.messages.clone() {
             if message.chat.id.0 == chat_id
                 && message.from.is_some()
                 && message.from.unwrap().id.0 == body.user_id
             {
-                MESSAGES.delete_message(message.id.0);
+                lock.messages.delete_message(message.id.0);
             }
         }
     }
-    let mut lock = state.lock().unwrap();
     lock.responses.banned_chat_members.push(body.into_inner());
 
     make_telegram_result(true)

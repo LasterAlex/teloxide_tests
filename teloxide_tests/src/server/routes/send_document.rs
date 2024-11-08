@@ -15,7 +15,7 @@ use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters};
 
-use crate::server::{routes::check_if_message_exists, SentMessageDocument, MESSAGES};
+use crate::server::{routes::check_if_message_exists, SentMessageDocument};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
@@ -24,6 +24,7 @@ pub async fn send_document(
     me: web::Data<Me>,
     state: web::Data<Mutex<State>>,
 ) -> impl Responder {
+    let mut lock = state.lock().unwrap();
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
     let body =
         SendMessageDocumentBody::serialize_raw_fields(&fields, &attachments, FileType::Document)
@@ -37,8 +38,11 @@ pub async fn send_document(
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
 
     if let Some(reply_parameters) = &body.reply_parameters {
-        check_if_message_exists!(reply_parameters.message_id.0);
-        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        check_if_message_exists!(lock, reply_parameters.message_id.0);
+        let reply_to_message = lock
+            .messages
+            .get_message(reply_parameters.message_id.0)
+            .unwrap();
         message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
@@ -59,10 +63,9 @@ pub async fn send_document(
     );
     message.has_protected_content = body.protect_content.unwrap_or(false);
 
-    let last_id = MESSAGES.max_message_id();
-    let message = MESSAGES.add_message(message.id(last_id + 1).build());
+    let last_id = lock.messages.max_message_id();
+    let message = lock.messages.add_message(message.id(last_id + 1).build());
 
-    let mut lock = state.lock().unwrap();
     lock.files.push(teloxide::types::File {
         meta: message.document().unwrap().file.clone(),
         path: body.file_name.to_owned(),

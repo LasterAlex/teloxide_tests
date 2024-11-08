@@ -6,7 +6,6 @@ use serde::Deserialize;
 
 use crate::mock_bot::State;
 use crate::server::routes::make_telegram_result;
-use crate::server::MESSAGES;
 
 use super::{check_if_message_exists, BodyChatId};
 
@@ -21,9 +20,8 @@ pub async fn pin_chat_message(
     state: web::Data<Mutex<State>>,
     body: web::Json<PinChatMessageBody>,
 ) -> impl Responder {
-    check_if_message_exists!(body.message_id);
     let mut lock = state.lock().unwrap();
+    check_if_message_exists!(lock, body.message_id);
     lock.responses.pinned_chat_messages.push(body.into_inner());
-
     make_telegram_result(true)
 }

@@ -10,8 +10,8 @@ use teloxide::types::{
 };
 
 use crate::mock_bot::State;
+use crate::server::routes::check_if_message_exists;
 use crate::server::CopiedMessage;
-use crate::server::{routes::check_if_message_exists, MESSAGES};
 
 use super::{make_telegram_result, BodyChatId};
 
@@ -36,9 +36,10 @@ pub async fn copy_message(
     me: web::Data<Me>,
     state: web::Data<Mutex<State>>,
 ) -> impl Responder {
+    let mut lock = state.lock().unwrap();
     let chat = body.chat_id.chat();
-    check_if_message_exists!(body.message_id);
-    let mut message = MESSAGES.get_message(body.message_id).unwrap();
+    check_if_message_exists!(lock, body.message_id);
+    let mut message = lock.messages.get_message(body.message_id).unwrap();
     message.chat = chat;
     message.from = Some(me.user.clone());
 
@@ -87,12 +88,11 @@ pub async fn copy_message(
         common.has_protected_content = body.protect_content.unwrap_or(false);
     }
 
-    let last_id = MESSAGES.max_message_id();
+    let last_id = lock.messages.max_message_id();
     message.id = MessageId(last_id + 1);
     message.chat = body.chat_id.chat();
-    let message = MESSAGES.add_message(message);
+    let message = lock.messages.add_message(message);
 
-    let mut lock = state.lock().unwrap();
     lock.responses.sent_messages.push(message.clone());
     lock.responses.copied_messages.push(CopiedMessage {
         message_id: message.id,

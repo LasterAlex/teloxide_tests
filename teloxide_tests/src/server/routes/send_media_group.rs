@@ -1,5 +1,5 @@
 use crate::mock_bot::State;
-use crate::server::{SentMediaGroup, MESSAGES};
+use crate::server::SentMediaGroup;
 use crate::{
     MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
     MockVideo,
@@ -29,6 +29,7 @@ pub async fn send_media_group(
     state: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
+    let mut lock = state.lock().unwrap();
     let body = SendMediaGroupBody::serialize_raw_fields(&fields, &attachments).unwrap();
     if body.media.len() > 10 {
         return ErrorBadRequest("Too many media items").into();
@@ -39,10 +40,12 @@ pub async fn send_media_group(
     let protect_content = body.protect_content;
     let mut reply_to_message = None;
     if let Some(reply_parameters) = &body.reply_parameters {
-        check_if_message_exists!(reply_parameters.message_id.0);
+        check_if_message_exists!(lock, reply_parameters.message_id.0);
         // All of messages in the media group are replying to the same message
         reply_to_message = Some(Box::new(
-            MESSAGES.get_message(reply_parameters.message_id.0).unwrap(),
+            lock.messages
+                .get_message(reply_parameters.message_id.0)
+                .unwrap(),
         ));
     }
     let media_group_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
@@ -52,7 +55,7 @@ pub async fn send_media_group(
     for media in &body.media {
         let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
         let file_unique_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
-        let last_id = MESSAGES.max_message_id();
+        let last_id = lock.messages.max_message_id();
         let message: Message;
         match media {
             MediaGroupInputMedia::InputMediaAudio(audio) => {
@@ -78,7 +81,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.lock().unwrap().files.push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.audio().unwrap().file.clone(),
                     path: audio.file_name.clone(),
                 });
@@ -104,7 +107,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.lock().unwrap().files.push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.document().unwrap().file.clone(),
                     path: document.file_name.clone(),
                 });
@@ -131,7 +134,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.lock().unwrap().files.push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.photo().unwrap().first().unwrap().clone().file,
                     path: photo.file_name.clone(),
                 });
@@ -163,7 +166,7 @@ pub async fn send_media_group(
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                state.lock().unwrap().files.push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.video().unwrap().file.clone(),
                     path: video.file_name.clone(),
                 });
@@ -171,10 +174,9 @@ pub async fn send_media_group(
         }
 
         messages.push(message.clone());
-        MESSAGES.add_message(message);
+        lock.messages.add_message(message);
     }
 
-    let mut lock = state.lock().unwrap();
     lock.responses.sent_messages.extend(messages.clone());
     lock.responses.sent_media_group.push(SentMediaGroup {
         messages: messages.clone(),

@@ -7,7 +7,7 @@ use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
 use crate::mock_bot::State;
 use crate::server::routes::make_telegram_result;
-use crate::server::{EditedMessageCaption, MESSAGES};
+use crate::server::EditedMessageCaption;
 
 use super::{check_if_message_exists, BodyChatId};
 
@@ -34,19 +34,21 @@ pub async fn edit_message_caption(
         body.inline_message_id.clone(),
     ) {
         (Some(_), Some(message_id), None) => {
-            check_if_message_exists!(message_id);
-            MESSAGES.edit_message(message_id, "caption", body.caption.clone());
-            MESSAGES.edit_message(
+            let mut lock = state.lock().unwrap();
+            check_if_message_exists!(lock, message_id);
+            lock.messages
+                .edit_message(message_id, "caption", body.caption.clone());
+            lock.messages.edit_message(
                 message_id,
                 "caption_entities",
                 body.caption_entities.clone().unwrap_or_default(),
             );
 
-            let message = MESSAGES
+            let message = lock
+                .messages
                 .edit_message_reply_markup(message_id, body.reply_markup.clone())
                 .unwrap();
 
-            let mut lock = state.lock().unwrap();
             lock.responses
                 .edited_messages_caption
                 .push(EditedMessageCaption {

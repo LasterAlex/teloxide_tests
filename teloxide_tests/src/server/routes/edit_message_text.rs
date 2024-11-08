@@ -6,7 +6,7 @@ use teloxide::types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup}
 
 use crate::{
     mock_bot::State,
-    server::{routes::make_telegram_result, EditedMessageText, MESSAGES},
+    server::{routes::make_telegram_result, EditedMessageText},
 };
 
 use super::{check_if_message_exists, BodyChatId};
@@ -34,19 +34,21 @@ pub async fn edit_message_text(
         body.inline_message_id.clone(),
     ) {
         (Some(_), Some(message_id), None) => {
-            check_if_message_exists!(message_id);
+            let mut lock = state.lock().unwrap();
+            check_if_message_exists!(lock, message_id);
 
-            MESSAGES.edit_message(message_id, "text", body.text.clone());
-            MESSAGES.edit_message(
+            lock.messages
+                .edit_message(message_id, "text", body.text.clone());
+            lock.messages.edit_message(
                 message_id,
                 "entities",
                 body.entities.clone().unwrap_or(vec![]),
             );
-            let message = MESSAGES
+            let message = lock
+                .messages
                 .edit_message_reply_markup(message_id, body.reply_markup.clone())
                 .unwrap();
 
-            let mut lock = state.lock().unwrap();
             lock.responses.edited_messages_text.push(EditedMessageText {
                 message: message.clone(),
                 bot_request: body.into_inner(),

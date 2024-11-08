@@ -167,8 +167,8 @@ pub trait SerializeRawFields {
 }
 
 macro_rules! check_if_message_exists {
-    ($msg_id:expr) => {
-        if MESSAGES.get_message($msg_id).is_none() {
+    ($lock:expr, $msg_id:expr) => {
+        if $lock.messages.get_message($msg_id).is_none() {
             return ErrorBadRequest("Message not found").into();
         }
     };
