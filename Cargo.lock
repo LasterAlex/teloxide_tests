@@ -2535,7 +2535,6 @@ dependencies = [
  "log",
  "mime",
  "mime_guess",
- "parking_lot",
  "pretty_env_logger",
  "rand",
  "reqwest",
