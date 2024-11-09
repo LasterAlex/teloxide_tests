@@ -85,6 +85,21 @@ async fn test_echo_with_start_state() {
 }
 
 #[tokio::test]
+async fn test_assert_state() {
+    let bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
+    let storage = InMemStorage::<State>::new();
+    bot.dependencies(deps![storage]);
+    bot.set_state(State::Start).await;
+
+    bot.dispatch().await;
+
+    bot.assert_state(State::NotStart).await;
+
+    let last_response = bot.get_responses().sent_messages.pop().unwrap();
+    assert_eq!(last_response.text(), Some("test"));
+}
+
+#[tokio::test]
 async fn test_echo_with_not_start_test() {
     let mut bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
     let storage = InMemStorage::<State>::new();
