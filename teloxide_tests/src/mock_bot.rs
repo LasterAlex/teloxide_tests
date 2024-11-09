@@ -11,7 +11,6 @@ use gag::Gag;
 use lazy_static::lazy_static;
 use serde_json::Value;
 use std::{
-    env,
     fmt::Debug,
     mem::discriminant,
     panic,
