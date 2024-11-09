@@ -123,9 +123,10 @@ pub struct MockBot {
     pub me: Me,
     /// If you have something like a state, you should add the storage here using .dependencies()
     pub dependencies: DependencyMap,
+    /// The stack size of the runtime for running updates
+    pub stack_size: usize,
 
     current_update_id: AtomicI32,
-    stack_size: usize,
     state: Arc<Mutex<State>>,
     _bot_lock: Option<MutexGuard<'static, ()>>,
 }
