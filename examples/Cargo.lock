@@ -35,7 +35,7 @@ dependencies = [
  "brotli",
  "bytes",
  "bytestring",
- "derive_more",
+ "derive_more 0.99.18",
  "encoding_rs",
  "flate2",
  "futures-core",
@@ -77,7 +77,7 @@ dependencies = [
  "actix-multipart-derive",
  "actix-utils",
  "actix-web",
- "derive_more",
+ "derive_more 0.99.18",
  "futures-core",
  "futures-util",
  "httparse",
@@ -189,7 +189,7 @@ dependencies = [
  "bytestring",
  "cfg-if",
  "cookie",
- "derive_more",
+ "derive_more 0.99.18",
  "encoding_rs",
  "futures-core",
  "futures-util",
@@ -234,14 +234,14 @@ dependencies = [
  "actix-service",
  "actix-utils",
  "actix-web",
- "actix-web-lab-derive",
+ "actix-web-lab-derive 0.20.0",
  "ahash",
  "arc-swap",
  "async-trait",
  "bytes",
  "bytestring",
  "csv",
- "derive_more",
+ "derive_more 0.99.18",
  "futures-core",
  "futures-util",
  "http 0.2.12",
@@ -262,10 +262,59 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-lab"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee75923689132fc5fb57ccc5bb98d25bb214796a29cd505844eb3b42daf11df0"
+dependencies = [
+ "actix-http",
+ "actix-router",
+ "actix-service",
+ "actix-utils",
+ "actix-web",
+ "actix-web-lab-derive 0.23.0",
+ "ahash",
+ "arc-swap",
+ "bytes",
+ "bytestring",
+ "csv",
+ "derive_more 1.0.0",
+ "form_urlencoded",
+ "futures-core",
+ "futures-util",
+ "http 0.2.12",
+ "impl-more",
+ "itertools 0.13.0",
+ "local-channel",
+ "mediatype",
+ "mime",
+ "pin-project-lite",
+ "regex",
+ "serde",
+ "serde_html_form",
+ "serde_json",
+ "serde_path_to_error",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+]
+
+[[package]]
 name = "actix-web-lab-derive"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9aa0b287c8de4a76b691f29dbb5451e8dd5b79d777eaf87350c9b0cbfdb5e968"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
+name = "actix-web-lab-derive"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c221da13534b9352f3f79fcbbd6095f6d8aee63bdf1da8a73d36f9eeea17d5a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -316,8 +365,8 @@ dependencies = [
  "dotenv",
  "log",
  "pretty_env_logger",
- "teloxide",
- "teloxide_tests",
+ "teloxide 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "teloxide_tests 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
 ]
 
@@ -349,6 +398,55 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "819e7219dbd41043ac279b19830f2efc897156490d7fd6ea916720117ee66311"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "anstream"
+version = "0.6.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8acc5369981196006228e28809f761875c0327210a891e941f4c683b3a99529b"
+dependencies = [
+ "anstyle",
+ "anstyle-parse",
+ "anstyle-query",
+ "anstyle-wincon",
+ "colorchoice",
+ "is_terminal_polyfill",
+ "utf8parse",
+]
+
+[[package]]
+name = "anstyle"
+version = "1.0.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55cc3b69f167a1ef2e161439aa98aed94e6028e5f9a59be9a6ffb47aef1651f9"
+
+[[package]]
+name = "anstyle-parse"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b2d16507662817a6a20a9ea92df6652ee4f94f914589377d69f3b21bc5798a9"
+dependencies = [
+ "utf8parse",
+]
+
+[[package]]
+name = "anstyle-query"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79947af37f4177cfead1110013d678905c37501914fba0efea834c3fe9a8d60c"
+dependencies = [
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "anstyle-wincon"
+version = "3.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2109dbce0e72be3ec00bed26e6a7479ca384ad226efdd66db8fa2e3a38c83125"
+dependencies = [
+ "anstyle",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -470,6 +568,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
 
 [[package]]
+name = "bytemuck"
+version = "1.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8334215b81e418a0a7bdb8ef0849474f40bb10c8b71f1c4ed315cff49f32494d"
+
+[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -499,16 +603,16 @@ dependencies = [
  "pretty_env_logger",
  "serde",
  "serde_json",
- "teloxide",
- "teloxide_tests",
+ "teloxide 0.13.0 (git+https://github.com/teloxide/teloxide.git?rev=24a8d5f)",
+ "teloxide_tests 0.2.0",
  "tokio",
 ]
 
 [[package]]
 name = "cc"
-version = "1.1.35"
+version = "1.1.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f57c4b4da2a9d619dd035f27316d7a426305b75be93d09e92f2b9229c34feaf"
+checksum = "40545c26d092346d8a8dab71ee48e7685a7a9cba76e634790c215b41a4a7b4cf"
 dependencies = [
  "jobserver",
  "libc",
@@ -540,6 +644,12 @@ dependencies = [
  "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
+
+[[package]]
+name = "colorchoice"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 
 [[package]]
 name = "combine"
@@ -755,8 +865,8 @@ dependencies = [
  "dotenv",
  "serde",
  "serde_json",
- "teloxide",
- "teloxide_tests",
+ "teloxide 0.13.0 (git+https://github.com/teloxide/teloxide.git?rev=24a8d5f)",
+ "teloxide_tests 0.2.0",
  "tokio",
 ]
 
@@ -780,6 +890,27 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn 2.0.87",
+]
+
+[[package]]
+name = "derive_more"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a9b99b9cbbe49445b21764dc0625032a89b145a2642e67603e1c936f5458d05"
+dependencies = [
+ "derive_more-impl",
+]
+
+[[package]]
+name = "derive_more-impl"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+ "unicode-xid",
 ]
 
 [[package]]
@@ -883,6 +1014,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_filter"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f2c92ceda6ceec50f43169f9ee8424fe2db276791afde7b2cd8bc084cb376ab"
+dependencies = [
+ "log",
+ "regex",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -893,6 +1034,19 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e13fa619b91fb2381732789fc5de83b45675e882f66623b7d8cb4f643017018d"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "env_filter",
+ "humantime",
+ "log",
 ]
 
 [[package]]
@@ -923,17 +1077,17 @@ dependencies = [
 
 [[package]]
 name = "fastrand"
-version = "2.1.1"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8c02a5121d4ea3eb16a80748c74f5549a5665e4c21333c6098f283870fbdea6"
+checksum = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4"
 
 [[package]]
 name = "file_download_bot"
 version = "0.1.0"
 dependencies = [
  "dotenv",
- "teloxide",
- "teloxide_tests",
+ "teloxide 0.13.0 (git+https://github.com/teloxide/teloxide.git?rev=24a8d5f)",
+ "teloxide_tests 0.2.0",
  "tokio",
 ]
 
@@ -1181,8 +1335,8 @@ name = "hello_world_bot"
 version = "0.1.0"
 dependencies = [
  "dotenv",
- "teloxide",
- "teloxide_tests",
+ "teloxide 0.13.0 (git+https://github.com/teloxide/teloxide.git?rev=24a8d5f)",
+ "teloxide_tests 0.2.0",
  "tokio",
 ]
 
@@ -1602,6 +1756,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "is_terminal_polyfill"
+version = "1.70.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1615,6 +1775,15 @@ name = "itertools"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
 dependencies = [
  "either",
 ]
@@ -1657,9 +1826,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.161"
+version = "0.2.162"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e9489c2807c139ffd9c1794f4af0ebe86a828db53ecdc7fea2111d0fed085d1"
+checksum = "18d287de67fe55fd7e1581fe933d965a5a9477b38e949cfa9f8574ef01506398"
 
 [[package]]
 name = "linux-raw-sys"
@@ -1920,8 +2089,8 @@ dependencies = [
  "pretty_env_logger",
  "serde",
  "serde_json",
- "teloxide",
- "teloxide_tests",
+ "teloxide 0.13.0 (git+https://github.com/teloxide/teloxide.git?rev=24a8d5f)",
+ "teloxide_tests 0.2.0",
  "tokio",
 ]
 
@@ -1993,7 +2162,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "865724d4dbe39d9f3dd3b52b88d859d66bcb2d6a0acfd5ea68a65fb66d4bdc1c"
 dependencies = [
- "env_logger",
+ "env_logger 0.10.2",
  "log",
 ]
 
@@ -2207,6 +2376,7 @@ dependencies = [
  "js-sys",
  "log",
  "mime",
+ "mime_guess",
  "native-tls",
  "once_cell",
  "percent-encoding",
@@ -2219,12 +2389,23 @@ dependencies = [
  "system-configuration 0.6.1",
  "tokio",
  "tokio-native-tls",
+ "tokio-util",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm-streams",
  "web-sys",
  "windows-registry",
+]
+
+[[package]]
+name = "rgb"
+version = "0.8.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57397d16646700483b67d2dd6511d79318f9d057fdbd21a4066aeac8b41d310a"
+dependencies = [
+ "bytemuck",
 ]
 
 [[package]]
@@ -2354,9 +2535,9 @@ dependencies = [
 
 [[package]]
 name = "security-framework-sys"
-version = "2.12.0"
+version = "2.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea4a292869320c0272d7bc55a5a6aafaff59b4f63404a003887b679a2e05b4b6"
+checksum = "fa39c7303dc58b5543c94d22c1766b0d31f2ee58306363ea622b10bbc075eaa2"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -2420,6 +2601,16 @@ dependencies = [
  "itoa",
  "memchr",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_path_to_error"
+version = "0.1.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af99884400da37c88f5e9146b7f1fd0fbcae8f6eec4e9da38b67d05486f814a6"
+dependencies = [
+ "itoa",
  "serde",
 ]
 
@@ -2657,8 +2848,33 @@ checksum = "5f79dd283eb21b90451c03fa7c7f83b9985130efb876b33bad89a2c208ccbc16"
 dependencies = [
  "aquamarine",
  "bytes",
+ "derive_more 0.99.18",
+ "dptree",
+ "either",
+ "futures",
+ "log",
+ "mime",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "teloxide-core 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "teloxide-macros",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "teloxide"
+version = "0.13.0"
+source = "git+https://github.com/teloxide/teloxide.git?rev=24a8d5f#24a8d5f9d5f5467eabdbfe165839bf5a44cbddf9"
+dependencies = [
+ "aquamarine",
+ "bytes",
  "deadpool-redis",
- "derive_more",
+ "derive_more 0.99.18",
  "dptree",
  "either",
  "futures",
@@ -2668,7 +2884,7 @@ dependencies = [
  "serde",
  "serde_cbor",
  "serde_json",
- "teloxide-core",
+ "teloxide-core 0.10.1 (git+https://github.com/teloxide/teloxide.git?rev=24a8d5f)",
  "teloxide-macros",
  "thiserror",
  "tokio",
@@ -2686,7 +2902,7 @@ dependencies = [
  "bitflags 1.3.2",
  "bytes",
  "chrono",
- "derive_more",
+ "derive_more 0.99.18",
  "either",
  "futures",
  "log",
@@ -2695,6 +2911,36 @@ dependencies = [
  "pin-project",
  "rc-box",
  "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "take_mut",
+ "takecell",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "teloxide-core"
+version = "0.10.1"
+source = "git+https://github.com/teloxide/teloxide.git?rev=24a8d5f#24a8d5f9d5f5467eabdbfe165839bf5a44cbddf9"
+dependencies = [
+ "bitflags 1.3.2",
+ "bytes",
+ "chrono",
+ "derive_more 0.99.18",
+ "either",
+ "futures",
+ "log",
+ "mime",
+ "once_cell",
+ "pin-project",
+ "rc-box",
+ "reqwest 0.12.9",
+ "rgb",
  "serde",
  "serde_json",
  "serde_with",
@@ -2722,16 +2968,45 @@ dependencies = [
 [[package]]
 name = "teloxide_tests"
 version = "0.2.0"
+dependencies = [
+ "actix-multipart",
+ "actix-web",
+ "actix-web-lab 0.23.0",
+ "chrono",
+ "ctrlc",
+ "dotenv",
+ "env_logger 0.11.5",
+ "futures-util",
+ "gag",
+ "lazy_static",
+ "log",
+ "mime",
+ "mime_guess",
+ "pretty_env_logger",
+ "rand",
+ "reqwest 0.12.9",
+ "serde",
+ "serde_json",
+ "teloxide 0.13.0 (git+https://github.com/teloxide/teloxide.git?rev=24a8d5f)",
+ "teloxide_tests_macros",
+ "tokio",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "teloxide_tests"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "063e7d8270f4b1c1be07a16320b424b29cfefd48e6250eeb69020ec847bc0faa"
 dependencies = [
  "actix-multipart",
  "actix-web",
- "actix-web-lab",
+ "actix-web-lab 0.20.2",
  "chrono",
  "ctrlc",
  "dotenv",
- "env_logger",
+ "env_logger 0.10.2",
  "futures-util",
  "gag",
  "lazy_static",
@@ -2744,7 +3019,7 @@ dependencies = [
  "reqwest 0.12.9",
  "serde",
  "serde_json",
- "teloxide",
+ "teloxide 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "teloxide_tests_macros",
  "tokio",
  "url",
@@ -2763,9 +3038,9 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.13.0"
+version = "3.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0f2c9fc62d0beef6951ccffd757e241266a2c833136efbe35af6cd2567dca5b"
+checksum = "28cce251fcbc87fac86a866eeb0d6c2d536fc16d06f184bb61aeae11aa4cee0c"
 dependencies = [
  "cfg-if",
  "fastrand",
@@ -2846,9 +3121,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.41.0"
+version = "1.41.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "145f3413504347a2be84393cc8a7d2fb4d863b375909ea59f2158261aa258bbb"
+checksum = "22cfb5bee7a6a52939ca9224d6ac897bb669134078daa8735560897f69de4d33"
 dependencies = [
  "backtrace",
  "bytes",
@@ -2981,6 +3256,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e91b56cd4cadaeb79bbf1a5645f6b4f8dc5bde8834ad5894a8db35fda9efa1fe"
 
 [[package]]
+name = "unicode-xid"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
 name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3009,6 +3290,12 @@ name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+
+[[package]]
+name = "utf8parse"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"

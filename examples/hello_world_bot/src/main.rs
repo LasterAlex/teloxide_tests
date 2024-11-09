@@ -40,7 +40,7 @@ mod tests {
         // This creates a fake bot that will send the mock_message after we dispatch it as if it was sent by the user
         // If you wanted, you could've made vec![MockMessageText::new().text("Hi!"), MockMessageText::new().text("Hello!")],
         // and both updates would've been sent one after the other. You also can make a MockMessagePhoto, MockMessageDocument, etc
-        let bot = MockBot::new(mock_message, handler_tree());
+        let mut bot = MockBot::new(mock_message, handler_tree());
         // This will dispatch the update
         bot.dispatch().await;
 
