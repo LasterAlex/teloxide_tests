@@ -451,7 +451,7 @@ async fn test_no_updates() {
 
     // This shouldn't panic
     bot.dispatch().await;
-    
+
     // Just to test that everything is fine
     bot.update(MockMessageText::new().text("/echo echo"));
     bot.dispatch_and_check_last_text("/echo echo").await;

@@ -16,7 +16,6 @@ pub struct EditMessageReplyMarkupBody {
     pub chat_id: Option<BodyChatId>,
     pub message_id: Option<i32>,
     pub inline_message_id: Option<String>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }
 

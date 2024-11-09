@@ -96,6 +96,5 @@ pub struct SendMessageAudioBody {
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
     pub reply_parameters: Option<ReplyParameters>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }

@@ -20,7 +20,6 @@ pub struct EditMessageCaptionBody {
     pub parse_mode: Option<ParseMode>,
     pub caption_entities: Option<Vec<MessageEntity>>,
     pub show_caption_above_media: Option<bool>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }
 

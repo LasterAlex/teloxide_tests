@@ -27,7 +27,6 @@ pub struct CopyMessageBody {
     pub show_caption_above_media: Option<bool>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }
 

@@ -157,11 +157,11 @@
 #![allow(clippy::bool_assert_comparison)]
 
 mod dataset;
+pub(crate) mod listener;
 pub mod mock_bot;
 mod server;
 #[cfg(test)]
 mod tests;
-pub mod listener;
 
 pub use dataset::*;
 pub use mock_bot::MockBot;

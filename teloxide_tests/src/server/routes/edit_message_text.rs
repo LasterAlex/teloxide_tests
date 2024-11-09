@@ -20,7 +20,6 @@ pub struct EditMessageTextBody {
     pub parse_mode: Option<ParseMode>,
     pub entities: Option<Vec<MessageEntity>>,
     pub link_preview_options: Option<LinkPreviewOptions>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }
 
