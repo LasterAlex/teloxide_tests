@@ -32,7 +32,7 @@ use teloxide::{
 };
 
 lazy_static! {
-    static ref BOT_LOCK: Arc<Mutex<()>> = Arc::new(Mutex::new(()));
+    static ref BOT_LOCK: Mutex<()> = Mutex::new(());
 }
 
 fn find_file(value: Value) -> Option<FileMeta> {
