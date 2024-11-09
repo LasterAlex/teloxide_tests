@@ -36,6 +36,8 @@ enum State {
     NotStart,
 }
 
+type MyDialogue = Dialogue<State, InMemStorage<State>>;
+
 async fn handler_with_state(
     bot: Bot,
     dialogue: MyDialogue,
@@ -160,8 +162,6 @@ pub enum AllCommands {
     #[command()]
     Panic,
 }
-
-type MyDialogue = Dialogue<State, InMemStorage<State>>;
 
 async fn handler(
     bot: Bot,
@@ -433,12 +433,28 @@ async fn test_echo() {
 #[tokio::test]
 #[should_panic]
 async fn test_panic() {
-    // Nothing else should fail because it panics
-    let mut bot = MockBot::new(MockMessageText::new().text("/panic"), get_schema());
+    // Nothing else should fail because this panics
+    let bot = MockBot::new(MockMessageText::new().text("/panic"), get_schema());
 
-    bot.dispatch().await;
+    // To actually keep the bot in scope
+    if true {
+        panic!("Expected panic");
+    }
 
     drop(bot);
+}
+
+#[tokio::test]
+async fn test_no_updates() {
+    let empty: Vec<MockMessageDice> = vec![];
+    let mut bot = MockBot::new(empty, get_schema());
+
+    // This shouldn't panic
+    bot.dispatch().await;
+    
+    // Just to test that everything is fine
+    bot.update(MockMessageText::new().text("/echo echo"));
+    bot.dispatch_and_check_last_text("/echo echo").await;
 }
 
 #[tokio::test]

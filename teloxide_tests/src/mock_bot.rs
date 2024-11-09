@@ -1,24 +1,26 @@
 //! Mock bot that sends requests to the fake server
+use crate::{
+    dataset::{IntoUpdate, MockMe},
+    server::ServerManager,
+};
+use crate::{
+    listener::InsertingListener,
+    server::{self, messages::Messages, Responses},
+};
 use gag::Gag;
+use lazy_static::lazy_static;
 use serde_json::Value;
 use std::{
     mem::discriminant,
     panic,
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
 };
+use teloxide::types::UpdateKind;
 use teloxide::{
     dispatching::dialogue::ErasedStorage,
     dptree::di::DependencySupplier,
     types::{File, FileMeta, MaybeInaccessibleMessage, MessageId, MessageKind},
 };
-use teloxide::{dptree::deps, types::UpdateKind};
-
-use crate::server::{self, messages::Messages, Responses};
-use crate::{
-    dataset::{IntoUpdate, MockMe},
-    server::ServerManager,
-};
-use lazy_static::lazy_static;
 use teloxide::{
     dispatching::{
         dialogue::{GetChatId, InMemStorage, Storage},
@@ -73,6 +75,7 @@ fn find_chat_id(value: Value) -> Option<i64> {
     }
     None
 }
+
 #[derive(Default)]
 pub struct State {
     pub files: Vec<File>,
@@ -225,9 +228,9 @@ impl MockBot {
         self.updates = update.into_update(&self.current_update_id);
     }
 
-    fn collect_handles(&self, handles: &mut Vec<std::thread::JoinHandle<()>>, bot: Bot) {
-        let self_deps = self.dependencies.clone();
-        for mut update in self.updates.clone() {
+    /// Just inserts the updates into the state, returning them
+    fn insert_updates(&self, updates: &mut [Update]) {
+        for update in updates.iter_mut() {
             match update.kind.clone() {
                 UpdateKind::Message(mut message) => {
                     // Add the message to the list of messages, so the bot can interact with it
@@ -244,46 +247,33 @@ impl MockBot {
                 }
                 _ => {}
             }
-
-            let mut deps = deps![
-                bot.clone(),
-                self.me.clone(),
-                update.clone() // This actually makes an update go through the dptree
-            ];
-
-            deps.insert_container(self_deps.clone()); // These are nessessary for the dispatch
-
-            // This, too, will need to be redone in the ideal world, but it just waits until the server is up
-            let handler_tree = self.handler_tree.clone();
-
-            let stack_size = self.stack_size;
-
-            // To fix the stack overflow, a new thread with a new runtime is needed
-            let builder = std::thread::Builder::new().stack_size(self.stack_size);
-            handles.push(
-                builder
-                    .spawn(move || {
-                        let runtime = tokio::runtime::Builder::new_multi_thread()
-                            .thread_stack_size(stack_size) // Not needed, but just in case
-                            .enable_all()
-                            .build()
-                            .unwrap();
-
-                        runtime.block_on(async move {
-                            let result = handler_tree.dispatch(deps.clone()).await;
-                            if let ControlFlow::Break(result) = result {
-                                // If it returned `ControlFlow::Break`, everything is fine, but we need to check, if the
-                                // handler didn't error out
-                                assert!(result.is_ok(), "Error in handler: {:?}", result);
-                            } else {
-                                log::error!("Update didn't get handled!");
-                                panic!("Unhandled update!");
-                            }
-                        })
-                    })
-                    .unwrap(),
-            );
         }
+    }
+
+    async fn run_updates(&self, bot: Bot, updates: Vec<Update>) {
+        let handler_tree = self.handler_tree.clone();
+        let deps = self.dependencies.clone();
+        let stack_size = self.stack_size;
+
+        tokio::task::spawn_blocking(move || {
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .thread_stack_size(stack_size) // Not needed, but just in case
+                .enable_all()
+                .build()
+                .unwrap();
+            runtime.block_on(
+                Dispatcher::builder(bot.clone(), handler_tree.clone())
+                    .dependencies(deps)
+                    .stack_size(stack_size)
+                    .build()
+                    .dispatch_with_listener(
+                        InsertingListener { updates },
+                        LoggingErrorHandler::new(),
+                    ),
+            );
+        })
+        .await
+        .expect("Thread panicked");
     }
 
     /// Actually dispatches the bot, calling the update through the handler tree.
@@ -296,25 +286,12 @@ impl MockBot {
         let server = ServerManager::start(self.me.clone(), self.state.clone())
             .await
             .unwrap();
+        let mut updates = self.updates.clone();
+        self.insert_updates(&mut updates);
 
         let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", server.port)).unwrap();
         let bot = self.bot.clone().set_api_url(api_url);
-
-        // Gets all of the updates to send
-        let mut handles = vec![];
-        self.collect_handles(&mut handles, bot.clone());
-
-        for handle in handles {
-            // Waits until every update has been sent
-            match handle.join() {
-                Ok(_) => {}
-                Err(_) => {
-                    server.stop().await.unwrap();
-                    panic!("Something went wrong and the bot panicked!");
-                }
-            };
-        }
-
+        self.run_updates(bot, updates).await;
         server.stop().await.unwrap();
     }
 

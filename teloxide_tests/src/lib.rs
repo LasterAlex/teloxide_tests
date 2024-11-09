@@ -161,6 +161,7 @@ pub mod mock_bot;
 mod server;
 #[cfg(test)]
 mod tests;
+pub mod listener;
 
 pub use dataset::*;
 pub use mock_bot::MockBot;
