@@ -447,7 +447,7 @@ impl MockBot {
     /// Helper function to fetch the state of the dialogue and assert its value
     pub async fn assert_state<S>(&self, state: S)
     where
-        S: Send + 'static + Clone + Debug + PartialEq,
+        S: Send + Default + 'static + Clone + Debug + PartialEq,
     {
         assert_eq!(self.get_state::<S>().await, state)
     }
@@ -457,6 +457,16 @@ impl MockBot {
     /// You need to use type annotation to get the state, please refer to the `set_state`
     /// documentation example
     pub async fn get_state<S>(&self) -> S
+    where
+        S: Send + Default + 'static + Clone,
+    {
+        self.try_get_state().await.unwrap_or(S::default())
+    }
+
+    /// Same as [`get_state`], but returns None if the state is None, instead of the default
+    ///
+    /// [`get_state`]: crate::MockBot::get_state
+    pub async fn try_get_state<S>(&self) -> Option<S>
     where
         S: Send + 'static + Clone,
     {
@@ -477,16 +487,16 @@ impl MockBot {
                 .clone()
                 .get_dialogue(chat_id)
                 .await
-                .expect("Error getting dialogue")
-                .expect("State is None")
+                .ok()
+                .flatten()
         } else if let Some(storage) = erased_storage {
             // If erased storage exists
             (*storage)
                 .clone()
                 .get_dialogue(chat_id)
                 .await
-                .expect("Error getting dialogue")
-                .expect("State is None")
+                .ok()
+                .flatten()
         } else {
             log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
             panic!("No storage was detected!");
@@ -524,7 +534,7 @@ impl MockBot {
         text_or_caption: &str,
         state: S,
     ) where
-        S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
+        S: Send + Default + 'static + Clone + std::fmt::Debug + PartialEq,
     {
         self.dispatch().await;
 
@@ -554,7 +564,7 @@ impl MockBot {
         text_or_caption: &str,
         state: S,
     ) where
-        S: Send + 'static + Clone,
+        S: Send + Default + 'static + Clone,
     {
         self.dispatch().await;
 
@@ -583,7 +593,7 @@ impl MockBot {
     /// Just checks the state after dispathing the update, like `dispatch_and_check_last_text_and_state`
     pub async fn dispatch_and_check_state<S>(&mut self, state: S)
     where
-        S: Send + 'static + Clone + std::fmt::Debug + PartialEq,
+        S: Send + Default + 'static + Clone + std::fmt::Debug + PartialEq,
     {
         self.dispatch().await;
         let got_state: S = self.get_state().await;
@@ -593,7 +603,7 @@ impl MockBot {
     /// Just checks the state discriminant after dispathing the update, like `dispatch_and_check_last_text_and_state_discriminant`
     pub async fn dispatch_and_check_state_discriminant<S>(&mut self, state: S)
     where
-        S: Send + 'static + Clone,
+        S: Send + Default + 'static + Clone,
     {
         self.dispatch().await;
         let got_state: S = self.get_state().await;

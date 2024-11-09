@@ -44,6 +44,10 @@ async fn handler_with_state(
     msg: Message,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
+    if msg.text().unwrap() == "exit" {
+        dialogue.exit().await?;
+        return Ok(());
+    }
 
     dialogue.update(State::NotStart).await?;
     Ok(())
@@ -97,6 +101,22 @@ async fn test_assert_state() {
 
     let last_response = bot.get_responses().sent_messages.pop().unwrap();
     assert_eq!(last_response.text(), Some("test"));
+}
+
+#[tokio::test]
+async fn test_try_get() {
+    let mut bot = MockBot::new(MockMessageText::new().text("exit"), get_dialogue_schema());
+    let storage = InMemStorage::<State>::new();
+    bot.dependencies(deps![storage]);
+    bot.set_state(State::Start).await;
+
+    bot.dispatch().await;
+
+    let last_response = bot.get_responses().sent_messages.pop().unwrap();
+    let state: Option<State> = bot.try_get_state().await;
+    assert_eq!(state, None);
+
+    assert_eq!(last_response.text(), Some("exit"));
 }
 
 #[tokio::test]
