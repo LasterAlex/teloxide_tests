@@ -28,7 +28,6 @@ teloxide_tests_macros = "0.2.0"
 mime = "0.3.17"
 chrono = "0.4.38"
 actix-web-lab = "0.23.0"
-parking_lot = "0.12.3"
 mime_guess = "2.0.5"
 rand = "0.8.5"
 actix-multipart = "0.7.2"
@@ -36,6 +35,7 @@ lazy_static = "1.5.0"
 futures-util = "0.3"
 actix-web = "4.9"
 env_logger = "0.11.5"
+tokio-util = "0.7.12"
 
 [dev-dependencies]
 serial_test = { version = "3.1.1" }

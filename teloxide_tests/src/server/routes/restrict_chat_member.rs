@@ -1,9 +1,10 @@
+use std::sync::Mutex;
+
 use actix_web::{web, Responder};
 use serde::Deserialize;
 use teloxide::types::ChatPermissions;
 
-use crate::server::routes::make_telegram_result;
-use crate::server::RESPONSES;
+use crate::{mock_bot::State, server::routes::make_telegram_result};
 
 use super::BodyChatId;
 
@@ -16,10 +17,13 @@ pub struct RestrictChatMemberBody {
     pub until_date: Option<i64>,
 }
 
-pub async fn restrict_chat_member(body: web::Json<RestrictChatMemberBody>) -> impl Responder {
+pub async fn restrict_chat_member(
+    state: web::Data<Mutex<State>>,
+    body: web::Json<RestrictChatMemberBody>,
+) -> impl Responder {
     // Idk what to verify here
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock
+    let mut lock = state.lock().unwrap();
+    lock.responses
         .restricted_chat_members
         .push(body.into_inner());
 

@@ -1,8 +1,13 @@
+use std::sync::Mutex;
+
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::server::{routes::make_telegram_result, EditedMessageText, MESSAGES, RESPONSES};
+use crate::{
+    mock_bot::State,
+    server::{routes::make_telegram_result, EditedMessageText},
+};
 
 use super::{check_if_message_exists, BodyChatId};
 
@@ -15,31 +20,35 @@ pub struct EditMessageTextBody {
     pub parse_mode: Option<ParseMode>,
     pub entities: Option<Vec<MessageEntity>>,
     pub link_preview_options: Option<LinkPreviewOptions>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }
 
-pub async fn edit_message_text(body: web::Json<EditMessageTextBody>) -> impl Responder {
+pub async fn edit_message_text(
+    body: web::Json<EditMessageTextBody>,
+    state: web::Data<Mutex<State>>,
+) -> impl Responder {
     match (
         body.chat_id.clone(),
         body.message_id,
         body.inline_message_id.clone(),
     ) {
         (Some(_), Some(message_id), None) => {
-            check_if_message_exists!(message_id);
+            let mut lock = state.lock().unwrap();
+            check_if_message_exists!(lock, message_id);
 
-            MESSAGES.edit_message(message_id, "text", body.text.clone());
-            MESSAGES.edit_message(
+            lock.messages
+                .edit_message(message_id, "text", body.text.clone());
+            lock.messages.edit_message(
                 message_id,
                 "entities",
                 body.entities.clone().unwrap_or(vec![]),
             );
-            let message = MESSAGES
+            let message = lock
+                .messages
                 .edit_message_reply_markup(message_id, body.reply_markup.clone())
                 .unwrap();
 
-            let mut responses_lock = RESPONSES.lock().unwrap();
-            responses_lock.edited_messages_text.push(EditedMessageText {
+            lock.responses.edited_messages_text.push(EditedMessageText {
                 message: message.clone(),
                 bot_request: body.into_inner(),
             });

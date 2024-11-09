@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-teloxide = { version = "0.13.0", features = ["macros", "redis-storage", "cbor-serializer"] }
+teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "24a8d5f", features = ["macros", "redis-storage", "cbor-serializer"] }
 tokio = { version =  "1.38", features = ["rt-multi-thread", "macros"] }
 dotenv = "0.15.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -14,4 +14,4 @@ pretty_env_logger = "0.5"
 diesel = { version = "2.1.6", features = ["postgres"] }
 
 [dev-dependencies]
-teloxide_tests = "0.2.0"
+teloxide_tests = { path = "../../teloxide_tests" }

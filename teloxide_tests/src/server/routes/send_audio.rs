@@ -1,3 +1,4 @@
+use crate::mock_bot::State;
 use crate::server::routes::Attachment;
 use crate::{
     server::{
@@ -6,6 +7,7 @@ use crate::{
     },
     MockMessageAudio,
 };
+use std::sync::Mutex;
 use std::{collections::HashMap, str::FromStr};
 
 use crate::proc_macros::SerializeRawFields;
@@ -17,12 +19,17 @@ use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
 
-use crate::server::{routes::check_if_message_exists, FILES, MESSAGES, RESPONSES};
+use crate::server::routes::check_if_message_exists;
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 
-pub async fn send_audio(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
+pub async fn send_audio(
+    mut payload: Multipart,
+    me: web::Data<Me>,
+    state: web::Data<Mutex<State>>,
+) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
+    let mut lock = state.lock().unwrap();
     let body =
         SendMessageAudioBody::serialize_raw_fields(&fields, &attachments, FileType::Audio).unwrap();
     let chat = body.chat_id.chat();
@@ -34,8 +41,11 @@ pub async fn send_audio(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
 
     if let Some(reply_parameters) = &body.reply_parameters {
-        check_if_message_exists!(reply_parameters.message_id.0);
-        let reply_to_message = MESSAGES.get_message(reply_parameters.message_id.0).unwrap();
+        check_if_message_exists!(lock, reply_parameters.message_id.0);
+        let reply_to_message = lock
+            .messages
+            .get_message(reply_parameters.message_id.0)
+            .unwrap();
         message.reply_to_message = Some(Box::new(reply_to_message.clone()));
     }
     if let Some(ReplyMarkup::InlineKeyboard(markup)) = body.reply_markup.clone() {
@@ -54,16 +64,15 @@ pub async fn send_audio(mut payload: Multipart, me: web::Data<Me>) -> impl Respo
     message.mime_type = Some(Mime::from_str("audio/mp3").unwrap());
     message.file_name = Some(body.file_name.clone());
 
-    let last_id = MESSAGES.max_message_id();
-    let message = MESSAGES.add_message(message.id(last_id + 1).build());
+    let last_id = lock.messages.max_message_id();
+    let message = lock.messages.add_message(message.id(last_id + 1).build());
 
-    FILES.lock().unwrap().push(teloxide::types::File {
+    lock.files.push(teloxide::types::File {
         meta: message.audio().unwrap().file.clone(),
         path: body.file_name.to_owned(),
     });
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock.sent_messages_audio.push(SentMessageAudio {
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses.sent_messages_audio.push(SentMessageAudio {
         message: message.clone(),
         bot_request: body,
     });
@@ -87,6 +96,5 @@ pub struct SendMessageAudioBody {
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
     pub reply_parameters: Option<ReplyParameters>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }

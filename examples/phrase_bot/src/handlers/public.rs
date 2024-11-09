@@ -67,7 +67,7 @@ mod tests {
             .from(MockUser::new().first_name("me").id(1234).build())
             .reply_to_message(reply_message.build());
 
-        let bot = MockBot::new(me_message, handler_tree());
+        let mut bot = MockBot::new(me_message, handler_tree());
         // !!! IMPORTANT !!! same as in test_delete_phrase in private handlers, do all db stuff
         // after creating the bot
         db::full_user_redeletion(1234, Some("nick1".to_string()));
@@ -101,7 +101,7 @@ mod tests {
             .chat(chat.clone())
             .from(MockUser::new().first_name("me").id(1234).build());
 
-        let bot = MockBot::new(me_message.clone(), handler_tree());
+        let mut bot = MockBot::new(me_message.clone(), handler_tree());
         db::full_user_redeletion(1234, None);
         db::create_phrase(
             1234,

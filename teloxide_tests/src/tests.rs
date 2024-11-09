@@ -36,12 +36,18 @@ enum State {
     NotStart,
 }
 
+type MyDialogue = Dialogue<State, InMemStorage<State>>;
+
 async fn handler_with_state(
     bot: Bot,
     dialogue: MyDialogue,
     msg: Message,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
+    if msg.text().unwrap() == "exit" {
+        dialogue.exit().await?;
+        return Ok(());
+    }
 
     dialogue.update(State::NotStart).await?;
     Ok(())
@@ -68,7 +74,7 @@ fn get_dialogue_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Syn
 
 #[tokio::test]
 async fn test_echo_with_start_state() {
-    let bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
     let storage = InMemStorage::<State>::new();
     bot.dependencies(deps![storage]);
     bot.set_state(State::Start).await;
@@ -84,7 +90,7 @@ async fn test_echo_with_start_state() {
 
 #[tokio::test]
 async fn test_assert_state() {
-    let bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
     let storage = InMemStorage::<State>::new();
     bot.dependencies(deps![storage]);
     bot.set_state(State::Start).await;
@@ -98,8 +104,24 @@ async fn test_assert_state() {
 }
 
 #[tokio::test]
+async fn test_try_get() {
+    let mut bot = MockBot::new(MockMessageText::new().text("exit"), get_dialogue_schema());
+    let storage = InMemStorage::<State>::new();
+    bot.dependencies(deps![storage]);
+    bot.set_state(State::Start).await;
+
+    bot.dispatch().await;
+
+    let last_response = bot.get_responses().sent_messages.pop().unwrap();
+    let state: Option<State> = bot.try_get_state().await;
+    assert_eq!(state, None);
+
+    assert_eq!(last_response.text(), Some("exit"));
+}
+
+#[tokio::test]
 async fn test_echo_with_not_start_test() {
-    let bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("test"), get_dialogue_schema());
     let storage = InMemStorage::<State>::new();
     bot.dependencies(deps![storage]);
     bot.set_state(State::NotStart).await;
@@ -175,8 +197,6 @@ pub enum AllCommands {
     #[command()]
     Panic,
 }
-
-type MyDialogue = Dialogue<State, InMemStorage<State>>;
 
 async fn handler(
     bot: Bot,
@@ -436,7 +456,7 @@ fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
 
 #[tokio::test]
 async fn test_echo() {
-    let bot = MockBot::new(MockMessageText::new().text("/echo echo"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/echo echo"), get_schema());
 
     bot.dispatch().await;
 
@@ -448,17 +468,33 @@ async fn test_echo() {
 #[tokio::test]
 #[should_panic]
 async fn test_panic() {
-    // Nothing else should fail because it panics
+    // Nothing else should fail because this panics
     let bot = MockBot::new(MockMessageText::new().text("/panic"), get_schema());
 
-    bot.dispatch().await;
+    // To actually keep the bot in scope
+    if true {
+        panic!("Expected panic");
+    }
 
     drop(bot);
 }
 
 #[tokio::test]
+async fn test_no_updates() {
+    let empty: Vec<MockMessageDice> = vec![];
+    let mut bot = MockBot::new(empty, get_schema());
+
+    // This shouldn't panic
+    bot.dispatch().await;
+
+    // Just to test that everything is fine
+    bot.update(MockMessageText::new().text("/echo echo"));
+    bot.dispatch_and_check_last_text("/echo echo").await;
+}
+
+#[tokio::test]
 async fn test_send_photo() {
-    let bot = MockBot::new(MockMessageText::new().text("/photo"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/photo"), get_schema());
 
     bot.dispatch().await;
 
@@ -476,7 +512,7 @@ async fn test_send_photo() {
 
 #[tokio::test]
 async fn test_send_video() {
-    let bot = MockBot::new(MockMessageText::new().text("/video"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/video"), get_schema());
 
     bot.dispatch().await;
 
@@ -494,7 +530,7 @@ async fn test_send_video() {
 
 #[tokio::test]
 async fn test_send_audio() {
-    let bot = MockBot::new(MockMessageText::new().text("/audio"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/audio"), get_schema());
 
     bot.dispatch().await;
 
@@ -512,7 +548,7 @@ async fn test_send_audio() {
 
 #[tokio::test]
 async fn test_send_voice() {
-    let bot = MockBot::new(MockMessageText::new().text("/voice"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/voice"), get_schema());
 
     bot.dispatch().await;
 
@@ -530,7 +566,7 @@ async fn test_send_voice() {
 
 #[tokio::test]
 async fn test_send_video_note() {
-    let bot = MockBot::new(MockMessageText::new().text("/videonote"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/videonote"), get_schema());
 
     bot.dispatch().await;
 
@@ -546,7 +582,7 @@ async fn test_send_video_note() {
 
 #[tokio::test]
 async fn test_send_document() {
-    let bot = MockBot::new(MockMessageText::new().text("/document"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/document"), get_schema());
 
     bot.dispatch().await;
 
@@ -563,7 +599,7 @@ async fn test_send_document() {
 
 #[tokio::test]
 async fn test_send_animation() {
-    let bot = MockBot::new(MockMessageText::new().text("/animation"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/animation"), get_schema());
 
     bot.dispatch().await;
 
@@ -578,7 +614,7 @@ async fn test_send_animation() {
 
 #[tokio::test]
 async fn test_send_media_group() {
-    let bot = MockBot::new(MockMessageText::new().text("/mediagroup"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/mediagroup"), get_schema());
 
     bot.dispatch().await;
 
@@ -692,7 +728,7 @@ async fn test_send_media_group() {
 
 #[tokio::test]
 async fn test_send_location() {
-    let bot = MockBot::new(MockMessageText::new().text("/location"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/location"), get_schema());
 
     bot.dispatch().await;
 
@@ -712,7 +748,7 @@ async fn test_send_location() {
 
 #[tokio::test]
 async fn test_send_venue() {
-    let bot = MockBot::new(MockMessageText::new().text("/venue"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/venue"), get_schema());
 
     bot.dispatch().await;
 
@@ -730,7 +766,7 @@ async fn test_send_venue() {
 
 #[tokio::test]
 async fn test_send_contact() {
-    let bot = MockBot::new(MockMessageText::new().text("/contact"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/contact"), get_schema());
 
     bot.dispatch().await;
 
@@ -749,7 +785,7 @@ async fn test_send_contact() {
 
 #[tokio::test]
 async fn test_send_dice() {
-    let bot = MockBot::new(MockMessageText::new().text("/dice"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/dice"), get_schema());
 
     bot.dispatch().await;
 
@@ -761,7 +797,7 @@ async fn test_send_dice() {
 
 #[tokio::test]
 async fn test_send_poll() {
-    let bot = MockBot::new(MockMessageText::new().text("/poll"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/poll"), get_schema());
 
     bot.dispatch().await;
 
@@ -795,7 +831,7 @@ async fn test_send_poll() {
 
 #[tokio::test]
 async fn test_send_sticker() {
-    let bot = MockBot::new(MockMessageText::new().text("/sticker"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/sticker"), get_schema());
 
     bot.dispatch().await;
 
@@ -810,7 +846,7 @@ async fn test_send_sticker() {
 
 #[tokio::test]
 async fn test_edit_message() {
-    let bot = MockBot::new(MockMessageText::new().text("/edit"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/edit"), get_schema());
 
     bot.dispatch().await;
 
@@ -831,7 +867,7 @@ async fn test_edit_message() {
 
 #[tokio::test]
 async fn test_edit_caption() {
-    let bot = MockBot::new(MockMessageText::new().text("/editcaption"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/editcaption"), get_schema());
 
     bot.dispatch().await;
 
@@ -844,7 +880,7 @@ async fn test_edit_caption() {
 
 #[tokio::test]
 async fn test_edit_reply_markup() {
-    let bot = MockBot::new(
+    let mut bot = MockBot::new(
         MockMessageText::new().text("/editreplymarkup"),
         get_schema(),
     );
@@ -872,7 +908,7 @@ async fn test_edit_reply_markup() {
 
 #[tokio::test]
 async fn test_delete_message() {
-    let bot = MockBot::new(MockMessageText::new().text("/delete"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/delete"), get_schema());
 
     bot.dispatch().await;
 
@@ -885,7 +921,7 @@ async fn test_delete_message() {
 
 #[tokio::test]
 async fn test_answer_callback_query() {
-    let bot = MockBot::new(MockCallbackQuery::new().data("test"), get_schema());
+    let mut bot = MockBot::new(MockCallbackQuery::new().data("test"), get_schema());
 
     bot.dispatch().await;
 
@@ -896,7 +932,7 @@ async fn test_answer_callback_query() {
 
 #[tokio::test]
 async fn test_pin_message() {
-    let bot = MockBot::new(MockMessageText::new().text("/pinmessage"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/pinmessage"), get_schema());
 
     bot.dispatch().await;
 
@@ -911,7 +947,7 @@ async fn test_pin_message() {
 
 #[tokio::test]
 async fn test_forward_message() {
-    let bot = MockBot::new(MockMessageText::new().text("/forwardmessage"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/forwardmessage"), get_schema());
 
     bot.dispatch().await;
 
@@ -928,7 +964,7 @@ async fn test_forward_message() {
 
 #[tokio::test]
 async fn test_copy_message() {
-    let bot = MockBot::new(MockMessageText::new().text("/copymessage"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/copymessage"), get_schema());
 
     bot.dispatch().await;
 
@@ -947,7 +983,7 @@ async fn test_copy_message() {
 
 #[tokio::test]
 async fn test_ban_and_unban() {
-    let bot = MockBot::new(MockMessageText::new().text("/ban"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/ban"), get_schema());
 
     bot.dispatch().await;
 
@@ -961,7 +997,7 @@ async fn test_ban_and_unban() {
 
 #[tokio::test]
 async fn test_restrict() {
-    let bot = MockBot::new(MockMessageText::new().text("/restrict"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/restrict"), get_schema());
 
     bot.dispatch().await;
 
@@ -974,7 +1010,7 @@ async fn test_restrict() {
 
 #[tokio::test]
 async fn test_send_chat_action() {
-    let bot = MockBot::new(MockMessageText::new().text("/chataction"), get_schema());
+    let mut bot = MockBot::new(MockMessageText::new().text("/chataction"), get_schema());
 
     bot.dispatch().await;
 
@@ -986,7 +1022,7 @@ async fn test_send_chat_action() {
 
 #[tokio::test]
 async fn test_set_message_reaction() {
-    let bot = MockBot::new(
+    let mut bot = MockBot::new(
         MockMessageText::new().text("/setmessagereaction"),
         get_schema(),
     );

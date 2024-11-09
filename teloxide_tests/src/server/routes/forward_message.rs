@@ -1,5 +1,8 @@
+use std::sync::Mutex;
+
+use crate::mock_bot::State;
+use crate::server::routes::check_if_message_exists;
 use crate::server::ForwardedMessage;
-use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
@@ -20,9 +23,12 @@ pub struct ForwardMessageBody {
 pub async fn forward_message(
     body: web::Json<ForwardMessageBody>,
     me: web::Data<Me>,
+    state: web::Data<Mutex<State>>,
 ) -> impl Responder {
-    check_if_message_exists!(body.message_id);
-    let mut message = MESSAGES.get_message(body.message_id).unwrap();
+    let mut lock = state.lock().unwrap();
+
+    check_if_message_exists!(lock, body.message_id);
+    let mut message = lock.messages.get_message(body.message_id).unwrap();
 
     if message.has_protected_content() {
         return ErrorBadRequest("Message has protected content").into();
@@ -62,15 +68,14 @@ pub async fn forward_message(
         common.has_protected_content = body.protect_content.unwrap_or(false);
     }
 
-    let last_id = MESSAGES.max_message_id();
+    let last_id = lock.messages.max_message_id();
     message.id = MessageId(last_id + 1);
     message.chat = body.chat_id.chat();
     message.from = Some(me.user.clone());
-    let message = MESSAGES.add_message(message);
+    let message = lock.messages.add_message(message);
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock.forwarded_messages.push(ForwardedMessage {
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses.forwarded_messages.push(ForwardedMessage {
         message: message.clone(),
         bot_request: body.into_inner(),
     });

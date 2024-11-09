@@ -1,7 +1,9 @@
+use std::sync::Mutex;
+
 use actix_web::{web, Responder};
 use serde::Deserialize;
 
-use crate::server::RESPONSES;
+use crate::mock_bot::State;
 
 use super::make_telegram_result;
 
@@ -14,9 +16,12 @@ pub struct AnswerCallbackQueryBody {
     pub cache_time: Option<i32>,
 }
 
-pub async fn answer_callback_query(body: web::Json<AnswerCallbackQueryBody>) -> impl Responder {
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock
+pub async fn answer_callback_query(
+    state: web::Data<Mutex<State>>,
+    body: web::Json<AnswerCallbackQueryBody>,
+) -> impl Responder {
+    let mut lock = state.lock().unwrap();
+    lock.responses
         .answered_callback_queries
         .push(body.into_inner());
     make_telegram_result(true)
