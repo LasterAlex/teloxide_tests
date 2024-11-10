@@ -7,16 +7,17 @@ use crate::{
     listener::InsertingListener,
     server::{self, messages::Messages, Responses},
 };
+use futures_util::future::BoxFuture;
 use gag::Gag;
 use lazy_static::lazy_static;
 use serde_json::Value;
 use std::{
     fmt::Debug,
+    hash::Hash,
     mem::discriminant,
     panic,
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
 };
-use teloxide::types::UpdateKind;
 use teloxide::{
     dispatching::dialogue::ErasedStorage,
     dptree::di::DependencySupplier,
@@ -30,6 +31,7 @@ use teloxide::{
     prelude::*,
     types::Me,
 };
+use teloxide::{error_handlers::ErrorHandler, types::UpdateKind};
 
 lazy_static! {
     static ref BOT_LOCK: Mutex<()> = Mutex::new(());
@@ -118,7 +120,11 @@ impl State {
 
     fn add_message(&mut self, message: &mut Message) {
         let max_id = self.messages.max_message_id();
-        if message.id.0 <= max_id || self.messages.get_message(message.id.0).is_some() {
+        let maybe_message = self.messages.get_message(message.id.0);
+        if maybe_message == Some(message.clone()) {
+            return;
+        }
+        if message.id.0 <= max_id || maybe_message.is_some() {
             message.id = MessageId(max_id + 1);
         }
         if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
@@ -137,13 +143,26 @@ impl State {
     }
 }
 
+// Copied from source code
+type DefaultHandler = Arc<dyn Fn(Arc<Update>) -> BoxFuture<'static, ()> + Send + Sync>;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+pub struct DefaultKey(ChatId);
+
+pub(crate) fn default_distribution_function(update: &Update) -> Option<DefaultKey> {
+    update.chat().map(|c| c.id).map(DefaultKey)
+}
+
 /// A mocked bot that sends requests to the fake server
-/// Please check the `new` function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
-pub struct MockBot {
+/// Please check the [`new`] function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
+///
+/// [`new`]: crate::MockBot::new
+#[allow(dead_code)]
+pub struct MockBot<Err, Key> {
     /// The bot with a fake server url
     pub bot: Bot,
     /// The thing that dptree::entry() returns
-    pub handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>,
+    pub handler_tree: UpdateHandler<Err>,
     /// Updates to send as user
     pub updates: Vec<Update>,
     /// Bot parameters are here
@@ -153,12 +172,30 @@ pub struct MockBot {
     /// The stack size of the runtime for running updates
     pub stack_size: usize,
 
+    default_handler: DefaultHandler,
+    distribution_f: fn(&Update) -> Option<Key>,
+    error_handler: Arc<dyn ErrorHandler<Err> + Send + Sync>,
+
     current_update_id: AtomicI32,
     state: Arc<Mutex<State>>,
     _bot_lock: Option<MutexGuard<'static, ()>>,
 }
 
-impl MockBot {
+impl<Err, Key> MockBot<Err, Key>
+where
+    Err: Debug + Send + Sync + 'static,
+    Key: Hash + Eq,
+{
+    /// Sets the dispatchers distribution function
+    pub fn distribution_function(&mut self, f: fn(&Update) -> Option<Key>) {
+        self.distribution_f = f;
+    }
+}
+
+impl<Err> MockBot<Err, DefaultKey>
+where
+    Err: Debug + Send + Sync + 'static,
+{
     const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 
     /// Creates a new MockBot, using something that can be turned into Updates, and a handler tree.
@@ -210,10 +247,11 @@ impl MockBot {
     pub fn new<T>(
         update: T, // This 'T' is just anything that can be turned into an Update, like a
         // MockMessageText or MockCallbackQuery, or a vec[MockMessagePhoto] if you want!
-        handler_tree: UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>,
+        handler_tree: UpdateHandler<Err>,
     ) -> Self
     where
         T: IntoUpdate, // And that code just "proves" that it can be turned into an update
+        Err: Debug,
     {
         let _ = pretty_env_logger::try_init();
 
@@ -231,9 +269,15 @@ impl MockBot {
             updates: update.into_update(&current_update_id),
             handler_tree,
             dependencies: DependencyMap::new(),
+            stack_size: Self::DEFAULT_STACK_SIZE,
+            default_handler: Arc::new(|upd| {
+                log::warn!("Unhandled update: {:?}", upd);
+                Box::pin(async {})
+            }),
+            error_handler: LoggingErrorHandler::new(),
+            distribution_f: default_distribution_function,
             _bot_lock: lock,
             current_update_id,
-            stack_size: Self::DEFAULT_STACK_SIZE,
             state,
         }
     }
@@ -283,6 +327,8 @@ impl MockBot {
         let handler_tree = self.handler_tree.clone();
         let deps = self.dependencies.clone();
         let stack_size = self.stack_size;
+        let distribution_f = self.distribution_f.clone();
+        let error_handler = self.error_handler.clone();
 
         tokio::task::spawn_blocking(move || {
             let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -293,6 +339,8 @@ impl MockBot {
             runtime.block_on(async {
                 Dispatcher::builder(bot.clone(), handler_tree.clone())
                     .dependencies(deps)
+                    .distribution_function(distribution_f)
+                    .error_handler(error_handler)
                     .stack_size(stack_size)
                     .build()
                     .dispatch_with_listener(
