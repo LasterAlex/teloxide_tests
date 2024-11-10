@@ -165,6 +165,8 @@ async fn test_erased_state() {
     );
     let storage: MyStorage = SqliteStorage::open(":memory:", Json).await.unwrap().erase();
     bot.dependencies(deps![storage]);
+
+    // This .dispatch is important?..
     bot.dispatch().await;
     bot.dispatch_and_check_state(State::NotStart).await;
 }

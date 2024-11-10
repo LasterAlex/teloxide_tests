@@ -35,6 +35,33 @@ lazy_static! {
     static ref BOT_LOCK: Mutex<()> = Mutex::new(());
 }
 
+macro_rules! assert_eqn {
+    ($actual:expr, $expected:expr $(,)?) => {
+        match (&$actual, &$expected) {
+            (actual, expected) => {
+                if !(*actual == *expected) {
+                    panic!("assertion `actual == expected` failed:
+   actual: {actual:?}
+ expected: {expected:?}", actual=&*actual, expected=&*expected)
+
+                }
+            }
+        }
+    };
+    ($actual:expr, $expected:expr, $($arg:tt)+) => {
+        match (&$actual, &$expected) {
+            (actual, expected) => {
+                if !(*actual == *expected) {
+                    panic!("assertion `actual == expected` failed: {message}
+   actual: {actual:?}
+ expected: {expected:?}", message=$($arg)+, actual=&*actual, expected=&*expected)
+
+                }
+            }
+        }
+    };
+}
+
 fn find_file(value: Value) -> Option<FileMeta> {
     // Recursively searches for file meta
     let mut file_id = None;
@@ -276,7 +303,7 @@ impl MockBot {
             });
         })
         .await
-        .expect("Thread panicked");
+        .expect("Dispatcher panicked!");
     }
 
     /// Actually dispatches the bot, calling the update through the handler tree.
@@ -450,13 +477,15 @@ impl MockBot {
     where
         S: Send + Default + 'static + Clone + Debug + PartialEq,
     {
-        assert_eq!(self.get_state::<S>().await, state)
+        assert_eqn!(self.get_state::<S>().await, state, "States are not equal!")
     }
 
     /// Gets the state of the dialogue, if the storage exists in dependencies
     /// Panics if no storage was found
-    /// You need to use type annotation to get the state, please refer to the `set_state`
+    /// You need to use type annotation to get the state, please refer to the [`set_state`]
     /// documentation example
+    ///
+    /// [`set_state`]: crate::MockBot::set_state
     pub async fn get_state<S>(&self) -> S
     where
         S: Send + Default + 'static + Clone,
@@ -520,9 +549,9 @@ impl MockBot {
             .expect("No sent messages were detected!");
 
         if let Some(text) = message.text() {
-            assert_eq!(text, text_or_caption, "Texts are not equal!");
+            assert_eqn!(text, text_or_caption, "Texts are not equal!");
         } else if let Some(caption) = message.caption() {
-            assert_eq!(caption, text_or_caption, "Captions are not equal!");
+            assert_eqn!(caption, text_or_caption, "Captions are not equal!");
         } else if !text_or_caption.is_empty() {
             panic!("Message has no text or caption!");
         }
@@ -546,15 +575,14 @@ impl MockBot {
             .expect("No sent messages were detected!");
 
         if let Some(text) = message.text() {
-            assert_eq!(text, text_or_caption, "Texts are not equal!");
+            assert_eqn!(text, text_or_caption, "Texts are not equal!");
         } else if let Some(caption) = message.caption() {
-            assert_eq!(caption, text_or_caption, "Captions are not equal!");
+            assert_eqn!(caption, text_or_caption, "Captions are not equal!");
         } else if !text_or_caption.is_empty() {
             panic!("Message has no text or caption!");
         }
 
-        let got_state: S = self.get_state().await;
-        assert_eq!(got_state, state, "States are not equal!");
+        self.assert_state(state).await;
     }
 
     /// Same as `dispatch_and_check_last_text`, but also checks, if the variants of the state are the same
@@ -565,7 +593,7 @@ impl MockBot {
         text_or_caption: &str,
         state: S,
     ) where
-        S: Send + Default + 'static + Clone,
+        S: Send + PartialEq + Debug + Default + 'static + Clone,
     {
         self.dispatch().await;
 
@@ -576,19 +604,17 @@ impl MockBot {
             .expect("No sent messages were detected!");
 
         if let Some(text) = message.text() {
-            assert_eq!(text, text_or_caption, "Texts are not equal!");
+            assert_eqn!(text, text_or_caption, "Texts are not equal!");
         } else if let Some(caption) = message.caption() {
-            assert_eq!(caption, text_or_caption, "Captions are not equal!");
+            assert_eqn!(caption, text_or_caption, "Captions are not equal!");
         } else if !text_or_caption.is_empty() {
             panic!("Message has no text or caption!");
         }
 
         let got_state: S = self.get_state().await;
-        assert_eq!(
-            discriminant(&got_state),
-            discriminant(&state),
-            "State variants are not equal!"
-        );
+        if discriminant(&got_state) != discriminant(&state) {
+            assert_eqn!(got_state, state, "State variants are not equal!")
+        }
     }
 
     /// Just checks the state after dispathing the update, like `dispatch_and_check_last_text_and_state`
@@ -597,21 +623,18 @@ impl MockBot {
         S: Send + Default + 'static + Clone + std::fmt::Debug + PartialEq,
     {
         self.dispatch().await;
-        let got_state: S = self.get_state().await;
-        assert_eq!(got_state, state, "States are not equal!");
+        self.assert_state(state).await;
     }
 
     /// Just checks the state discriminant after dispathing the update, like `dispatch_and_check_last_text_and_state_discriminant`
     pub async fn dispatch_and_check_state_discriminant<S>(&mut self, state: S)
     where
-        S: Send + Default + 'static + Clone,
+        S: Send + Debug + PartialEq + Default + 'static + Clone,
     {
         self.dispatch().await;
         let got_state: S = self.get_state().await;
-        assert_eq!(
-            discriminant(&got_state),
-            discriminant(&state),
-            "State variants are not equal!"
-        );
+        if discriminant(&got_state) != discriminant(&state) {
+            assert_eqn!(got_state, state, "State variants are not equal!")
+        }
     }
 }
