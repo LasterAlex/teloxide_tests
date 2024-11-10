@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use actix_web::{web, Responder};
 use serde::Deserialize;
 
-use crate::{mock_bot::State, server::routes::make_telegram_result};
+use crate::{server::routes::make_telegram_result, state::State};
 
 use super::BodyChatId;
 

@@ -5,8 +5,8 @@ use serde::Deserialize;
 use teloxide::types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup};
 
 use crate::{
-    mock_bot::State,
     server::{routes::make_telegram_result, EditedMessageText},
+    state::State,
 };
 
 use super::{check_if_message_exists, BodyChatId};

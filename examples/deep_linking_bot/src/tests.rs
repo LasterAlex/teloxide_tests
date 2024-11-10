@@ -20,7 +20,7 @@ async fn test_start() {
 
 #[tokio::test]
 async fn test_with_deep_link() {
-    // Because https://t.me/some_bot?start=987654321 is the same as sending "/start 987654321", 
+    // Because https://t.me/some_bot?start=987654321 is the same as sending "/start 987654321",
     // we can simulate it with this
     let mock_message = MockMessageText::new().text("/start 987654321");
     let mut bot = MockBot::new(mock_message, handler_tree());
@@ -57,7 +57,7 @@ async fn test_send_message() {
     assert_eq!(
         sent_message.text().unwrap(),
         text::YOU_HAVE_A_NEW_MESSAGE.replace("{message}", "I love you!")
-    );  // Just checking that the text and sender are correct
+    ); // Just checking that the text and sender are correct
     assert_eq!(sent_message.chat.id.0, 987654321);
 
     assert_eq!(

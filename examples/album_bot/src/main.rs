@@ -165,7 +165,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_one_message() {
-        let bot = MockBot::new(MockMessagePhoto::new(), handler_tree());
+        let mut bot = MockBot::new_with_distribution_function(
+            MockMessagePhoto::new(),
+            handler_tree(),
+            default_distribution_function,
+        );
         let album_storage: AlbumStorage = Arc::new(Mutex::new(HashMap::new()));
 
         bot.dependencies(deps![album_storage]);
@@ -175,28 +179,28 @@ mod tests {
 
     #[tokio::test]
     async fn test_multiple_text_messages() {
-        let bot = MockBot::new(vec![MockMessageText::new(); 3], handler_tree());
+        let mut bot = MockBot::new_with_distribution_function(
+            vec![MockMessageText::new(); 3],
+            handler_tree(),
+            default_distribution_function,
+        );
         let album_storage: AlbumStorage = Arc::new(Mutex::new(HashMap::new()));
 
         bot.dependencies(deps![album_storage]);
-        // ATTENTION!!! This is NOT how it would work in real life. Because we are simulating
-        // an update, there is no distribution function, so in reality you would see that behaviour
-        // only if you set the distribution function to always return None.
-        // I don't consider it a big deal, the default distribution function is more for real
-        // users, who may send multiple messages in a row, for testing no distribution function is
-        // fine
-        bot.dispatch_and_check_last_text("Detected 3 messages without media group!")
+        // This is 3 messages with the text "Detected 1 messages without media group!"
+        bot.dispatch_and_check_last_text("Detected 1 messages without media group!")
             .await;
-        // In reality it would be 3 messages with the text "Detected 1 messages without media group!"
+        assert_eq!(bot.get_responses().sent_messages.len(), 3);
     }
 
     #[tokio::test]
     async fn test_get_album() {
         // This sends all three messages consecutively, making an album simulation, because
         // telegram would've sent them exactly the same way
-        let bot = MockBot::new(
+        let mut bot = MockBot::new_with_distribution_function(
             vec![MockMessagePhoto::new().media_group_id("123"); 3],
             handler_tree(),
+            default_distribution_function,
         );
         let album_storage: AlbumStorage = Arc::new(Mutex::new(HashMap::new()));
 
@@ -214,6 +218,6 @@ mod tests {
             Some("Detected 3 messages!")
         );
         assert_eq!(sent_media_group.messages.len(), 3);
-        assert_eq!(sent_messages.len(), 3);  // Just a sanity check
+        assert_eq!(sent_messages.len(), 3); // Just a sanity check
     }
 }

@@ -2,15 +2,12 @@
 use crate::{
     dataset::{IntoUpdate, MockMe},
     server::ServerManager,
+    state::State,
+    utils::{assert_eqn, default_distribution_function, find_chat_id, DefaultKey},
 };
-use crate::{
-    listener::InsertingListener,
-    server::{self, messages::Messages, Responses},
-};
-use futures_util::future::BoxFuture;
+use crate::{listener::InsertingListener, server};
 use gag::Gag;
 use lazy_static::lazy_static;
-use serde_json::Value;
 use std::{
     fmt::Debug,
     hash::Hash,
@@ -19,9 +16,8 @@ use std::{
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
 };
 use teloxide::{
-    dispatching::dialogue::ErasedStorage,
-    dptree::di::DependencySupplier,
-    types::{File, FileMeta, MaybeInaccessibleMessage, MessageId, MessageKind},
+    dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier,
+    types::MaybeInaccessibleMessage,
 };
 use teloxide::{
     dispatching::{
@@ -37,121 +33,7 @@ lazy_static! {
     static ref BOT_LOCK: Mutex<()> = Mutex::new(());
 }
 
-macro_rules! assert_eqn {
-    ($actual:expr, $expected:expr $(,)?) => {
-        match (&$actual, &$expected) {
-            (actual, expected) => {
-                if !(*actual == *expected) {
-                    panic!("assertion `actual == expected` failed:
-   actual: {actual:?}
- expected: {expected:?}", actual=&*actual, expected=&*expected)
-
-                }
-            }
-        }
-    };
-    ($actual:expr, $expected:expr, $($arg:tt)+) => {
-        match (&$actual, &$expected) {
-            (actual, expected) => {
-                if !(*actual == *expected) {
-                    panic!("assertion `actual == expected` failed: {message}
-   actual: {actual:?}
- expected: {expected:?}", message=$($arg)+, actual=&*actual, expected=&*expected)
-
-                }
-            }
-        }
-    };
-}
-
-fn find_file(value: Value) -> Option<FileMeta> {
-    // Recursively searches for file meta
-    let mut file_id = None;
-    let mut file_unique_id = None;
-    let mut file_size = None;
-    if let Value::Object(map) = value {
-        for (k, v) in map {
-            if k == "file_id" {
-                file_id = Some(v.as_str().unwrap().to_string());
-            } else if k == "file_unique_id" {
-                file_unique_id = Some(v.as_str().unwrap().to_string());
-            } else if k == "file_size" {
-                file_size = Some(v.as_u64().unwrap() as u32);
-            } else if let Some(found) = find_file(v) {
-                return Some(found);
-            }
-        }
-    }
-    if let (Some(id), Some(unique_id)) = (file_id, file_unique_id) {
-        return Some(FileMeta {
-            id,
-            unique_id,
-            size: file_size.unwrap_or(0),
-        });
-    }
-    None
-}
-
-fn find_chat_id(value: Value) -> Option<i64> {
-    // Recursively searches for chat id
-    if let Value::Object(map) = value {
-        for (k, v) in map {
-            if k == "chat" {
-                return v["id"].as_i64();
-            } else if let Some(found) = find_chat_id(v) {
-                return Some(found);
-            }
-        }
-    }
-    None
-}
-
-#[derive(Default)]
-pub struct State {
-    pub files: Vec<File>,
-    pub responses: Responses,
-    pub messages: Messages,
-}
-
-impl State {
-    pub fn reset(&mut self) {
-        self.responses = Responses::default();
-    }
-
-    fn add_message(&mut self, message: &mut Message) {
-        let max_id = self.messages.max_message_id();
-        let maybe_message = self.messages.get_message(message.id.0);
-        if maybe_message == Some(message.clone()) {
-            return;
-        }
-        if message.id.0 <= max_id || maybe_message.is_some() {
-            message.id = MessageId(max_id + 1);
-        }
-        if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
-            let file = File {
-                meta: file_meta,
-                path: "some_path.txt".to_string(), // This doesn't really matter
-            };
-            self.files.push(file);
-        }
-        if let MessageKind::Common(ref mut message_kind) = message.kind {
-            if let Some(ref mut reply_message) = message_kind.reply_to_message {
-                self.add_message(reply_message);
-            }
-        }
-        self.messages.add_message(message.clone());
-    }
-}
-
-// Copied from source code
-type DefaultHandler = Arc<dyn Fn(Arc<Update>) -> BoxFuture<'static, ()> + Send + Sync>;
-
-#[derive(Debug, Hash, PartialEq, Eq, Clone)]
-pub struct DefaultKey(ChatId);
-
-pub(crate) fn default_distribution_function(update: &Update) -> Option<DefaultKey> {
-    update.chat().map(|c| c.id).map(DefaultKey)
-}
+const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 
 /// A mocked bot that sends requests to the fake server
 /// Please check the [`new`] function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
@@ -172,7 +54,6 @@ pub struct MockBot<Err, Key> {
     /// The stack size of the runtime for running updates
     pub stack_size: usize,
 
-    default_handler: DefaultHandler,
     distribution_f: fn(&Update) -> Option<Key>,
     error_handler: Arc<dyn ErrorHandler<Err> + Send + Sync>,
 
@@ -181,23 +62,10 @@ pub struct MockBot<Err, Key> {
     _bot_lock: Option<MutexGuard<'static, ()>>,
 }
 
-impl<Err, Key> MockBot<Err, Key>
-where
-    Err: Debug + Send + Sync + 'static,
-    Key: Hash + Eq,
-{
-    /// Sets the dispatchers distribution function
-    pub fn distribution_function(&mut self, f: fn(&Update) -> Option<Key>) {
-        self.distribution_f = f;
-    }
-}
-
 impl<Err> MockBot<Err, DefaultKey>
 where
     Err: Debug + Send + Sync + 'static,
 {
-    const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
-
     /// Creates a new MockBot, using something that can be turned into Updates, and a handler tree.
     /// You can't create a new bot while you have another bot in scope. Otherwise you will have a
     /// lot of race conditions. If you still somehow manage to create two bots at the same time
@@ -269,14 +137,59 @@ where
             updates: update.into_update(&current_update_id),
             handler_tree,
             dependencies: DependencyMap::new(),
-            stack_size: Self::DEFAULT_STACK_SIZE,
-            default_handler: Arc::new(|upd| {
-                log::warn!("Unhandled update: {:?}", upd);
-                Box::pin(async {})
-            }),
+            stack_size: DEFAULT_STACK_SIZE,
             error_handler: LoggingErrorHandler::new(),
             distribution_f: default_distribution_function,
             _bot_lock: lock,
+            current_update_id,
+            state,
+        }
+    }
+}
+
+// Trait bound things
+impl<Err, Key> MockBot<Err, Key>
+where
+    Err: Debug + Send + Sync + 'static,
+    Key: Hash + Eq + Clone + Send + 'static,
+{
+    /// Same as [`new`], but it inserts a distribution_function into the dispatcher
+    ///
+    /// [`new`]: crate::MockBot::new
+    pub fn new_with_distribution_function<T>(
+        update: T,
+        handler_tree: UpdateHandler<Err>,
+        f: fn(&Update) -> Option<Key>,
+    ) -> Self
+    where
+        T: IntoUpdate,
+        Err: Debug,
+    {
+        // Again, trait bounds stuff, the generic Key is hard to work around
+        let MockBot {
+            bot,
+            me,
+            updates,
+            handler_tree,
+            dependencies,
+            stack_size,
+            error_handler,
+            distribution_f: _,
+            _bot_lock,
+            current_update_id,
+            state,
+        } = MockBot::new(update, handler_tree);
+
+        Self {
+            bot,
+            me,
+            updates,
+            handler_tree,
+            dependencies,
+            stack_size,
+            error_handler,
+            distribution_f: f,
+            _bot_lock,
             current_update_id,
             state,
         }
@@ -299,6 +212,11 @@ where
     /// Reminder: You can pass in vec![MockMessagePhoto] or something else!
     pub fn update<T: IntoUpdate>(&mut self, update: T) {
         self.updates = update.into_update(&self.current_update_id);
+    }
+
+    /// Sets the error_handler for Dispather
+    pub fn error_handler(&mut self, handler: Arc<dyn ErrorHandler<Err> + Send + Sync>) {
+        self.error_handler = handler;
     }
 
     /// Just inserts the updates into the state, returning them

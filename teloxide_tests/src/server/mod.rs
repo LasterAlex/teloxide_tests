@@ -30,7 +30,7 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
-use crate::mock_bot::State;
+use crate::state::State;
 
 pub mod messages;
 pub mod responses;

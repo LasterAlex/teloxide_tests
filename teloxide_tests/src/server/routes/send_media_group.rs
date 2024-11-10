@@ -1,5 +1,5 @@
-use crate::mock_bot::State;
 use crate::server::SentMediaGroup;
+use crate::state::State;
 use crate::{
     MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
     MockVideo,

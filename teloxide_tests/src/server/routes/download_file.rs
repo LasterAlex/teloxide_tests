@@ -7,7 +7,7 @@ use actix_web::{
 };
 use futures_util::{future::ok, stream::once};
 
-use crate::mock_bot::State;
+use crate::state::State;
 
 pub async fn download_file(
     path: web::Path<(String, String)>,

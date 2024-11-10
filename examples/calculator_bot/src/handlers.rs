@@ -121,4 +121,3 @@ pub async fn get_result(
     dialogue.update(State::default()).await?;
     Ok(())
 }
-

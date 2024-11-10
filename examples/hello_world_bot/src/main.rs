@@ -45,19 +45,18 @@ mod tests {
         bot.dispatch().await;
 
         // We can now check the sent messages
-        let responses = bot.get_responses();  // This returns a struct that has all of the recieved
-        // updates and requests. You can treat that function like a variable, because it basically is.
+        let responses = bot.get_responses(); // This returns a struct that has all of the recieved
+                                             // updates and requests. You can treat that function like a variable, because it basically is.
         let message = responses
-            .sent_messages  // This is a list of all sent messages. Be warned, editing or deleting
+            .sent_messages // This is a list of all sent messages. Be warned, editing or deleting
             // messages do not affect this list!
             .last()
             .expect("No sent messages were detected!");
         assert_eq!(message.text(), Some("Hello World!"));
 
-
         // There is also a more specialized field, sent_messages_text:
         let message_text = responses
-            .sent_messages_text  // This has a list request bodies and sent messages of only text messages, no photo, audio, etc.
+            .sent_messages_text // This has a list request bodies and sent messages of only text messages, no photo, audio, etc.
             // messages
             .last()
             .expect("No sent messages were detected!");
@@ -66,7 +65,7 @@ mod tests {
         // can't be accessed by looking only at the resulted message. For example, drop-down style keyboards can't
         // be seen in the regular message, like the parse_mode.
         assert_eq!(message_text.bot_request.parse_mode, None);
-        // Also, it is highly discouraged to use the raw bot fields like bot.updates and bot.bot, 
+        // Also, it is highly discouraged to use the raw bot fields like bot.updates and bot.bot,
         // abstractions exist for a reason!!! Do not use them unless you know what you are doing!
     }
 }

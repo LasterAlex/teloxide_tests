@@ -9,9 +9,9 @@ use teloxide::types::{
     MessageEntity, MessageId, MessageKind, ParseMode, ReplyMarkup,
 };
 
-use crate::mock_bot::State;
 use crate::server::routes::check_if_message_exists;
 use crate::server::CopiedMessage;
+use crate::state::State;
 
 use super::{make_telegram_result, BodyChatId};
 

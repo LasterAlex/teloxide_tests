@@ -160,8 +160,10 @@ mod dataset;
 pub(crate) mod listener;
 pub mod mock_bot;
 mod server;
+pub(crate) mod state;
 #[cfg(test)]
 mod tests;
+pub(crate) mod utils;
 
 pub use dataset::*;
 pub use mock_bot::MockBot;

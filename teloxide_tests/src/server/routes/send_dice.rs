@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 
-use crate::mock_bot::State;
 use crate::server::routes::check_if_message_exists;
 use crate::server::SentMessageDice;
+use crate::state::State;
 use crate::MockMessageDice;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};

@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 
-use crate::mock_bot::State;
+use crate::state::State;
 
 use super::make_telegram_result;
 

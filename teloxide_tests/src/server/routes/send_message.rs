@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
 use crate::dataset::message_common::MockMessageText;
-use crate::mock_bot::State;
+use crate::state::State;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;

@@ -1,10 +1,9 @@
-use std::sync::Mutex;
-
-use crate::mock_bot::State;
 use crate::server::routes::{check_if_message_exists, make_telegram_result};
+use crate::state::State;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{web, Responder};
 use serde::Deserialize;
+use std::sync::Mutex;
 use teloxide::types::ReplyMarkup;
 
 use crate::server::EditedMessageReplyMarkup;

@@ -5,9 +5,9 @@ use actix_web::{web, Responder};
 use serde::Deserialize;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::mock_bot::State;
 use crate::server::routes::make_telegram_result;
 use crate::server::EditedMessageCaption;
+use crate::state::State;
 
 use super::{check_if_message_exists, BodyChatId};
 

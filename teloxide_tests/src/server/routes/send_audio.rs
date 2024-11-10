@@ -1,5 +1,5 @@
-use crate::mock_bot::State;
 use crate::server::routes::Attachment;
+use crate::state::State;
 use crate::{
     server::{
         routes::{FileType, SerializeRawFields},

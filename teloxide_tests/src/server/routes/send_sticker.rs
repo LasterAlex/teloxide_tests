@@ -1,7 +1,7 @@
-use crate::mock_bot::State;
 use crate::server::routes::Attachment;
 use crate::server::routes::{FileType, SerializeRawFields};
 use crate::server::SentMessageSticker;
+use crate::state::State;
 use crate::MockMessageSticker;
 use std::collections::HashMap;
 use std::sync::Mutex;

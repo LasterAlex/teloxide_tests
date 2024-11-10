@@ -11,7 +11,9 @@ pub async fn bot_phrase(bot: Bot, msg: Message) -> HandlerResult {
             let reply_from_id = reply_from.clone().id.0 as i64;
             let user_phrases = db::get_user_phrases(user_from_id).unwrap();
             // Gets all the phrases and tries to find a matching one in the db
-            let phrase = user_phrases.iter().find(|phrase| phrase.text.to_lowercase() == text.to_lowercase());
+            let phrase = user_phrases
+                .iter()
+                .find(|phrase| phrase.text.to_lowercase() == text.to_lowercase());
 
             if let Some(phrase) = phrase {
                 // If successfull, start making the test string
