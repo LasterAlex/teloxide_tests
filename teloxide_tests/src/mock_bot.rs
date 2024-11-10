@@ -263,7 +263,7 @@ impl MockBot {
                 .enable_all()
                 .build()
                 .unwrap();
-            runtime.block_on(
+            runtime.block_on(async {
                 Dispatcher::builder(bot.clone(), handler_tree.clone())
                     .dependencies(deps)
                     .stack_size(stack_size)
@@ -271,8 +271,9 @@ impl MockBot {
                     .dispatch_with_listener(
                         InsertingListener { updates },
                         LoggingErrorHandler::new(),
-                    ),
-            );
+                    )
+                    .await;
+            });
         })
         .await
         .expect("Thread panicked");

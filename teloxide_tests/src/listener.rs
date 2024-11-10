@@ -2,6 +2,8 @@ use std::{
     pin::Pin,
     sync::Mutex,
     task::{Context, Poll},
+    thread::sleep,
+    time::Duration,
 };
 
 use futures_util::Stream;
@@ -27,8 +29,11 @@ impl Stream for InsertingListenerStream {
 
     fn poll_next(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         if self.updates.lock().unwrap().len() == 0 {
+            // A small wait to make sure the state is setteled in?..
+            // No idea, but it fixes a bug with test_erased_state...
+            sleep(Duration::from_millis(10));
             // Returning Poll::Ready(None) means that there is nothing more to poll, and the
-            // dispatcher closes. If we wanted it to continue, Poll::Pending is the way.
+            // dispatcher closes.
             return Poll::Ready(None);
         }
         // Returns updates one by one

@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
 use super::*;
 use crate::dataset::*;
 use serde::{Deserialize, Serialize};
+use teloxide::dispatching::dialogue::serializer::Json;
+use teloxide::dispatching::dialogue::{ErasedStorage, SqliteStorage, Storage};
 use teloxide::dispatching::{HandlerExt, UpdateHandler};
 use teloxide::dptree::case;
 use teloxide::net::Download;
@@ -37,6 +41,8 @@ enum State {
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
+type ErasedDialogue = Dialogue<State, ErasedStorage<State>>;
+type MyStorage = Arc<ErasedStorage<State>>;
 
 async fn handler_with_state(
     bot: Bot,
@@ -133,6 +139,34 @@ async fn test_echo_with_not_start_test() {
     assert_eq!(state, State::Start);
 
     assert_eq!(last_response.text(), Some("Not start!"));
+}
+
+fn get_erased_dialogue_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
+{
+    dialogue::enter::<Update, ErasedStorage<State>, State, _>()
+        .branch(Update::filter_message().endpoint(handler_with_erased_state))
+}
+
+async fn handler_with_erased_state(
+    bot: Bot,
+    dialogue: ErasedDialogue,
+    msg: Message,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    bot.send_message(msg.chat.id, msg.text().unwrap()).await?;
+    dialogue.update(State::NotStart).await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_erased_state() {
+    let mut bot = MockBot::new(
+        MockMessageText::new().text("test"),
+        get_erased_dialogue_schema(),
+    );
+    let storage: MyStorage = SqliteStorage::open(":memory:", Json).await.unwrap().erase();
+    bot.dependencies(deps![storage]);
+    bot.dispatch().await;
+    bot.dispatch_and_check_state(State::NotStart).await;
 }
 
 //
