@@ -28,6 +28,7 @@ use teloxide::{
     types::Me,
 };
 use teloxide::{error_handlers::ErrorHandler, types::UpdateKind};
+// Needed for trait bound stuff
 pub use crate::utils::DistributionKey;
 
 lazy_static! {
@@ -38,6 +39,10 @@ const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 
 /// A mocked bot that sends requests to the fake server
 /// Please check the [`new`] function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
+///
+/// If you are having troubles with generics while trying to store `MockBot`, just do this:
+///
+/// `MockBot<Box<dyn std::error::Error + Send + Sync>, teloxide_tests::mock_bot::DistributionKey>`
 ///
 /// [`new`]: crate::MockBot::new
 pub struct MockBot<Err, Key> {
