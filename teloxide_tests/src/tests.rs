@@ -1,12 +1,16 @@
+use std::fmt::Display;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use super::*;
 use crate::dataset::*;
+use futures_util::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use teloxide::dispatching::dialogue::serializer::Json;
 use teloxide::dispatching::dialogue::{ErasedStorage, SqliteStorage, Storage};
 use teloxide::dispatching::{HandlerExt, UpdateHandler};
 use teloxide::dptree::case;
+use teloxide::error_handlers::ErrorHandler;
 use teloxide::net::Download;
 use teloxide::payloads::{
     BanChatMemberSetters, CopyMessageSetters, SendPhotoSetters, SendPollSetters,
@@ -522,6 +526,34 @@ async fn test_panic() {
     }
 
     drop(bot);
+}
+
+pub struct MyErrorHandler {
+    some_bool: Arc<AtomicBool>,
+}
+
+impl<E> ErrorHandler<E> for MyErrorHandler
+where
+    E: std::fmt::Debug + Display + 'static + Sync + Send,
+{
+    fn handle_error(self: Arc<Self>, _error: E) -> BoxFuture<'static, ()> {
+        self.some_bool
+            .swap(true, std::sync::atomic::Ordering::SeqCst);
+        Box::pin(async {})
+    }
+}
+
+#[tokio::test]
+async fn test_error_handler() {
+    let mut bot = MockBot::new(MockMessageText::new().text("/panic"), get_schema());
+    let some_bool = Arc::new(AtomicBool::new(false));
+
+    bot.error_handler(Arc::new(MyErrorHandler {
+        some_bool: some_bool.clone(),
+    }));
+    bot.dispatch().await;
+
+    assert!(some_bool.load(std::sync::atomic::Ordering::SeqCst));
 }
 
 #[tokio::test]

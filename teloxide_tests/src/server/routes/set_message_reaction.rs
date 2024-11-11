@@ -26,9 +26,7 @@ pub async fn set_message_reaction(
 
     check_if_message_exists!(lock, body.message_id);
 
-    lock.responses
-        .set_message_reaction
-        .push(body.into_inner());
+    lock.responses.set_message_reaction.push(body.into_inner());
 
     make_telegram_result(true)
 }
