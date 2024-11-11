@@ -73,10 +73,10 @@ pub fn find_chat_id(value: Value) -> Option<i64> {
     None
 }
 
-// Copied from source code
+/// A key that defines the parallelism of updates
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
-pub struct DefaultKey(ChatId);
+pub struct DistributionKey(pub ChatId);
 
-pub(crate) fn default_distribution_function(update: &Update) -> Option<DefaultKey> {
-    update.chat().map(|c| c.id).map(DefaultKey)
+pub(crate) fn default_distribution_function(update: &Update) -> Option<DistributionKey> {
+    update.chat().map(|c| c.id).map(DistributionKey)
 }

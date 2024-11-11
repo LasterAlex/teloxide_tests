@@ -3,7 +3,7 @@ use crate::{
     dataset::{IntoUpdate, MockMe},
     server::ServerManager,
     state::State,
-    utils::{assert_eqn, default_distribution_function, find_chat_id, DefaultKey},
+    utils::{assert_eqn, default_distribution_function, find_chat_id},
 };
 use crate::{listener::InsertingListener, server};
 use gag::Gag;
@@ -28,6 +28,7 @@ use teloxide::{
     types::Me,
 };
 use teloxide::{error_handlers::ErrorHandler, types::UpdateKind};
+pub use crate::utils::DistributionKey;
 
 lazy_static! {
     static ref BOT_LOCK: Mutex<()> = Mutex::new(());
@@ -61,7 +62,7 @@ pub struct MockBot<Err, Key> {
     _bot_lock: Option<MutexGuard<'static, ()>>,
 }
 
-impl<Err> MockBot<Err, DefaultKey>
+impl<Err> MockBot<Err, DistributionKey>
 where
     Err: Debug + Send + Sync + 'static,
 {
