@@ -20,7 +20,7 @@ log = "0.4"
 pretty_env_logger = "0.5"
 url = "2.5.1"
 reqwest = "0.12.5"
-teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "24a8d5f", features = ["macros", "sqlite-storage-nativetls"] }
+teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "94db1757dc96116f4756a586fcbce3ac5ebd0c59", features = ["macros", "sqlite-storage-nativetls"] }
 tokio = { version =  "1.38", features = ["rt-multi-thread", "macros"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

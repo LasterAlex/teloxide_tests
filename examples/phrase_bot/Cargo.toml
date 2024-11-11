@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "24a8d5f", features = ["macros", "redis-storage", "cbor-serializer"] }
+teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "94db1757dc96116f4756a586fcbce3ac5ebd0c59", features = ["macros", "redis-storage", "cbor-serializer"] }
 tokio = { version =  "1.38", features = ["rt-multi-thread", "macros"] }
 dotenv = "0.15.0"
 serde = { version = "1.0", features = ["derive"] }

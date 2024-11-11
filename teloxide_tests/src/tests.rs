@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::thread;
 
 use super::*;
 use crate::dataset::*;
@@ -537,10 +538,24 @@ where
     E: std::fmt::Debug + Display + 'static + Sync + Send,
 {
     fn handle_error(self: Arc<Self>, _error: E) -> BoxFuture<'static, ()> {
+        thread::spawn(|| {
+            respond_to_error();
+        })
+        .join()
+        .unwrap();
+
         self.some_bool
             .swap(true, std::sync::atomic::Ordering::SeqCst);
         Box::pin(async {})
     }
+}
+
+#[tokio::main]
+async fn respond_to_error() {
+    let bot = Bot::from_env();
+    bot.send_message(ChatId(MockUser::ID as i64), "Error detected!")
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -551,7 +566,7 @@ async fn test_error_handler() {
     bot.error_handler(Arc::new(MyErrorHandler {
         some_bool: some_bool.clone(),
     }));
-    bot.dispatch().await;
+    bot.dispatch_and_check_last_text("Error detected!").await;
 
     assert!(some_bool.load(std::sync::atomic::Ordering::SeqCst));
 }

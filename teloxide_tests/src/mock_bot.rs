@@ -9,6 +9,7 @@ use crate::{listener::InsertingListener, server};
 use gag::Gag;
 use lazy_static::lazy_static;
 use std::{
+    env,
     fmt::Debug,
     hash::Hash,
     mem::discriminant,
@@ -284,6 +285,9 @@ where
     /// All the requests made through the bot will be stored in `responses`, and can be retrieved
     /// with `get_responses`. All the responses are unique to that dispatch, and will be erased for
     /// every new dispatch.
+    ///
+    /// This method overrides env variables `TELOXIDE_TOKEN` and `TELOXIDE_API_URL`, so anyone can
+    /// call `Bot::from_env()` and get an actual bot that is connected to the fake server
     pub async fn dispatch(&mut self) {
         self.state.lock().unwrap().reset();
 
@@ -295,7 +299,10 @@ where
         self.insert_updates(&mut updates);
 
         let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", server.port)).unwrap();
-        let bot = self.bot.clone().set_api_url(api_url);
+        let bot = self.bot.clone().set_api_url(api_url.clone());
+
+        env::set_var("TELOXIDE_TOKEN", bot.token());
+        env::set_var("TELOXIDE_API_URL", api_url.to_string());
 
         self.run_updates(bot, updates).await;
 
