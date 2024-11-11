@@ -1,6 +1,7 @@
 use teloxide::prelude::*;
 use teloxide::types::{File, MessageId, MessageKind};
 
+use crate::MockMessageText;
 use crate::{server::messages::Messages, utils::find_file, Responses};
 
 #[derive(Default)]
@@ -21,9 +22,9 @@ impl State {
 
         // If message exists in the database, and it isn't a default,
         // let it be, the user knows best
-        if Some(message.clone()) == maybe_message.clone() {
+        if maybe_message.is_some() && message.id != MessageId(MockMessageText::ID) {
             log::debug!(
-                "Not inserting message with id {}, it exists in the database.",
+                "Not inserting message with id {}, this id exists in the database.",
                 message.id
             );
             return;
@@ -32,6 +33,7 @@ impl State {
         if message.id.0 <= max_id || maybe_message.is_some() {
             message.id = MessageId(max_id + 1);
         }
+
         if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
             let file = File {
                 meta: file_meta,

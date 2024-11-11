@@ -146,7 +146,7 @@ where
     }
 }
 
-// Trait bound things
+// Trait bound things.
 impl<Err, Key> MockBot<Err, Key>
 where
     Err: Debug + Send + Sync + 'static,
@@ -155,6 +155,9 @@ where
     /// Same as [`new`], but it inserts a distribution_function into the dispatcher
     ///
     /// [`new`]: crate::MockBot::new
+    // It is its own function instead of `.distribution_function` setter because of the Key
+    // generic. If `new` sets the Key to DefaultKey, it's impossible to swich back to a different
+    // one, even if it fits all the trait bounds.
     pub fn new_with_distribution_function<T>(
         update: T,
         handler_tree: UpdateHandler<Err>,
@@ -281,12 +284,15 @@ where
         let server = ServerManager::start(self.me.clone(), self.state.clone())
             .await
             .unwrap();
+
         let mut updates = self.updates.clone();
         self.insert_updates(&mut updates);
 
         let api_url = reqwest::Url::parse(&format!("http://127.0.0.1:{}", server.port)).unwrap();
         let bot = self.bot.clone().set_api_url(api_url);
+
         self.run_updates(bot, updates).await;
+
         server.stop().await.unwrap();
     }
 
