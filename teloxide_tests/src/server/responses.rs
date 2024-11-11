@@ -6,7 +6,7 @@ use super::routes::{
     send_location::*, send_media_group::*, send_message::*, send_photo::*, send_poll::*,
     send_sticker::*, send_venue::*, send_video::*, send_video_note::*, send_voice::*,
     set_message_reaction::*, unban_chat_member::*, unpin_all_chat_messages::*,
-    unpin_chat_message::*,
+    unpin_chat_message::*, set_my_commands::*,
 };
 use teloxide::types::{Message, MessageId};
 
@@ -135,11 +135,6 @@ pub struct ForwardedMessage {
 pub struct CopiedMessage {
     pub message_id: MessageId,
     pub bot_request: CopyMessageBody,
-}
-
-#[derive(Clone, Debug)]
-pub struct SetMessageReaction {
-    pub bot_request: SetMessageReactionBody,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -296,5 +291,10 @@ pub struct Responses {
     /// This has only the requests that were sent to the fake server to set message reactions.
     /// Telegram doesn't return anything, because there isn't anything to return, so there is no
     /// `.message` field.
-    pub set_message_reaction: Vec<SetMessageReaction>,
+    pub set_message_reaction: Vec<SetMessageReactionBody>,
+
+    /// This has only the requests that were sent to the fake server to set message reactions.
+    /// Telegram doesn't return anything, because there isn't anything to return, so there is no
+    /// `.message` field.
+    pub set_my_commands: Vec<SetMyCommandsBody>,
 }

@@ -14,8 +14,8 @@ use teloxide::payloads::{
 use teloxide::requests::Requester;
 use teloxide::sugar::request::RequestReplyExt;
 use teloxide::types::{
-    ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup, InputFile,
-    InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
+    BotCommand, ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup,
+    InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
     LinkPreviewOptions, Message, MessageEntity, MessageId, PollOption, PollType, ReactionType,
     ReplyParameters, Seconds, Update,
 };
@@ -230,6 +230,8 @@ pub enum AllCommands {
     ChatAction,
     #[command()]
     SetMessageReaction,
+    #[command()]
+    SetMyCommands,
     #[command()]
     Panic,
 }
@@ -458,6 +460,13 @@ async fn handler(
                     emoji: "👍".to_owned(),
                 }])
                 .await?;
+        }
+        AllCommands::SetMyCommands => {
+            bot.set_my_commands(vec![BotCommand {
+                command: String::from("test"),
+                description: String::from("test"),
+            }])
+            .await?;
         }
         AllCommands::Panic => {
             // This message id does not exist
@@ -1069,9 +1078,27 @@ async fn test_set_message_reaction() {
     let last_reaction = responses.set_message_reaction.last().unwrap();
 
     assert_eq!(
-        last_reaction.bot_request.reaction.clone().unwrap()[0],
+        last_reaction.reaction.clone().unwrap()[0],
         ReactionType::Emoji {
             emoji: "👍".to_owned()
         }
+    );
+}
+
+#[tokio::test]
+async fn test_set_my_commands() {
+    let mut bot = MockBot::new(MockMessageText::new().text("/setmycommands"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let set_commands = responses.set_my_commands.last().unwrap();
+
+    assert_eq!(
+        set_commands.commands.first(),
+        Some(&BotCommand {
+            command: String::from("test"),
+            description: String::from("test")
+        })
     );
 }
