@@ -39,7 +39,6 @@ const DEFAULT_STACK_SIZE: usize = 8 * 1024 * 1024;
 /// Please check the [`new`] function docs and [github examples](https://github.com/LasterAlex/teloxide_tests/tree/master/examples) for more information.
 ///
 /// [`new`]: crate::MockBot::new
-#[allow(dead_code)]
 pub struct MockBot<Err, Key> {
     /// The bot with a fake server url
     pub bot: Bot,
@@ -209,7 +208,7 @@ where
     }
 
     /// Sets the updates. Useful for reusing the same mocked bot instance in different tests
-    /// Reminder: You can pass in vec![MockMessagePhoto] or something else!
+    /// Reminder: You can pass in `vec![MockMessagePhoto]` or something else!
     pub fn update<T: IntoUpdate>(&mut self, update: T) {
         self.updates = update.into_update(&self.current_update_id);
     }
@@ -292,7 +291,6 @@ where
     }
 
     /// Returns the responses stored in `responses`
-    /// Panics if no dispatching was done.
     /// Should be treated as a variable, because it kinda is
     pub fn get_responses(&self) -> server::Responses {
         self.state.lock().unwrap().responses.clone()

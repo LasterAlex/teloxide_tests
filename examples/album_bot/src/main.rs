@@ -188,6 +188,8 @@ mod tests {
 
         bot.dependencies(deps![album_storage]);
         // This is 3 messages with the text "Detected 1 messages without media group!"
+        // They aren't bundled exactly because distribution_function only processes in parallel
+        // updates with a media group
         bot.dispatch_and_check_last_text("Detected 1 messages without media group!")
             .await;
         assert_eq!(bot.get_responses().sent_messages.len(), 3);

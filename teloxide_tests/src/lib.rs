@@ -87,10 +87,12 @@
 //! - /UnbanChatMember
 //! - /RestrictChatMember
 //! - /SetMessageReaction
+//! - /SetMyCommands
+//! - /GetMe
 //!
 //! More endpoints will be added as time goes on!
 //!
-//! (do not worry about /GetMe and /GetUpdates, they are not needed for this bot!)
+//! (/GetUpdates and /GetWebhookInfo exist, but they are dummies)
 //!
 //! And also fake file downloading!
 //!

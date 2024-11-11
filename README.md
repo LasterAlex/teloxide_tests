@@ -23,7 +23,7 @@
 ## What this crate has
 
 - Easy testing of handlers with access to raw bot requests (see [hello_world_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/hello_world_bot/src/main.rs))
-- Support of dependencies, changes of `me` and multiple updates (see [album_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/album_bot/src/main.rs))
+- Support of dependencies, changes of `me`, distribution_function and multiple updates (see [album_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/album_bot/src/main.rs))
 - Syntactic sugar and native support for storage, dialogue and states (see [calculator_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs))
 - Fake file getting and downloading (see [file_download_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs))
 - Ability to be used with databases (see [phrase_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/phrase_bot/src/main.rs))
