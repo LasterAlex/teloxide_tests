@@ -35,7 +35,7 @@ Simplified [[`hello_world_bot`]](https://github.com/LasterAlex/teloxide_tests/bl
 #[tokio::test]
 async fn test_hello_world() {
     let message = MockMessageText::new().text("Hi!");
-    let bot = MockBot::new(message, handler_tree());
+    let mut bot = MockBot::new(message, handler_tree());
     // Sends the message as if it was from a user
     bot.dispatch().await;  
 
@@ -52,14 +52,14 @@ async fn test_hello_world() {
 ```rust,ignore
 #[tokio::test]
 async fn test_not_a_document() {
-    let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+    let mut bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
     // Syntactic sugar
     bot.dispatch_and_check_last_text("Not a document").await;
 }
 
 #[tokio::test]
 async fn test_download_document_and_check() {
-    let bot = MockBot::new(MockMessageDocument::new(), handler_tree());
+    let mut bot = MockBot::new(MockMessageDocument::new(), handler_tree());
     bot.dispatch_and_check_last_text("Downloaded!").await;
 }
 ```
@@ -68,7 +68,7 @@ async fn test_download_document_and_check() {
 ```rust,ignore
 #[tokio::test]
 async fn test_what_is_the_first_number() {
-    let bot = MockBot::new(MockCallbackQuery::new().data("add"), handler_tree());
+    let mut bot = MockBot::new(MockCallbackQuery::new().data("add"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::WhatDoYouWant).await;
