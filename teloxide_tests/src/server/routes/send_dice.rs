@@ -1,15 +1,15 @@
 use std::sync::Mutex;
 
-use crate::server::routes::check_if_message_exists;
-use crate::server::SentMessageDice;
-use crate::state::State;
-use crate::MockMessageDice;
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::{DiceEmoji, ReplyMarkup, ReplyParameters};
 
 use super::{make_telegram_result, BodyChatId};
+use crate::{
+    server::{routes::check_if_message_exists, SentMessageDice},
+    state::State,
+    MockMessageDice,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SendMessageDiceBody {

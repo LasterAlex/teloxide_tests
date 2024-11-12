@@ -1,23 +1,22 @@
-use crate::server::routes::Attachment;
-use crate::server::routes::{FileType, SerializeRawFields};
-use crate::state::State;
-use std::collections::HashMap;
-use std::str::FromStr;
-use std::sync::Mutex;
+use std::{collections::HashMap, str::FromStr, sync::Mutex};
 
-use crate::dataset::{MockMessageVideo, MockVideo};
-use crate::proc_macros::SerializeRawFields;
 use actix_multipart::Multipart;
-use actix_web::Responder;
-use actix_web::{error::ErrorBadRequest, web};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use mime::Mime;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
 
-use crate::server::{routes::check_if_message_exists, SentMessageVideo};
-
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
+use crate::{
+    dataset::{MockMessageVideo, MockVideo},
+    proc_macros::SerializeRawFields,
+    server::{
+        routes::{check_if_message_exists, Attachment, FileType, SerializeRawFields},
+        SentMessageVideo,
+    },
+    state::State,
+};
 
 pub async fn send_video(
     mut payload: Multipart,

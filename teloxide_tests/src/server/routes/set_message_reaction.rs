@@ -1,14 +1,11 @@
 use std::sync::Mutex;
 
-use crate::state::State;
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::ReactionType;
 
-use crate::server::routes::check_if_message_exists;
-
 use super::{make_telegram_result, BodyChatId};
+use crate::{server::routes::check_if_message_exists, state::State};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SetMessageReactionBody {

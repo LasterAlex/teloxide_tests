@@ -65,10 +65,11 @@ impl Messages {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::dataset::*;
     use serial_test::serial;
     use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+
+    use super::*;
+    use crate::dataset::*;
 
     #[test]
     #[serial]

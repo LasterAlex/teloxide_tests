@@ -4,12 +4,11 @@ use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup};
 
+use super::{check_if_message_exists, BodyChatId};
 use crate::{
     server::{routes::make_telegram_result, EditedMessageText},
     state::State,
 };
-
-use super::{check_if_message_exists, BodyChatId};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct EditMessageTextBody {

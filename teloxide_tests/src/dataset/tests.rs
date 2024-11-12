@@ -1,9 +1,9 @@
-use crate::dataset::*;
-use crate::proc_macros::Changeable;
 use teloxide::{
     dispatching::dialogue::GetChatId,
     types::{ChatId, MessageEntity, MessageId, True, UpdateId, UserId},
 };
+
+use crate::{dataset::*, proc_macros::Changeable};
 
 #[derive(Changeable)]
 struct Test {

@@ -1,15 +1,14 @@
 use std::sync::Mutex;
 
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
 
-use crate::server::routes::make_telegram_result;
-use crate::server::EditedMessageCaption;
-use crate::state::State;
-
 use super::{check_if_message_exists, BodyChatId};
+use crate::{
+    server::{routes::make_telegram_result, EditedMessageCaption},
+    state::State,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct EditMessageCaptionBody {

@@ -142,6 +142,7 @@
     html_logo_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040",
     html_favicon_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040"
 )]
+#![allow(clippy::too_long_first_doc_paragraph)]
 #![allow(clippy::to_string_in_format_args)]
 #![allow(clippy::new_without_default)]
 #![allow(clippy::too_many_arguments)]

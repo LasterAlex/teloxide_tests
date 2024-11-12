@@ -1,13 +1,4 @@
 //! Mock bot that sends requests to the fake server
-use crate::{
-    dataset::{IntoUpdate, MockMe},
-    server::ServerManager,
-    state::State,
-    utils::{assert_eqn, default_distribution_function, find_chat_id},
-};
-use crate::{listener::InsertingListener, server};
-use gag::Gag;
-use lazy_static::lazy_static;
 use std::{
     env,
     fmt::Debug,
@@ -16,21 +7,30 @@ use std::{
     panic,
     sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
 };
-use teloxide::{
-    dispatching::dialogue::ErasedStorage, dptree::di::DependencySupplier,
-    types::MaybeInaccessibleMessage,
-};
+
+use gag::Gag;
+use lazy_static::lazy_static;
 use teloxide::{
     dispatching::{
-        dialogue::{GetChatId, InMemStorage, Storage},
+        dialogue::{ErasedStorage, GetChatId, InMemStorage, Storage},
         UpdateHandler,
     },
+    dptree::di::DependencySupplier,
+    error_handlers::ErrorHandler,
     prelude::*,
-    types::Me,
+    types::{MaybeInaccessibleMessage, Me, UpdateKind},
 };
-use teloxide::{error_handlers::ErrorHandler, types::UpdateKind};
+
 // Needed for trait bound stuff
 pub use crate::utils::DistributionKey;
+use crate::{
+    dataset::{IntoUpdate, MockMe},
+    listener::InsertingListener,
+    server,
+    server::ServerManager,
+    state::State,
+    utils::{assert_eqn, default_distribution_function, find_chat_id},
+};
 
 lazy_static! {
     static ref BOT_LOCK: Mutex<()> = Mutex::new(());

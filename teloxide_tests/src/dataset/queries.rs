@@ -1,11 +1,9 @@
 use std::sync::atomic::{AtomicI32, Ordering};
 
-use crate::proc_macros::Changeable;
 use teloxide::types::*;
 
-use super::MockMessageText;
-
-use super::MockUser;
+use super::{MockMessageText, MockUser};
+use crate::proc_macros::Changeable;
 
 #[derive(Changeable, Clone)]
 pub struct MockCallbackQuery {

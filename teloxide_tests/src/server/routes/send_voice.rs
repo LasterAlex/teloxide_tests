@@ -1,27 +1,22 @@
-use crate::server::routes::Attachment;
-use crate::state::State;
-use crate::{
-    server::{
-        routes::{FileType, SerializeRawFields},
-        SentMessageVoice,
-    },
-    MockMessageVoice,
-};
-use std::sync::Mutex;
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, str::FromStr, sync::Mutex};
 
-use crate::proc_macros::SerializeRawFields;
 use actix_multipart::Multipart;
-use actix_web::Responder;
-use actix_web::{error::ErrorBadRequest, web};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use mime::Mime;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
 
-use crate::server::routes::check_if_message_exists;
-
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
+use crate::{
+    proc_macros::SerializeRawFields,
+    server::{
+        routes::{check_if_message_exists, Attachment, FileType, SerializeRawFields},
+        SentMessageVoice,
+    },
+    state::State,
+    MockMessageVoice,
+};
 
 pub async fn send_voice(
     mut payload: Multipart,

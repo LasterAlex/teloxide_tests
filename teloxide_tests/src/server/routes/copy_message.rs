@@ -1,7 +1,6 @@
 use std::sync::Mutex;
 
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use serde_json::json;
 use teloxide::types::{
@@ -9,11 +8,11 @@ use teloxide::types::{
     MessageEntity, MessageId, MessageKind, ParseMode, ReplyMarkup,
 };
 
-use crate::server::routes::check_if_message_exists;
-use crate::server::CopiedMessage;
-use crate::state::State;
-
 use super::{make_telegram_result, BodyChatId};
+use crate::{
+    server::{routes::check_if_message_exists, CopiedMessage},
+    state::State,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct CopyMessageBody {

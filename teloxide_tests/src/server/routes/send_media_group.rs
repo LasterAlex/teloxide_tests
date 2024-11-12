@@ -1,26 +1,22 @@
-use crate::server::SentMediaGroup;
-use crate::state::State;
-use crate::{
-    MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
-    MockVideo,
-};
-use std::collections::HashMap;
-use std::sync::Mutex;
+use std::{collections::HashMap, sync::Mutex};
 
 use actix_multipart::Multipart;
-use actix_web::Responder;
-use actix_web::{error::ErrorBadRequest, web};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use serde_json::Value;
 use teloxide::types::{Me, Message, MessageEntity, MessageId, ParseMode, ReplyParameters, Seconds};
 
-use crate::server::routes::check_if_message_exists;
-
 use super::{
     get_raw_multipart_fields, make_telegram_result, Attachment, BodyChatId, MediaGroupInputMedia,
     MediaGroupInputMediaAudio, MediaGroupInputMediaDocument, MediaGroupInputMediaPhoto,
     MediaGroupInputMediaVideo,
+};
+use crate::{
+    server::{routes::check_if_message_exists, SentMediaGroup},
+    state::State,
+    MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
+    MockVideo,
 };
 
 pub async fn send_media_group(

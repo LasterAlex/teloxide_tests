@@ -1,14 +1,17 @@
-use crate::server::routes::{check_if_message_exists, make_telegram_result};
-use crate::state::State;
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
-use serde::Deserialize;
 use std::sync::Mutex;
+
+use actix_web::{error::ErrorBadRequest, web, Responder};
+use serde::Deserialize;
 use teloxide::types::ReplyMarkup;
 
-use crate::server::EditedMessageReplyMarkup;
-
 use super::BodyChatId;
+use crate::{
+    server::{
+        routes::{check_if_message_exists, make_telegram_result},
+        EditedMessageReplyMarkup,
+    },
+    state::State,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct EditMessageReplyMarkupBody {

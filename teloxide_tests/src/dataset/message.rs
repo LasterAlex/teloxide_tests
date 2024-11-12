@@ -1,9 +1,10 @@
-use super::chat::MockPrivateChat;
-use crate::proc_macros::Changeable;
-use crate::MockUser;
-use chrono::{DateTime, Utc};
 use core::sync::atomic::{AtomicI32, Ordering};
+
+use chrono::{DateTime, Utc};
 use teloxide::types::*;
+
+use super::chat::MockPrivateChat;
+use crate::{proc_macros::Changeable, MockUser};
 
 macro_rules! Message {
     (

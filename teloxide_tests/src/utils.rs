@@ -1,6 +1,5 @@
 use serde_json::Value;
-use teloxide::prelude::*;
-use teloxide::types::FileMeta;
+use teloxide::{prelude::*, types::FileMeta};
 
 macro_rules! assert_eqn {
     ($actual:expr, $expected:expr $(,)?) => {

@@ -1,14 +1,13 @@
-use std::collections::HashMap;
-use std::str::from_utf8;
+use std::{collections::HashMap, str::from_utf8};
 
-use crate::dataset::{MockPrivateChat, MockSupergroupChat};
 use actix_web::HttpResponse;
-use futures_util::stream::StreamExt as _;
-use futures_util::TryStreamExt;
+use futures_util::{stream::StreamExt as _, TryStreamExt};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use teloxide::types::{Chat, MessageEntity, ParseMode, Seconds};
+
+use crate::dataset::{MockPrivateChat, MockSupergroupChat};
 
 pub mod answer_callback_query;
 pub mod ban_chat_member;

@@ -1,19 +1,18 @@
 use std::sync::Mutex;
 
-use crate::server::SentMessagePoll;
-use crate::state::State;
-use crate::MockMessagePoll;
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use chrono::DateTime;
 use serde::Deserialize;
 use teloxide::types::{
     Me, MessageEntity, ParseMode, PollOption, PollType, ReplyMarkup, ReplyParameters, Seconds,
 };
 
-use crate::server::routes::check_if_message_exists;
-
 use super::{make_telegram_result, BodyChatId};
+use crate::{
+    server::{routes::check_if_message_exists, SentMessagePoll},
+    state::State,
+    MockMessagePoll,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SendMessagePollBody {
