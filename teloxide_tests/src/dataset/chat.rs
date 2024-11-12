@@ -1,11 +1,10 @@
-use crate::proc_macros::Changeable;
-use teloxide::types::*;
 use teloxide::types::{
     Chat, ChatId, ChatKind, ChatLocation, ChatPermissions, ChatPhoto, ChatPrivate, ChatPublic,
-    Message, PublicChatChannel, PublicChatGroup, PublicChatKind, PublicChatSupergroup, True,
+    Message, PublicChatChannel, PublicChatGroup, PublicChatKind, PublicChatSupergroup, True, *,
 };
 
 use super::{MockChatFullInfo, MockUser};
+use crate::proc_macros::Changeable;
 
 macro_rules! Chat {
     (

@@ -1,3 +1,5 @@
+use teloxide::types::{Message, MessageId};
+
 use super::routes::{
     answer_callback_query::*, ban_chat_member::*, copy_message::*, delete_message::*,
     edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*,
@@ -8,7 +10,6 @@ use super::routes::{
     set_message_reaction::*, set_my_commands::*, unban_chat_member::*, unpin_all_chat_messages::*,
     unpin_chat_message::*,
 };
-use teloxide::types::{Message, MessageId};
 
 #[derive(Clone, Debug)]
 pub struct SentMessageText {

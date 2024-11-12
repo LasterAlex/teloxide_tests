@@ -1,26 +1,21 @@
-use crate::server::routes::Attachment;
-use crate::state::State;
-use crate::{
-    server::{
-        routes::{FileType, SerializeRawFields},
-        SentMessageVideoNote,
-    },
-    MockMessageVideoNote,
-};
-use std::collections::HashMap;
-use std::sync::Mutex;
+use std::{collections::HashMap, sync::Mutex};
 
-use crate::proc_macros::SerializeRawFields;
 use actix_multipart::Multipart;
-use actix_web::Responder;
-use actix_web::{error::ErrorBadRequest, web};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{Me, ReplyMarkup, ReplyParameters, Seconds};
 
-use crate::server::routes::check_if_message_exists;
-
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
+use crate::{
+    proc_macros::SerializeRawFields,
+    server::{
+        routes::{check_if_message_exists, Attachment, FileType, SerializeRawFields},
+        SentMessageVideoNote,
+    },
+    state::State,
+    MockMessageVideoNote,
+};
 
 pub async fn send_video_note(
     mut payload: Multipart,

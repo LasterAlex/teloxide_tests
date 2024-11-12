@@ -1,38 +1,34 @@
-use std::fmt::Display;
-use std::sync::atomic::AtomicBool;
-use std::sync::Arc;
-use std::thread;
+use std::{
+    fmt::Display,
+    sync::{atomic::AtomicBool, Arc},
+    thread,
+};
+
+use futures_util::future::BoxFuture;
+use serde::{Deserialize, Serialize};
+use teloxide::{
+    dispatching::{
+        dialogue::{self, serializer::Json, ErasedStorage, InMemStorage, SqliteStorage, Storage},
+        HandlerExt, UpdateFilterExt, UpdateHandler,
+    },
+    dptree::{case, deps},
+    error_handlers::ErrorHandler,
+    macros::BotCommands,
+    net::Download,
+    payloads::{BanChatMemberSetters, CopyMessageSetters, SendPhotoSetters, SendPollSetters},
+    prelude::*,
+    requests::Requester,
+    sugar::request::RequestReplyExt,
+    types::{
+        BotCommand, ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton,
+        InlineKeyboardMarkup, InputFile, InputMedia, InputMediaAudio, InputMediaDocument,
+        InputMediaPhoto, InputMediaVideo, LinkPreviewOptions, Message, MessageEntity, MessageId,
+        PollOption, PollType, ReactionType, ReplyParameters, Seconds, Update,
+    },
+};
 
 use super::*;
 use crate::dataset::*;
-use futures_util::future::BoxFuture;
-use serde::{Deserialize, Serialize};
-use teloxide::dispatching::dialogue::serializer::Json;
-use teloxide::dispatching::dialogue::{ErasedStorage, SqliteStorage, Storage};
-use teloxide::dispatching::{HandlerExt, UpdateHandler};
-use teloxide::dptree::case;
-use teloxide::error_handlers::ErrorHandler;
-use teloxide::net::Download;
-use teloxide::payloads::{
-    BanChatMemberSetters, CopyMessageSetters, SendPhotoSetters, SendPollSetters,
-};
-use teloxide::requests::Requester;
-use teloxide::sugar::request::RequestReplyExt;
-use teloxide::types::{
-    BotCommand, ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton, InlineKeyboardMarkup,
-    InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
-    LinkPreviewOptions, Message, MessageEntity, MessageId, PollOption, PollType, ReactionType,
-    ReplyParameters, Seconds, Update,
-};
-use teloxide::{
-    dispatching::{
-        dialogue::{self, InMemStorage},
-        UpdateFilterExt,
-    },
-    dptree::deps,
-    macros::BotCommands,
-    prelude::*,
-};
 
 //
 //

@@ -3,9 +3,8 @@ use std::sync::Mutex;
 use actix_web::{web, Responder};
 use serde::Deserialize;
 
-use crate::state::State;
-
 use super::make_telegram_result;
+use crate::state::State;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AnswerCallbackQueryBody {

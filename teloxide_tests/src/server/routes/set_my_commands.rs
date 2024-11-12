@@ -4,9 +4,8 @@ use actix_web::{web, Responder};
 use serde::Deserialize;
 use teloxide::types::{BotCommand, BotCommandScope};
 
-use crate::state::State;
-
 use super::make_telegram_result;
+use crate::state::State;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SetMyCommandsBody {

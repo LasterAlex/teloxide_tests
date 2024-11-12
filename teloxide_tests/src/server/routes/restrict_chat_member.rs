@@ -4,9 +4,8 @@ use actix_web::{web, Responder};
 use serde::Deserialize;
 use teloxide::types::ChatPermissions;
 
-use crate::{server::routes::make_telegram_result, state::State};
-
 use super::BodyChatId;
+use crate::{server::routes::make_telegram_result, state::State};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct RestrictChatMemberBody {

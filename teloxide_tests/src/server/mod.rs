@@ -1,5 +1,12 @@
 //! A fake telegram bot API for testing purposes. Read more in teloxide_tests crate.
 pub mod routes;
+use std::{
+    error::Error,
+    io,
+    net::TcpListener,
+    sync::{Arc, Mutex},
+};
+
 use actix_web::{
     web::{get, post, scope, Data, Json, ServiceConfig},
     App, HttpResponse, HttpServer, Responder,
@@ -16,16 +23,9 @@ use routes::{
     set_message_reaction::*, set_my_commands::*, unban_chat_member::*, unpin_all_chat_messages::*,
     unpin_chat_message::*,
 };
-use std::{
-    error::Error,
-    io,
-    net::TcpListener,
-    sync::{Arc, Mutex},
-};
 use teloxide::types::Me;
-use tokio::sync::mpsc::Sender;
 use tokio::{
-    sync::mpsc::channel,
+    sync::mpsc::{channel, Sender},
     task::{JoinError, JoinHandle},
 };
 use tokio_util::sync::CancellationToken;

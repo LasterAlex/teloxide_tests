@@ -1,24 +1,23 @@
-use crate::server::routes::Attachment;
-use crate::server::routes::{FileType, SerializeRawFields};
-use crate::state::State;
+use std::{collections::HashMap, sync::Mutex};
 
-use std::collections::HashMap;
-use std::sync::Mutex;
-
-use crate::dataset::{MockMessagePhoto, MockPhotoSize};
-use crate::proc_macros::SerializeRawFields;
 use actix_multipart::Multipart;
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use teloxide::types::{
     LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters,
 };
 
-use crate::server::{routes::check_if_message_exists, SentMessagePhoto};
-
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
+use crate::{
+    dataset::{MockMessagePhoto, MockPhotoSize},
+    proc_macros::SerializeRawFields,
+    server::{
+        routes::{check_if_message_exists, Attachment, FileType, SerializeRawFields},
+        SentMessagePhoto,
+    },
+    state::State,
+};
 
 pub async fn send_photo(
     mut payload: Multipart,

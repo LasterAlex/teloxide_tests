@@ -1,17 +1,17 @@
 use std::sync::Mutex;
 
-use crate::dataset::message_common::MockMessageText;
-use crate::state::State;
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::{
     LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters,
 };
 
-use crate::server::{routes::check_if_message_exists, SentMessageText};
-
 use super::{make_telegram_result, BodyChatId};
+use crate::{
+    dataset::message_common::MockMessageText,
+    server::{routes::check_if_message_exists, SentMessageText},
+    state::State,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SendMessageTextBody {

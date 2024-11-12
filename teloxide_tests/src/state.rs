@@ -1,8 +1,9 @@
-use teloxide::prelude::*;
-use teloxide::types::{File, MessageId, MessageKind};
+use teloxide::{
+    prelude::*,
+    types::{File, MessageId, MessageKind},
+};
 
-use crate::MockMessageText;
-use crate::{server::messages::Messages, utils::find_file, Responses};
+use crate::{server::messages::Messages, utils::find_file, MockMessageText, Responses};
 
 #[derive(Default)]
 pub(crate) struct State {
