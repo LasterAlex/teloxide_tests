@@ -8,8 +8,8 @@ use std::{
 };
 
 use actix_web::{
-    web::{get, post, scope, Data, Json, ServiceConfig},
-    App, HttpResponse, HttpServer, Responder,
+    web::{get, post, scope, Data, ServiceConfig},
+    App, HttpServer,
 };
 pub use responses::*;
 use routes::{
@@ -48,14 +48,7 @@ use crate::state::State;
 pub mod messages;
 pub mod responses;
 
-#[allow(dead_code)]
-pub async fn log_request(body: Json<serde_json::Value>) -> impl Responder {
-    dbg!(body);
-    HttpResponse::Ok()
-}
-
-#[allow(dead_code)]
-pub struct ServerManager {
+pub(crate) struct ServerManager {
     pub port: u16,
     server: JoinHandle<()>,
     cancel_token: CancellationToken,
@@ -87,7 +80,7 @@ impl ServerManager {
         })
     }
 
-    pub async fn stop(self) -> Result<(), JoinError> {
+    pub(crate) async fn stop(self) -> Result<(), JoinError> {
         self.cancel_token.cancel();
         self.server.await
     }
