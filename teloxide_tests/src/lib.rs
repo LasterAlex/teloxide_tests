@@ -162,7 +162,7 @@
 mod dataset;
 pub(crate) mod listener;
 pub mod mock_bot;
-mod server;
+pub mod server;
 pub(crate) mod state;
 #[cfg(test)]
 mod tests;

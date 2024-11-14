@@ -1,5 +1,5 @@
 //! A fake telegram bot API for testing purposes. Read more in teloxide_tests crate.
-pub mod routes;
+mod routes;
 use std::{
     error::Error,
     io,
@@ -8,8 +8,8 @@ use std::{
 };
 
 use actix_web::{
-    web::{get, post, scope, Data, Json, ServiceConfig},
-    App, HttpResponse, HttpServer, Responder,
+    web::{get, post, scope, Data, ServiceConfig},
+    App, HttpServer,
 };
 pub use responses::*;
 use routes::{
@@ -23,6 +23,19 @@ use routes::{
     set_message_reaction::*, set_my_commands::*, unban_chat_member::*, unpin_all_chat_messages::*,
     unpin_chat_message::*,
 };
+pub use routes::{
+    copy_message::CopyMessageBody, delete_message::DeleteMessageBody,
+    edit_message_caption::EditMessageCaptionBody,
+    edit_message_reply_markup::EditMessageReplyMarkupBody, edit_message_text::EditMessageTextBody,
+    forward_message::ForwardMessageBody, send_animation::SendMessageAnimationBody,
+    send_audio::SendMessageAudioBody, send_contact::SendMessageContactBody,
+    send_dice::SendMessageDiceBody, send_document::SendMessageDocumentBody,
+    send_location::SendMessageLocationBody, send_media_group::SendMediaGroupBody,
+    send_message::SendMessageTextBody, send_photo::SendMessagePhotoBody,
+    send_poll::SendMessagePollBody, send_sticker::SendMessageStickerBody,
+    send_venue::SendMessageVenueBody, send_video::SendMessageVideoBody,
+    send_video_note::SendMessageVideoNoteBody,
+};
 use teloxide::types::Me;
 use tokio::{
     sync::mpsc::{channel, Sender},
@@ -35,14 +48,7 @@ use crate::state::State;
 pub mod messages;
 pub mod responses;
 
-#[allow(dead_code)]
-pub async fn log_request(body: Json<serde_json::Value>) -> impl Responder {
-    dbg!(body);
-    HttpResponse::Ok()
-}
-
-#[allow(dead_code)]
-pub struct ServerManager {
+pub(crate) struct ServerManager {
     pub port: u16,
     server: JoinHandle<()>,
     cancel_token: CancellationToken,
@@ -50,7 +56,7 @@ pub struct ServerManager {
 
 #[warn(clippy::unwrap_used)]
 impl ServerManager {
-    pub async fn start(me: Me, state: Arc<Mutex<State>>) -> Result<Self, Box<dyn Error>> {
+    pub(crate) async fn start(me: Me, state: Arc<Mutex<State>>) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let port = listener.local_addr()?.port();
 
@@ -74,7 +80,7 @@ impl ServerManager {
         })
     }
 
-    pub async fn stop(self) -> Result<(), JoinError> {
+    pub(crate) async fn stop(self) -> Result<(), JoinError> {
         self.cancel_token.cancel();
         self.server.await
     }
