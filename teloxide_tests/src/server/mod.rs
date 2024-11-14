@@ -1,5 +1,5 @@
 //! A fake telegram bot API for testing purposes. Read more in teloxide_tests crate.
-pub mod routes;
+mod routes;
 use std::{
     error::Error,
     io,
