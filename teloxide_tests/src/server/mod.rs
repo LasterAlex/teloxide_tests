@@ -50,7 +50,7 @@ pub struct ServerManager {
 
 #[warn(clippy::unwrap_used)]
 impl ServerManager {
-    pub async fn start(me: Me, state: Arc<Mutex<State>>) -> Result<Self, Box<dyn Error>> {
+    pub(crate) async fn start(me: Me, state: Arc<Mutex<State>>) -> Result<Self, Box<dyn Error>> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let port = listener.local_addr()?.port();
 
