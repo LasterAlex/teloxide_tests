@@ -8,8 +8,8 @@ use std::{
 };
 
 use actix_web::{
-    web::{get, post, scope, Data, ServiceConfig},
-    App, HttpServer,
+    web::{self, get, post, scope, Data, ServiceConfig},
+    App, HttpResponse, HttpServer, Responder,
 };
 pub use responses::*;
 use routes::{
@@ -164,5 +164,10 @@ fn set_bot_routes(cfg: &mut ServiceConfig) {
         .route("/UnbanChatMember", post().to(unban_chat_member))
         .route("/RestrictChatMember", post().to(restrict_chat_member))
         .route("/SetMessageReaction", post().to(set_message_reaction))
-        .route("/SetMyCommands", post().to(set_my_commands));
+        .route("/SetMyCommands", post().to(set_my_commands))
+        .route("/{unknown_endpoint}", post().to(unknown_endpoint));
+}
+
+async fn unknown_endpoint(path: web::Path<(String, String)>) -> impl Responder {
+    HttpResponse::InternalServerError().message_body(format!("Endpoint \"{}\" is not yet implemented! Please make an issue to https://github.com/LasterAlex/teloxide_tests/issues/new?assignees=&labels=no+endpoint&projects=&template=add-endpoint-template.md&title=", path.1))
 }
