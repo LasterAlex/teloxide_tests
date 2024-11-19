@@ -18,8 +18,8 @@ use routes::{
     edit_message_text::*, forward_message::*, get_file::*, get_me::*, get_updates::*,
     get_webhook_info::*, pin_chat_message::*, restrict_chat_member::*, send_animation::*,
     send_audio::*, send_chat_action::*, send_contact::*, send_dice::*, send_document::*,
-    send_location::*, send_media_group::*, send_message::*, send_photo::*, send_poll::*,
-    send_sticker::*, send_venue::*, send_video::*, send_video_note::*, send_voice::*,
+    send_invoice::*, send_location::*, send_media_group::*, send_message::*, send_photo::*,
+    send_poll::*, send_sticker::*, send_venue::*, send_video::*, send_video_note::*, send_voice::*,
     set_message_reaction::*, set_my_commands::*, unban_chat_member::*, unpin_all_chat_messages::*,
     unpin_chat_message::*,
 };
@@ -30,11 +30,11 @@ pub use routes::{
     forward_message::ForwardMessageBody, send_animation::SendMessageAnimationBody,
     send_audio::SendMessageAudioBody, send_contact::SendMessageContactBody,
     send_dice::SendMessageDiceBody, send_document::SendMessageDocumentBody,
-    send_location::SendMessageLocationBody, send_media_group::SendMediaGroupBody,
-    send_message::SendMessageTextBody, send_photo::SendMessagePhotoBody,
-    send_poll::SendMessagePollBody, send_sticker::SendMessageStickerBody,
-    send_venue::SendMessageVenueBody, send_video::SendMessageVideoBody,
-    send_video_note::SendMessageVideoNoteBody,
+    send_invoice::SendMessageInvoiceBody, send_location::SendMessageLocationBody,
+    send_media_group::SendMediaGroupBody, send_message::SendMessageTextBody,
+    send_photo::SendMessagePhotoBody, send_poll::SendMessagePollBody,
+    send_sticker::SendMessageStickerBody, send_venue::SendMessageVenueBody,
+    send_video::SendMessageVideoBody, send_video_note::SendMessageVideoNoteBody,
 };
 use teloxide::types::Me;
 use tokio::{
@@ -146,6 +146,7 @@ fn set_bot_routes(cfg: &mut ServiceConfig) {
         .route("/SendDice", post().to(send_dice))
         .route("/SendPoll", post().to(send_poll))
         .route("/SendMediaGroup", post().to(send_media_group))
+        .route("/SendInvoice", post().to(send_invoice))
         .route("/EditMessageText", post().to(edit_message_text))
         .route("/EditMessageCaption", post().to(edit_message_caption))
         .route(

@@ -22,8 +22,8 @@ use teloxide::{
     types::{
         BotCommand, ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton,
         InlineKeyboardMarkup, InputFile, InputMedia, InputMediaAudio, InputMediaDocument,
-        InputMediaPhoto, InputMediaVideo, LinkPreviewOptions, Message, MessageEntity, MessageId,
-        PollOption, PollType, ReactionType, ReplyParameters, Seconds, Update,
+        InputMediaPhoto, InputMediaVideo, LabeledPrice, LinkPreviewOptions, Message, MessageEntity,
+        MessageId, PollOption, PollType, ReactionType, ReplyParameters, Seconds, Update,
     },
 };
 
@@ -215,6 +215,8 @@ pub enum AllCommands {
     Sticker,
     #[command()]
     MediaGroup,
+    #[command()]
+    Invoice,
     #[command()]
     EditCaption,
     #[command()]
@@ -474,6 +476,21 @@ async fn handler(
             bot.send_message(msg.chat.id, "test")
                 .reply_to(MessageId(344382918))
                 .await?;
+        }
+        AllCommands::Invoice => {
+            bot.send_invoice(
+                msg.chat.id,
+                "Absolutely Nothing",
+                "Demo",
+                "test_payload",
+                "",
+                "XTR",
+                vec![LabeledPrice {
+                    label: "Stars".into(),
+                    amount: 1,
+                }],
+            )
+            .await?;
         }
     }
     Ok(())
@@ -1143,5 +1160,20 @@ async fn test_set_my_commands() {
             command: String::from("test"),
             description: String::from("test")
         })
+    );
+}
+
+#[tokio::test]
+async fn test_send_invoice() {
+    let mut bot = MockBot::new(MockMessageText::new().text("/invoice"), get_schema());
+
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    let invoice_message = responses.sent_messages_invoice.last().unwrap();
+
+    assert_eq!(
+        invoice_message.message.invoice().unwrap().title,
+        "Absolutely Nothing"
     );
 }

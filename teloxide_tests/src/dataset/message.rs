@@ -133,3 +133,64 @@ impl MockMessageDice {
         }))
     }
 }
+
+Message! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageInvoice {
+        pub title: String,
+        pub description: String,
+        pub start_parameter: String,
+        pub currency: String,
+        pub total_amount: u32,
+    }
+}
+
+impl MockMessageInvoice {
+    pub const TITLE: &'static str = "Title of Invoice";
+    pub const DESCRIPTION: &'static str = "Description of Invoice";
+    pub const START_PARAMETER: &'static str = "Start parameter of Invoice";
+    pub const CURRENCY: &'static str = "XTR";
+    pub const TOTAL_AMOUNT: u32 = 0;
+
+    /// Creates a new easily changable message invoice builder
+    ///
+    /// # Example
+    /// ```
+    /// let message = teloxide_tests::MockMessageInvoice::new()
+    ///     .title("Some title")
+    ///     .build();
+    /// assert_eq!(message.invoice().unwrap().title, "Some title".to_owned());
+    /// ```
+    ///
+    pub fn new() -> Self {
+        Self::new_message(
+            Self::TITLE.to_owned(),
+            Self::DESCRIPTION.to_owned(),
+            Self::START_PARAMETER.to_owned(),
+            Self::CURRENCY.to_owned(),
+            Self::TOTAL_AMOUNT,
+        )
+    }
+
+    /// Builds the message dice
+    ///
+    /// # Example
+    /// ```
+    /// let mock_message = teloxide_tests::MockMessageInvoice::new();
+    /// let message = mock_message.build();
+    /// assert_eq!(message.invoice().unwrap().currency, teloxide_tests::MockMessageInvoice::CURRENCY);  // CURRENCY is a default value
+    /// ```
+    ///
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message(MessageKind::Invoice(MessageInvoice {
+                invoice: Invoice {
+                    title: self.title,
+                    description: self.description,
+                    start_parameter: self.start_parameter,
+                    currency: self.currency,
+                    total_amount: self.total_amount,
+                },
+            }))
+    }
+}

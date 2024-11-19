@@ -30,6 +30,7 @@ pub mod send_chat_action;
 pub mod send_contact;
 pub mod send_dice;
 pub mod send_document;
+pub mod send_invoice;
 pub mod send_location;
 pub mod send_media_group;
 pub mod send_message;

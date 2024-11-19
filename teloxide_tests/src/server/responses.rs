@@ -5,8 +5,8 @@ use super::routes::{
     edit_message_caption::*, edit_message_reply_markup::*, edit_message_text::*,
     forward_message::*, pin_chat_message::*, restrict_chat_member::*, send_animation::*,
     send_audio::*, send_chat_action::*, send_contact::*, send_dice::*, send_document::*,
-    send_location::*, send_media_group::*, send_message::*, send_photo::*, send_poll::*,
-    send_sticker::*, send_venue::*, send_video::*, send_video_note::*, send_voice::*,
+    send_invoice::*, send_location::*, send_media_group::*, send_message::*, send_photo::*,
+    send_poll::*, send_sticker::*, send_venue::*, send_video::*, send_video_note::*, send_voice::*,
     set_message_reaction::*, set_my_commands::*, unban_chat_member::*, unpin_all_chat_messages::*,
     unpin_chat_message::*,
 };
@@ -100,6 +100,12 @@ pub struct SentMessageSticker {
 pub struct SentMediaGroup {
     pub messages: Vec<Message>,
     pub bot_request: SendMediaGroupBody,
+}
+
+#[derive(Clone, Debug)]
+pub struct SentMessageInvoice {
+    pub message: Message,
+    pub bot_request: SendMessageInvoiceBody,
 }
 
 #[derive(Clone, Debug)]
@@ -218,6 +224,11 @@ pub struct Responses {
     /// The `.messages` field has the sent by bot messages, and `.bot_request`
     /// has the request that was sent to the fake server
     pub sent_media_group: Vec<SentMediaGroup>,
+
+    /// This has only messages that are invoice messages, sent by the bot.
+    /// The `.message` field has the sent by bot message, and `.bot_request`
+    /// has the request that was sent to the fake server
+    pub sent_messages_invoice: Vec<SentMessageInvoice>,
 
     /// This has only edited by the bot text messages.
     /// The `.message` field has the new edited message, and `.bot_request`

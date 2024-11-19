@@ -78,6 +78,7 @@
 //! - /SendSticker
 //! - /SendChatAction
 //! - /SendMediaGroup
+//! - /SendInvoice
 //! - /PinChatMessage
 //! - /UnpinChatMessage
 //! - /UnpinAllChatMessages
