@@ -135,7 +135,7 @@ where
         let state = Arc::new(Mutex::new(State::default()));
 
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
-        let lock = Some(BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner));
+        // let lock = Some(BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner));
 
         Self {
             bot,
@@ -146,7 +146,7 @@ where
             stack_size: DEFAULT_STACK_SIZE,
             error_handler: LoggingErrorHandler::new(),
             distribution_f: default_distribution_function,
-            _bot_lock: lock,
+            _bot_lock: None,
             current_update_id,
             state,
         }
