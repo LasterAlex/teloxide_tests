@@ -1,11 +1,13 @@
 //! Mock bot that sends requests to the fake server
+#[cfg(not(feature = "parallel"))]
+use std::sync::PoisonError;
 use std::{
     env,
     fmt::Debug,
     hash::Hash,
     mem::discriminant,
     panic,
-    sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard, PoisonError},
+    sync::{atomic::AtomicI32, Arc, Mutex, MutexGuard},
 };
 
 use gag::Gag;
@@ -134,8 +136,12 @@ where
         let current_update_id = AtomicI32::new(42);
         let state = Arc::new(Mutex::new(State::default()));
 
+        #[cfg(feature = "parallel")]
+        let lock = None;
+
+        #[cfg(not(feature = "parallel"))]
         // If the lock is poisoned, we don't care, some other bot panicked and can't do anything
-        // let lock = Some(BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner));
+        let lock = Some(BOT_LOCK.lock().unwrap_or_else(PoisonError::into_inner));
 
         Self {
             bot,
@@ -146,7 +152,7 @@ where
             stack_size: DEFAULT_STACK_SIZE,
             error_handler: LoggingErrorHandler::new(),
             distribution_f: default_distribution_function,
-            _bot_lock: None,
+            _bot_lock: lock,
             current_update_id,
             state,
         }
