@@ -237,7 +237,7 @@ pub async fn get_raw_multipart_fields(
             Attachment {
                 raw_name: data.0.to_string(),
                 file_name: filename.to_string(),
-                file_data: from_utf8(&data.1).unwrap().to_string(),
+                file_data: from_utf8(&data.1).unwrap_or("error_getting_data").to_string(),
             },
         );
     }
