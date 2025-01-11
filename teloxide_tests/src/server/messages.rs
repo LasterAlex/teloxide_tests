@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde::Serialize;
 use teloxide::types::{Message, ReplyMarkup};
 
@@ -61,12 +63,24 @@ impl Messages {
         self.messages.retain(|m| m.id.0 != message_id);
         Some(message)
     }
+
+    pub fn delete_messages(&mut self, message_ids: &[i32]) -> Vec<Message> {
+        let message_ids: HashSet<i32> = message_ids.iter().cloned().collect();
+        let deleted = self
+            .messages
+            .iter()
+            .filter(|m| message_ids.contains(&m.id.0))
+            .cloned()
+            .collect();
+        self.messages.retain(|m| !message_ids.contains(&m.id.0));
+        deleted
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use serial_test::serial;
-    use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+    use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, MessageId};
 
     use super::*;
     use crate::dataset::*;
@@ -125,7 +139,7 @@ mod tests {
 
     #[test]
     #[serial]
-    fn test_delete_messages() {
+    fn test_delete_message() {
         let mut messages = Messages::default();
         messages.add_message(
             message_common::MockMessageText::new()
@@ -135,6 +149,32 @@ mod tests {
         );
         messages.delete_message(1);
         assert_eq!(messages.get_message(1), None);
+    }
+
+    #[test]
+    #[serial]
+    fn test_delete_messages() {
+        let mut messages = Messages::default();
+        for id in 1..=5 {
+            messages.add_message(
+                message_common::MockMessageText::new()
+                    .text(format!("Message {}", id))
+                    .id(id)
+                    .build(),
+            );
+        }
+
+        let deleted = messages.delete_messages(&[2, 3]);
+
+        assert_eq!(deleted.len(), 2);
+        assert_eq!(deleted[0].id, MessageId(2));
+        assert_eq!(deleted[1].id, MessageId(3));
+
+        assert!(messages.get_message(1).is_some());
+        assert_eq!(messages.get_message(2), None);
+        assert_eq!(messages.get_message(3), None);
+        assert!(messages.get_message(4).is_some());
+        assert!(messages.get_message(5).is_some());
     }
 
     #[test]
