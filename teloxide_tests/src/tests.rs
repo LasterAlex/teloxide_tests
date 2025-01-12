@@ -186,6 +186,8 @@ pub enum AllCommands {
     #[command()]
     Delete,
     #[command()]
+    DeleteBatch,
+    #[command()]
     EditReplyMarkup,
     #[command()]
     Photo,
@@ -263,6 +265,10 @@ async fn handler(
         }
         AllCommands::Delete => {
             bot.delete_message(msg.chat.id, sent_message.id).await?;
+        }
+        AllCommands::DeleteBatch => {
+            bot.delete_messages(msg.chat.id, vec![sent_message.id, MessageId(404)])
+                .await?;
         }
         AllCommands::EditReplyMarkup => {
             bot.edit_message_reply_markup(msg.chat.id, sent_message.id)
@@ -1021,6 +1027,19 @@ async fn test_delete_message() {
     let last_deleted_response = bot.get_responses().deleted_messages.pop().unwrap();
 
     assert_eq!(last_sent_message.text(), Some("/delete"));
+    assert_eq!(last_deleted_response.message.id, last_sent_message.id);
+}
+
+#[tokio::test]
+async fn test_delete_messages() {
+    let mut bot = MockBot::new(MockMessageText::new().text("/deletebatch"), get_schema());
+
+    bot.dispatch().await;
+
+    let last_sent_message = bot.get_responses().sent_messages.pop().unwrap();
+    let last_deleted_response = bot.get_responses().deleted_messages.pop().unwrap();
+
+    assert_eq!(last_sent_message.text(), Some("/deletebatch"));
     assert_eq!(last_deleted_response.message.id, last_sent_message.id);
 }
 

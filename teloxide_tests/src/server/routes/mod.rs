@@ -13,6 +13,7 @@ pub mod answer_callback_query;
 pub mod ban_chat_member;
 pub mod copy_message;
 pub mod delete_message;
+pub mod delete_messages;
 pub mod download_file;
 pub mod edit_message_caption;
 pub mod edit_message_reply_markup;
@@ -237,7 +238,9 @@ pub async fn get_raw_multipart_fields(
             Attachment {
                 raw_name: data.0.to_string(),
                 file_name: filename.to_string(),
-                file_data: from_utf8(&data.1).unwrap_or("error_getting_data").to_string(),
+                file_data: from_utf8(&data.1)
+                    .unwrap_or("error_getting_data")
+                    .to_string(),
             },
         );
     }

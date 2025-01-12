@@ -14,18 +14,18 @@ use actix_web::{
 pub use responses::*;
 use routes::{
     answer_callback_query::*, ban_chat_member::*, copy_message::*, delete_message::*,
-    download_file::download_file, edit_message_caption::*, edit_message_reply_markup::*,
-    edit_message_text::*, forward_message::*, get_file::*, get_me::*, get_updates::*,
-    get_webhook_info::*, pin_chat_message::*, restrict_chat_member::*, send_animation::*,
-    send_audio::*, send_chat_action::*, send_contact::*, send_dice::*, send_document::*,
-    send_invoice::*, send_location::*, send_media_group::*, send_message::*, send_photo::*,
-    send_poll::*, send_sticker::*, send_venue::*, send_video::*, send_video_note::*, send_voice::*,
-    set_message_reaction::*, set_my_commands::*, unban_chat_member::*, unpin_all_chat_messages::*,
-    unpin_chat_message::*,
+    delete_messages::*, download_file::download_file, edit_message_caption::*,
+    edit_message_reply_markup::*, edit_message_text::*, forward_message::*, get_file::*, get_me::*,
+    get_updates::*, get_webhook_info::*, pin_chat_message::*, restrict_chat_member::*,
+    send_animation::*, send_audio::*, send_chat_action::*, send_contact::*, send_dice::*,
+    send_document::*, send_invoice::*, send_location::*, send_media_group::*, send_message::*,
+    send_photo::*, send_poll::*, send_sticker::*, send_venue::*, send_video::*, send_video_note::*,
+    send_voice::*, set_message_reaction::*, set_my_commands::*, unban_chat_member::*,
+    unpin_all_chat_messages::*, unpin_chat_message::*,
 };
 pub use routes::{
     copy_message::CopyMessageBody, delete_message::DeleteMessageBody,
-    edit_message_caption::EditMessageCaptionBody,
+    delete_messages::DeleteMessagesBody, edit_message_caption::EditMessageCaptionBody,
     edit_message_reply_markup::EditMessageReplyMarkupBody, edit_message_text::EditMessageTextBody,
     forward_message::ForwardMessageBody, send_animation::SendMessageAnimationBody,
     send_audio::SendMessageAudioBody, send_contact::SendMessageContactBody,
@@ -154,6 +154,7 @@ fn set_bot_routes(cfg: &mut ServiceConfig) {
             post().to(edit_message_reply_markup),
         )
         .route("/DeleteMessage", post().to(delete_message))
+        .route("/DeleteMessages", post().to(delete_messages))
         .route("/ForwardMessage", post().to(forward_message))
         .route("/CopyMessage", post().to(copy_message))
         .route("/AnswerCallbackQuery", post().to(answer_callback_query))

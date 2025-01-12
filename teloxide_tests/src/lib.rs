@@ -58,6 +58,7 @@
 //!
 //! - /AnswerCallbackQuery
 //! - /DeleteMessage
+//! - /DeleteMessages
 //! - /EditMessageText
 //! - /EditMessageReplyMarkup
 //! - /EditMessageCaption
