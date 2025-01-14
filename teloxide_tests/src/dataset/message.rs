@@ -194,3 +194,40 @@ impl MockMessageInvoice {
             }))
     }
 }
+
+Message! {
+    #[derive(Changeable, Clone)]
+    pub struct MockMessageNewChatMembers {
+        pub new_chat_members: Vec<User>,
+    }
+}
+
+impl MockMessageNewChatMembers {
+    /// Creates a new easily changeable new chat member message builder
+    ///
+    /// # Example
+    /// ```
+    /// let message = teloxide_tests::MockMessageNewChatMembers::new()
+    ///     .new_chat_members(vec![teloxide_tests::MockUser::new().id(123).build()])
+    ///     .build();
+    /// assert_eq!(message.new_chat_members().unwrap()[0].id.0, 123);
+    pub fn new() -> Self {
+        Self::new_message(vec![MockUser::new().build()])
+    }
+
+    /// Builds the new chat member message
+    ///
+    /// # Example
+    /// ```
+    /// let mock_message = teloxide_tests::MockMessageNewChatMembers::new();
+    /// let message = mock_message.build();
+    /// assert_eq!(message.new_chat_members().unwrap().len(), 1);  // Contains a single MockUser by default
+    /// ```
+    ///
+    pub fn build(self) -> Message {
+        self.clone()
+            .build_message(MessageKind::NewChatMembers(MessageNewChatMembers {
+                new_chat_members: self.new_chat_members,
+            }))
+    }
+}
