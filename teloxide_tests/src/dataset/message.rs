@@ -60,7 +60,7 @@ macro_rules! Message {
         }
 
         impl crate::dataset::IntoUpdate for $name {
-            /// Converts the MockCallbackQuery into an updates vector
+            /// Converts the mock message into an updates vector
             ///
             /// # Example
             /// ```
@@ -86,6 +86,59 @@ macro_rules! Message {
 }
 
 pub(crate) use Message;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct MockEditedMessage(Message);
+
+impl MockEditedMessage {
+    /// Creates a new MockEditedMessage wrapper.
+    ///
+    /// This is useful for testing the `UpdateKind::EditedMessage` variant.
+    ///
+    /// # Example
+    /// ```
+    /// use chrono::Utc;
+    ///
+    /// let message = teloxide_tests::MockMessageText::new().edit_date(Utc::now()).build();
+    /// let edited_message = teloxide_tests::MockEditedMessage::new(message.clone());
+    /// assert_eq!(edited_message.message(), &message);
+    pub fn new(mut message: Message) -> Self {
+        if let MessageKind::Common(ref mut common) = message.kind {
+            common.edit_date = common.edit_date.or(Some(Utc::now()));
+        }
+        Self(message)
+    }
+
+    pub fn message(&self) -> &Message {
+        &self.0
+    }
+}
+
+impl crate::dataset::IntoUpdate for MockEditedMessage {
+    /// Converts the edited Message into an updates vector
+    ///
+    /// # Example
+    /// ```
+    /// use chrono::Utc;
+    /// use teloxide_tests::IntoUpdate;
+    /// use teloxide::types::{UpdateId, UpdateKind};
+    /// use std::sync::atomic::AtomicI32;
+    ///
+    /// let message = teloxide_tests::MockMessageText::new().edit_date(Utc::now()).build();
+    /// let edited_message = teloxide_tests::MockEditedMessage::new(message.clone());
+    /// let update = edited_message.into_update(&AtomicI32::new(42))[0].clone();
+    ///
+    /// assert_eq!(update.id, UpdateId(42));
+    /// assert_eq!(update.kind, UpdateKind::EditedMessage(message));
+    /// ```
+    ///
+    fn into_update(self, id: &AtomicI32) -> Vec<Update> {
+        vec![Update {
+            id: UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32),
+            kind: UpdateKind::EditedMessage(self.0),
+        }]
+    }
+}
 
 // More messages like Webapp data is needed
 

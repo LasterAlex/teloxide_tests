@@ -35,8 +35,8 @@ pub async fn edit_message_caption(
             let mut lock = state.lock().unwrap();
             check_if_message_exists!(lock, message_id);
             lock.messages
-                .edit_message(message_id, "caption", body.caption.clone());
-            lock.messages.edit_message(
+                .edit_message_field(message_id, "caption", body.caption.clone());
+            lock.messages.edit_message_field(
                 message_id,
                 "caption_entities",
                 body.caption_entities.clone().unwrap_or_default(),

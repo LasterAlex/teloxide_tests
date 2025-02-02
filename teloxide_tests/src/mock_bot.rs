@@ -237,6 +237,10 @@ where
                     self.state.lock().unwrap().add_message(&mut message);
                     update.kind = UpdateKind::Message(message.clone());
                 }
+                UpdateKind::EditedMessage(mut message) => {
+                    self.state.lock().unwrap().edit_message(&mut message);
+                    update.kind = UpdateKind::EditedMessage(message.clone());
+                }
                 UpdateKind::CallbackQuery(mut callback) => {
                     if let Some(MaybeInaccessibleMessage::Regular(ref mut message)) =
                         callback.message

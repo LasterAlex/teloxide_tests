@@ -37,11 +37,11 @@ pub async fn edit_message_reply_markup(
             let message = match body.reply_markup.clone() {
                 Some(reply_markup) => lock
                     .messages
-                    .edit_message(message_id, "reply_markup", reply_markup)
+                    .edit_message_field(message_id, "reply_markup", reply_markup)
                     .unwrap(),
                 None => lock
                     .messages
-                    .edit_message(message_id, "reply_markup", None::<()>)
+                    .edit_message_field(message_id, "reply_markup", None::<()>)
                     .unwrap(),
             };
 
