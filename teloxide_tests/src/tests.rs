@@ -1084,6 +1084,10 @@ async fn test_forward_message() {
         last_sent_message.forward_date(),
         Some(first_sent_message.date)
     );
+    assert_eq!(
+        last_sent_message.forward_from_user().unwrap().id,
+        first_sent_message.from.as_ref().unwrap().id
+    );
 }
 
 #[tokio::test]
