@@ -36,11 +36,15 @@ impl Messages {
         reply_markup: Option<ReplyMarkup>,
     ) -> Option<Message> {
         match reply_markup {
+            None => {
+                // Telegram deletes reply markup when `editMessageText` is called without any.
+                self.edit_message(message_id, "reply_markup", None::<()>)
+            }
             // Only the inline keyboard can be inside of a message
             Some(ReplyMarkup::InlineKeyboard(reply_markup)) => {
                 self.edit_message(message_id, "reply_markup", reply_markup)
             }
-            _ => self.get_message(message_id),
+            _ => unreachable!("Only InlineKeyboard is allowed"),
         }
     }
 
