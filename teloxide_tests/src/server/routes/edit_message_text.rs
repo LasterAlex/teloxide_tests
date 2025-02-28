@@ -1,10 +1,13 @@
 use std::sync::Mutex;
 
-use actix_web::{error::ErrorBadRequest, web, Responder};
+use actix_web::{error::ErrorBadRequest, web, Responder, ResponseError};
 use serde::Deserialize;
-use teloxide::types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::{
+    types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup},
+    ApiError,
+};
 
-use super::{check_if_message_exists, BodyChatId};
+use super::{BodyChatId, BotApiError};
 use crate::{
     server::{routes::make_telegram_result, EditedMessageText},
     state::State,
@@ -33,7 +36,16 @@ pub async fn edit_message_text(
     ) {
         (Some(_), Some(message_id), None) => {
             let mut lock = state.lock().unwrap();
-            check_if_message_exists!(lock, message_id);
+            let Some(old_message) = lock.messages.get_message(message_id) else {
+                return BotApiError::new(ApiError::MessageToEditNotFound).error_response();
+            };
+
+            let old_reply_markup = old_message
+                .reply_markup()
+                .map(|kb| ReplyMarkup::InlineKeyboard(kb.clone()));
+            if old_message.text() == Some(&body.text) && old_reply_markup == body.reply_markup {
+                return BotApiError::new(ApiError::MessageNotModified).error_response();
+            }
 
             lock.messages
                 .edit_message_field(message_id, "text", body.text.clone());

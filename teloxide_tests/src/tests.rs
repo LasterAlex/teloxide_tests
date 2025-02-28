@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, RwLock},
     thread,
 };
 
@@ -185,6 +185,8 @@ pub enum AllCommands {
     #[command()]
     Edit,
     #[command()]
+    EditUnchanged,
+    #[command()]
     Delete,
     #[command()]
     DeleteBatch,
@@ -261,6 +263,11 @@ async fn handler(
         AllCommands::Echo => {}
         AllCommands::Edit => {
             bot.edit_message_text(msg.chat.id, sent_message.id, "edited")
+                .link_preview_options(link_preview_options)
+                .await?;
+        }
+        AllCommands::EditUnchanged => {
+            bot.edit_message_text(msg.chat.id, sent_message.id, msg.text().unwrap())
                 .link_preview_options(link_preview_options)
                 .await?;
         }
@@ -554,22 +561,33 @@ async fn test_panic() {
 }
 
 pub struct MyErrorHandler {
-    some_bool: Arc<AtomicBool>,
+    errors: Arc<RwLock<Vec<String>>>,
+}
+
+impl MyErrorHandler {
+    pub fn new() -> Self {
+        Self {
+            errors: Arc::new(RwLock::new(vec![])),
+        }
+    }
+
+    pub fn errors(&self) -> Vec<String> {
+        self.errors.read().unwrap().clone()
+    }
 }
 
 impl<E> ErrorHandler<E> for MyErrorHandler
 where
     E: std::fmt::Debug + Display + 'static + Sync + Send,
 {
-    fn handle_error(self: Arc<Self>, _error: E) -> BoxFuture<'static, ()> {
+    fn handle_error(self: Arc<Self>, error: E) -> BoxFuture<'static, ()> {
         thread::spawn(|| {
             respond_to_error();
         })
         .join()
         .unwrap();
 
-        self.some_bool
-            .swap(true, std::sync::atomic::Ordering::SeqCst);
+        self.errors.write().unwrap().push(format!("{error:?}"));
         Box::pin(async {})
     }
 }
@@ -585,14 +603,14 @@ async fn respond_to_error() {
 #[tokio::test]
 async fn test_error_handler() {
     let mut bot = MockBot::new(MockMessageText::new().text("/panic"), get_schema());
-    let some_bool = Arc::new(AtomicBool::new(false));
+    let error_handler = Arc::new(MyErrorHandler::new());
+    bot.error_handler(error_handler.clone());
 
-    bot.error_handler(Arc::new(MyErrorHandler {
-        some_bool: some_bool.clone(),
-    }));
     bot.dispatch_and_check_last_text("Error detected!").await;
 
-    assert!(some_bool.load(std::sync::atomic::Ordering::SeqCst));
+    let errors = error_handler.errors();
+    assert_eq!(errors.len(), 1);
+    assert!(errors[0].contains("Message not found"));
 }
 
 #[tokio::test]
@@ -979,6 +997,20 @@ async fn test_edit_message() {
             .is_disabled,
         true
     );
+}
+
+#[tokio::test]
+async fn test_edit_message_unchanged() {
+    let mut bot = MockBot::new(MockMessageText::new().text("/editunchanged"), get_schema());
+    let error_handler = Arc::new(MyErrorHandler::new());
+    bot.error_handler(error_handler.clone());
+
+    bot.dispatch().await;
+
+    assert!(bot.get_responses().edited_messages_text.is_empty());
+    let errors = error_handler.errors();
+    assert_eq!(errors.len(), 1);
+    assert_eq!(errors[0], "Api(MessageNotModified)");
 }
 
 #[tokio::test]
