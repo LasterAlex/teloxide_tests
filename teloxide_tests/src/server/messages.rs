@@ -14,7 +14,20 @@ impl Messages {
         self.last_message_id
     }
 
-    pub fn edit_message<T>(&mut self, message_id: i32, field: &str, value: T) -> Option<Message>
+    pub fn edit_message(&mut self, message: Message) -> Option<Message> {
+        self.messages.iter().find(|m| m.id == message.id)?; // Find the message (return None if not found)
+
+        self.messages.retain(|m| m.id != message.id); // Remove the old message
+        self.messages.push(message.clone()); // Add the new message
+        Some(message) // Profit!
+    }
+
+    pub fn edit_message_field<T>(
+        &mut self,
+        message_id: i32,
+        field: &str,
+        value: T,
+    ) -> Option<Message>
     where
         T: Serialize,
     {
@@ -38,11 +51,11 @@ impl Messages {
         match reply_markup {
             None => {
                 // Telegram deletes reply markup when `editMessageText` is called without any.
-                self.edit_message(message_id, "reply_markup", None::<()>)
+                self.edit_message_field(message_id, "reply_markup", None::<()>)
             }
             // Only the inline keyboard can be inside of a message
             Some(ReplyMarkup::InlineKeyboard(reply_markup)) => {
-                self.edit_message(message_id, "reply_markup", reply_markup)
+                self.edit_message_field(message_id, "reply_markup", reply_markup)
             }
             _ => unreachable!("Only InlineKeyboard is allowed"),
         }
@@ -83,6 +96,7 @@ impl Messages {
 
 #[cfg(test)]
 mod tests {
+    use chrono::{TimeZone, Utc};
     use serial_test::serial;
     use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, MessageId};
 
@@ -116,7 +130,30 @@ mod tests {
 
     #[test]
     #[serial]
-    fn test_edit_messages() {
+    fn test_edit_message() {
+        let mut messages = Messages::default();
+        let date = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
+        messages.add_message(
+            message_common::MockMessageText::new()
+                .text("123")
+                .id(1)
+                .build(),
+        );
+        messages.edit_message(
+            message_common::MockMessageText::new()
+                .text("321")
+                .edit_date(date)
+                .id(1)
+                .build(),
+        );
+        let message = messages.get_message(1).unwrap();
+        assert_eq!(message.text().unwrap(), "321");
+        assert_eq!(message.edit_date().unwrap(), &date);
+    }
+
+    #[test]
+    #[serial]
+    fn test_edit_message_field() {
         let mut messages = Messages::default();
         messages.add_message(
             message_common::MockMessageText::new()
@@ -124,7 +161,7 @@ mod tests {
                 .id(1)
                 .build(),
         );
-        messages.edit_message(1, "text", "1234");
+        messages.edit_message_field(1, "text", "1234");
         assert_eq!(messages.get_message(1).unwrap().text().unwrap(), "1234");
     }
 

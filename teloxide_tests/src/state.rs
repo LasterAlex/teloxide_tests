@@ -50,4 +50,32 @@ impl State {
         log::debug!("Inserted message with {}.", message.id);
         self.messages.add_message(message.clone());
     }
+
+    pub(crate) fn edit_message(&mut self, message: &mut Message) {
+        let old_message = self.messages.get_message(message.id.0);
+
+        if old_message.is_none() {
+            log::error!(
+                "Not editing message with id {}, this id does not exist in the database.",
+                message.id
+            );
+            return;
+        }
+
+        if let Some(file_meta) = find_file(serde_json::to_value(&message).unwrap()) {
+            if self
+                .files
+                .iter()
+                .all(|f| f.meta.unique_id != file_meta.unique_id)
+            {
+                let file = File {
+                    meta: file_meta,
+                    path: "some_path.txt".to_string(), // This doesn't really matter
+                };
+                self.files.push(file);
+            }
+        }
+        log::debug!("Edited message with {}.", message.id);
+        self.messages.edit_message(message.clone());
+    }
 }

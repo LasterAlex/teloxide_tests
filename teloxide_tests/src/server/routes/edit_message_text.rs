@@ -36,8 +36,8 @@ pub async fn edit_message_text(
             check_if_message_exists!(lock, message_id);
 
             lock.messages
-                .edit_message(message_id, "text", body.text.clone());
-            lock.messages.edit_message(
+                .edit_message_field(message_id, "text", body.text.clone());
+            lock.messages.edit_message_field(
                 message_id,
                 "entities",
                 body.entities.clone().unwrap_or(vec![]),

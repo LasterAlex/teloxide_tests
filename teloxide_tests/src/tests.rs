@@ -4,6 +4,7 @@ use std::{
     thread,
 };
 
+use chrono::Utc;
 use futures_util::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use teloxide::{
@@ -519,7 +520,11 @@ fn get_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
                 .filter_command::<AllCommands>()
                 .endpoint(handler),
         )
-        .branch(Update::filter_message().endpoint(handler))
+        .branch(
+            Update::filter_edited_message()
+                .filter_command::<AllCommands>()
+                .branch(case![AllCommands::ForwardMessage].endpoint(handler)),
+        )
         .branch(Update::filter_callback_query().endpoint(callback_handler))
 }
 
@@ -1088,6 +1093,8 @@ async fn test_forward_message() {
         last_sent_message.forward_from_user().unwrap().id,
         first_sent_message.from.as_ref().unwrap().id
     );
+    assert_eq!(responses.forwarded_messages.len(), 1);
+    assert_eq!(&responses.forwarded_messages[0].message, last_sent_message);
 }
 
 #[tokio::test]
@@ -1199,4 +1206,30 @@ async fn test_send_invoice() {
         invoice_message.message.invoice().unwrap().title,
         "Absolutely Nothing"
     );
+}
+
+#[tokio::test]
+async fn test_edited_message() {
+    let mock_message = MockMessageText::new().text("/forwardmessage first");
+    let mut bot = MockBot::new(mock_message.clone(), get_schema());
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    assert_eq!(responses.forwarded_messages.len(), 1);
+    let forwarded_message = &responses.forwarded_messages[0].message;
+    assert_eq!(forwarded_message.text(), Some("/forwardmessage first"));
+
+    let edited_message = MockEditedMessage::new(
+        mock_message
+            .text("/forwardmessage second")
+            .edit_date(Utc::now())
+            .build(),
+    );
+    bot.update(edited_message);
+    bot.dispatch().await;
+
+    let responses = bot.get_responses();
+    assert_eq!(responses.forwarded_messages.len(), 1);
+    let forwarded_message = &responses.forwarded_messages[0].message;
+    assert_eq!(forwarded_message.text(), Some("/forwardmessage second"));
 }
