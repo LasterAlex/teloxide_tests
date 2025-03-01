@@ -1,11 +1,14 @@
 use std::{collections::HashMap, str::from_utf8};
 
-use actix_web::HttpResponse;
+use actix_web::{error::ResponseError, http::header::ContentType, HttpResponse};
 use futures_util::{stream::StreamExt as _, TryStreamExt};
 use rand::distributions::{Alphanumeric, DistString};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use teloxide::types::{Chat, MessageEntity, ParseMode, Seconds};
+use teloxide::{
+    types::{Chat, MessageEntity, ParseMode, Seconds},
+    ApiError,
+};
 
 use crate::dataset::{MockPrivateChat, MockSupergroupChat};
 
@@ -167,6 +170,46 @@ pub trait SerializeRawFields {
         Self: Sized;
 }
 
+#[derive(Debug, Serialize)]
+struct TelegramResponse {
+    ok: bool,
+    description: String,
+}
+
+#[derive(Debug, PartialEq, Hash, Eq, Clone)]
+struct BotApiError {
+    error: ApiError,
+}
+
+impl BotApiError {
+    pub fn new(error: ApiError) -> Self {
+        Self { error }
+    }
+}
+
+impl std::fmt::Display for BotApiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.error.fmt(f)
+    }
+}
+
+impl ResponseError for BotApiError {
+    fn status_code(&self) -> actix_web::http::StatusCode {
+        actix_web::http::StatusCode::BAD_REQUEST
+    }
+
+    fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
+        let response = TelegramResponse {
+            ok: false,
+            description: self.error.to_string(),
+        };
+        HttpResponse::build(self.status_code())
+            .insert_header(ContentType::json())
+            .body(serde_json::to_string(&response).unwrap())
+    }
+}
+
+// TODO: replace usages with appropriate error values from teloxide::ApiError.
 macro_rules! check_if_message_exists {
     ($lock:expr, $msg_id:expr) => {
         if $lock.messages.get_message($msg_id).is_none() {
