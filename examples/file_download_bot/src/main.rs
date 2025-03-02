@@ -48,8 +48,9 @@ async fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText};
+
+    use super::*;
 
     #[tokio::test]
     async fn test_not_a_document() {

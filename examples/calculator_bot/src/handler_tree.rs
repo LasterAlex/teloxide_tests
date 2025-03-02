@@ -1,16 +1,19 @@
-use crate::{get_bot_storage, handlers::*, text, MyDialogue};
-use crate::{handlers::StartCommand, State};
-use dptree::case;
 use std::error::Error;
-use teloxide::dispatching::dialogue::GetChatId;
-use teloxide::dispatching::UpdateFilterExt;
-use teloxide::prelude::*;
+
+use dptree::case;
 use teloxide::{
     dispatching::{
-        dialogue::{self, ErasedStorage},
-        UpdateHandler,
+        dialogue::{self, ErasedStorage, GetChatId},
+        UpdateFilterExt, UpdateHandler,
     },
+    prelude::*,
     types::Update,
+};
+
+use crate::{
+    get_bot_storage,
+    handlers::{StartCommand, *},
+    text, MyDialogue, State,
 };
 
 async fn check_if_the_state_is_ok(update: Update) -> bool {
@@ -32,7 +35,7 @@ async fn check_if_the_state_is_ok(update: Update) -> bool {
                 .await
                 .unwrap();
             dialogue.update(State::default()).await.unwrap();
-            return false;
+            false
         }
     }
 }

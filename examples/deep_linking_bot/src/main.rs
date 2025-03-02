@@ -4,11 +4,11 @@ pub mod handlers;
 pub mod tests;
 pub mod text;
 
+use std::error::Error;
+
 use dptree::deps;
 use handler_tree::handler_tree;
-use std::error::Error;
-use teloxide::types::Me;
-use teloxide::{dispatching::dialogue::InMemStorage, macros::BotCommands, prelude::*};
+use teloxide::{dispatching::dialogue::InMemStorage, macros::BotCommands, prelude::*, types::Me};
 
 pub type MyDialogue = Dialogue<State, InMemStorage<State>>;
 pub type HandlerResult = Result<(), Box<dyn Error + Send + Sync>>;

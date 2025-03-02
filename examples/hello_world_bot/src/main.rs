@@ -30,8 +30,9 @@ async fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use teloxide_tests::{MockBot, MockMessageText};
+
+    use super::*;
 
     #[tokio::test]
     async fn test_hello_world() {

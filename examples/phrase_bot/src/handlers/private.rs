@@ -1,10 +1,10 @@
-use teloxide::prelude::*;
-use teloxide::types::KeyboardRemove;
-use teloxide::{macros::BotCommands, payloads::SendMessageSetters};
+use teloxide::{
+    macros::BotCommands, payloads::SendMessageSetters, prelude::*, types::KeyboardRemove,
+};
 
-use crate::db::models;
-use crate::keyboards::menu_keyboard;
-use crate::{db, keyboards, text, HandlerResult, MyDialogue, State};
+use crate::{
+    db, db::models, keyboards, keyboards::menu_keyboard, text, HandlerResult, MyDialogue, State,
+};
 
 #[derive(BotCommands, Clone)]
 #[command(rename_rule = "lowercase")]
@@ -228,12 +228,12 @@ pub async fn added_phrase(
 
 #[cfg(test)]
 mod tests {
-    use crate::{get_bot_storage, handler_tree::handler_tree};
-
-    use super::*;
     use dptree::deps;
     use teloxide::types::ReplyMarkup;
     use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText, MockUser};
+
+    use super::*;
+    use crate::{get_bot_storage, handler_tree::handler_tree};
 
     #[tokio::test]
     async fn test_start() {

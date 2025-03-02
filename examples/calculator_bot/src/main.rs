@@ -8,9 +8,10 @@ use std::error::Error;
 
 use dotenv::dotenv;
 use handler_tree::handler_tree;
-use teloxide::dispatching::dialogue::serializer::Cbor;
-use teloxide::dispatching::dialogue::{Dialogue, ErasedStorage, RedisStorage, Storage};
-use teloxide::prelude::*;
+use teloxide::{
+    dispatching::dialogue::{serializer::Cbor, Dialogue, ErasedStorage, RedisStorage, Storage},
+    prelude::*,
+};
 
 pub type MyDialogue = Dialogue<State, ErasedStorage<State>>;
 pub type HandlerResult = Result<(), Box<dyn Error + Send + Sync>>;

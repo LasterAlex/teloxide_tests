@@ -1,19 +1,20 @@
 //! A set of mocked structs for testing purposes. Read more in teloxide_tests crate.
 use std::sync::atomic::{AtomicI32, Ordering};
 
-use chrono::{DateTime, Utc};
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    ChatFullInfo, ChatPhoto, FileMeta, LinkPreviewOptions, Location, Me, PhotoSize, Seconds,
-    Update, User, UserId, Video,
+    ChatPhoto, FileMeta, LinkPreviewOptions, LivePeriod, Location, Me, PhotoSize, Seconds, Update,
+    User, UserId, Video,
 };
 pub mod chat;
+pub mod chat_full_info;
 
 pub mod message;
 pub mod message_common;
 pub mod queries;
 pub use chat::*;
+pub use chat_full_info::*;
 pub use message::*;
 pub use message_common::*;
 pub use queries::*;
@@ -251,7 +252,7 @@ pub struct MockLocation {
     pub latitude: f64,
     pub longitude: f64,
     pub horizontal_accuracy: Option<f64>,
-    pub live_period: Option<Seconds>,
+    pub live_period: Option<LivePeriod>,
     pub heading: Option<u16>,
     pub proximity_alert_radius: Option<u32>,
 }
@@ -429,62 +430,6 @@ impl MockVideo {
                 unique_id: self.file_unique_id,
                 size: self.file_size,
             },
-        }
-    }
-}
-
-#[derive(Changeable, Clone)]
-pub struct MockChatFullInfo {
-    pub accent_color_id: Option<u8>,
-    pub background_custom_emoji_id: Option<String>,
-    pub profile_accent_color_id: Option<u8>,
-    pub profile_background_custom_emoji_id: Option<String>,
-    pub emoji_status_custom_emoji_id: Option<String>,
-    pub emoji_status_expiration_date: Option<DateTime<Utc>>,
-    pub has_visible_history: bool,
-}
-
-impl MockChatFullInfo {
-    /// Creates a new easily changable chat full info builder
-    ///
-    /// # Examples
-    /// ```
-    /// let chat_full_info = teloxide_tests::MockChatFullInfo::new()
-    ///     .accent_color_id(1)
-    ///     .build();
-    /// assert_eq!(chat_full_info.accent_color_id, Some(1));
-    /// ```
-    ///
-    pub fn new() -> Self {
-        Self {
-            accent_color_id: None,
-            background_custom_emoji_id: None,
-            profile_accent_color_id: None,
-            profile_background_custom_emoji_id: None,
-            emoji_status_custom_emoji_id: None,
-            emoji_status_expiration_date: None,
-            has_visible_history: true,
-        }
-    }
-
-    /// Builds the chat full info
-    ///
-    /// # Examples
-    /// ```
-    /// let mock_chat_full_info = teloxide_tests::MockChatFullInfo::new();
-    /// let chat_full_info = mock_chat_full_info.build();
-    /// assert_eq!(chat_full_info.has_visible_history, true);
-    /// ```
-    ///
-    pub fn build(self) -> ChatFullInfo {
-        ChatFullInfo {
-            accent_color_id: self.accent_color_id,
-            background_custom_emoji_id: self.background_custom_emoji_id,
-            profile_accent_color_id: self.profile_accent_color_id,
-            profile_background_custom_emoji_id: self.profile_background_custom_emoji_id,
-            emoji_status_custom_emoji_id: self.emoji_status_custom_emoji_id,
-            emoji_status_expiration_date: self.emoji_status_expiration_date,
-            has_visible_history: self.has_visible_history,
         }
     }
 }

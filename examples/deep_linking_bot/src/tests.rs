@@ -1,6 +1,7 @@
-use crate::{add_deep_link, handler_tree::handler_tree, text, State};
 use teloxide::{dispatching::dialogue::InMemStorage, dptree::deps};
 use teloxide_tests::{MockBot, MockMessagePhoto, MockMessageText};
+
+use crate::{add_deep_link, handler_tree::handler_tree, text, State};
 
 #[tokio::test]
 async fn test_start() {

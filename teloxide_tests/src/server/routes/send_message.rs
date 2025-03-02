@@ -3,7 +3,8 @@ use std::sync::Mutex;
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use teloxide::types::{
-    LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters,
+    BusinessConnectionId, LinkPreviewOptions, Me, MessageEntity, ParseMode, ReplyMarkup,
+    ReplyParameters,
 };
 
 use super::{make_telegram_result, BodyChatId};
@@ -26,6 +27,7 @@ pub struct SendMessageTextBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn send_message(
@@ -39,6 +41,8 @@ pub async fn send_message(
         MockMessageText::new().text(&body.text).chat(chat);
     message.from = Some(me.user.clone());
     message.has_protected_content = body.protect_content.unwrap_or(false);
+    message.effect_id = body.message_effect_id.clone();
+    message.business_connection_id = body.business_connection_id.clone();
 
     message.entities = body.entities.clone().unwrap_or_default();
     if let Some(reply_parameters) = &body.reply_parameters {

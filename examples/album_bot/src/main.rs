@@ -1,15 +1,19 @@
 //! This is a copy of the repo
 //! https://github.com/LasterAlex/AlbumTeloxideBot/blob/main/src/main.rs
-use std::collections::HashMap;
-use std::error::Error;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{Arc, Mutex},
+};
 
 use dotenv::dotenv;
-use teloxide::dispatching::UpdateHandler;
-use teloxide::prelude::*;
-use teloxide::types::{
-    InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
-    UpdateKind,
+use teloxide::{
+    dispatching::UpdateHandler,
+    prelude::*,
+    types::{
+        InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto,
+        InputMediaVideo, UpdateKind,
+    },
 };
 use tokio::time::{sleep, Duration};
 
@@ -34,7 +38,7 @@ async fn get_album(msg: Message, album: AlbumStorage) -> Option<Vec<Message>> {
         .lock()
         .unwrap()
         .entry(msg.chat.id.to_string())
-        .or_insert_with(Vec::new) // If there is no entry
+        .or_default() // If there is no entry
         .push(msg.clone());
 
     // Record length
@@ -101,11 +105,10 @@ async fn main() {
 async fn example_handler(bot: Bot, msg: Message, album_mutex: AlbumStorage) -> HandlerResult {
     let album = get_album(msg.clone(), album_mutex).await; // Get either all the messages, or
                                                            // None, which means that it is not the last message in the album, and we chould return
-    let album_messages: Vec<Message>; // Uninitialized variable, so that scoping is correct
-    match album {
-        Some(album_unwrapped) => album_messages = album_unwrapped,
+    let album_messages: Vec<Message> = match album {
+        Some(album_unwrapped) => album_unwrapped,
         None => return Ok(()), // If not the last message, return
-    }
+    };
 
     // Now we have all the media group messages in the album_messages variable
     // And parameter msg is the last message in the album
@@ -159,9 +162,10 @@ async fn example_handler(bot: Bot, msg: Message, album_mutex: AlbumStorage) -> H
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use teloxide::dptree::deps;
     use teloxide_tests::{MockBot, MockMessagePhoto, MockMessageText};
+
+    use super::*;
 
     #[tokio::test]
     async fn test_get_one_message() {

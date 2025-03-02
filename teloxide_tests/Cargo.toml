@@ -20,7 +20,7 @@ log = "0.4"
 pretty_env_logger = "0.5"
 url = "2.5.1"
 reqwest = "0.12.5"
-teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "94db1757dc96116f4756a586fcbce3ac5ebd0c59", features = ["macros", "sqlite-storage-nativetls"] }
+teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "c590976722378a3a02ad5f5dac06b30a4e013395", features = ["macros", "sqlite-storage-nativetls"] }
 tokio = { version =  "1.38", features = ["rt-multi-thread", "macros"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -29,7 +29,7 @@ mime = "0.3.17"
 chrono = "0.4.38"
 actix-web-lab = "0.23.0"
 mime_guess = "2.0.5"
-rand = "0.8.5"
+rand = "0.9.0"
 actix-multipart = "0.7.2"
 lazy_static = "1.5.0"
 futures-util = "0.3"

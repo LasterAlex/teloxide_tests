@@ -3,9 +3,11 @@ use std::{collections::HashMap, str::FromStr, sync::Mutex};
 use actix_multipart::Multipart;
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use mime::Mime;
-use rand::distributions::{Alphanumeric, DistString};
+use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
-use teloxide::types::{Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds};
+use teloxide::types::{
+    BusinessConnectionId, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds,
+};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 use crate::{
@@ -34,6 +36,7 @@ pub async fn send_voice(
     message.has_protected_content = body.protect_content.unwrap_or(false);
     message.caption = body.caption.clone();
     message.caption_entities = body.caption_entities.clone().unwrap_or_default();
+    message.business_connection_id = body.business_connection_id.clone();
 
     if let Some(reply_parameters) = &body.reply_parameters {
         check_if_message_exists!(lock, reply_parameters.message_id.0);
@@ -47,14 +50,15 @@ pub async fn send_voice(
         message.reply_markup = Some(markup);
     }
 
-    let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-    let file_unique_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
+    let file_id = Alphanumeric.sample_string(&mut rand::rng(), 16);
+    let file_unique_id = Alphanumeric.sample_string(&mut rand::rng(), 8);
 
     message.file_id = file_id.clone();
     message.file_unique_id = file_unique_id.clone();
     message.duration = body.duration.unwrap_or(Seconds::from_seconds(0));
     message.file_size = body.file_data.bytes().len() as u32;
     message.mime_type = Some(Mime::from_str("audio/mp3").unwrap());
+    message.effect_id = body.message_effect_id.clone();
 
     let last_id = lock.messages.max_message_id();
     let message = lock.messages.add_message(message.id(last_id + 1).build());
@@ -87,4 +91,5 @@ pub struct SendMessageVoiceBody {
     pub message_effect_id: Option<String>,
     pub reply_parameters: Option<ReplyParameters>,
     pub reply_markup: Option<ReplyMarkup>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }

@@ -2,9 +2,9 @@ use std::{collections::HashMap, sync::Mutex};
 
 use actix_multipart::Multipart;
 use actix_web::{error::ErrorBadRequest, web, Responder};
-use rand::distributions::{Alphanumeric, DistString};
+use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup, ReplyParameters, Seconds};
+use teloxide::types::{BusinessConnectionId, Me, ReplyMarkup, ReplyParameters, Seconds};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 use crate::{
@@ -45,14 +45,16 @@ pub async fn send_video_note(
         message.reply_markup = Some(markup);
     }
 
-    let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-    let file_unique_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
+    let file_id = Alphanumeric.sample_string(&mut rand::rng(), 16);
+    let file_unique_id = Alphanumeric.sample_string(&mut rand::rng(), 8);
 
     message.file_id = file_id.clone();
     message.file_unique_id = file_unique_id.clone();
     message.duration = body.duration.unwrap_or(Seconds::from_seconds(0));
     message.length = body.length.unwrap_or(100);
     message.file_size = body.file_data.bytes().len() as u32;
+    message.effect_id = body.message_effect_id.clone();
+    message.business_connection_id = body.business_connection_id.clone();
 
     let last_id = lock.messages.max_message_id();
     let message = lock.messages.add_message(message.id(last_id + 1).build());
@@ -85,4 +87,5 @@ pub struct SendMessageVideoNoteBody {
     pub message_effect_id: Option<String>,
     pub reply_parameters: Option<ReplyParameters>,
     pub reply_markup: Option<ReplyMarkup>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }

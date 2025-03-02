@@ -2,7 +2,7 @@ use std::{collections::HashMap, str::from_utf8};
 
 use actix_web::{error::ResponseError, http::header::ContentType, HttpResponse};
 use futures_util::{stream::StreamExt as _, TryStreamExt};
-use rand::distributions::{Alphanumeric, DistString};
+use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use teloxide::{
@@ -247,10 +247,7 @@ pub async fn get_raw_multipart_fields(
                     .enumerate()
                     .map(|(i, s)| {
                         if i == 0 {
-                            format!(
-                                "{s}{}",
-                                Alphanumeric.sample_string(&mut rand::thread_rng(), 5)
-                            )
+                            format!("{s}{}", Alphanumeric.sample_string(&mut rand::rng(), 5))
                         } else {
                             s.to_string()
                         }
