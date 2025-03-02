@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::ReplyMarkup;
+use teloxide::types::{BusinessConnectionId, ReplyMarkup};
 
 use super::BodyChatId;
 use crate::{
@@ -19,6 +19,7 @@ pub struct EditMessageReplyMarkupBody {
     pub message_id: Option<i32>,
     pub inline_message_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn edit_message_reply_markup(

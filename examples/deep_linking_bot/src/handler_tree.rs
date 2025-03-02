@@ -1,10 +1,10 @@
-use crate::handlers::*;
 use dptree::case;
-use teloxide::dispatching::dialogue::InMemStorage;
-use teloxide::dispatching::{dialogue, UpdateFilterExt, UpdateHandler};
-use teloxide::prelude::*;
+use teloxide::{
+    dispatching::{dialogue, dialogue::InMemStorage, UpdateFilterExt, UpdateHandler},
+    prelude::*,
+};
 
-use crate::{StartCommand, State};
+use crate::{handlers::*, StartCommand, State};
 
 pub fn handler_tree() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     dialogue::enter::<Update, InMemStorage<State>, State, _>()

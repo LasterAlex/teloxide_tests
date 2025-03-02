@@ -2,9 +2,8 @@
 //! that are used in the bot.
 pub mod models;
 pub mod schema;
-use models::*;
-
 use diesel::prelude::*;
+use models::*;
 
 pub fn establish_connection() -> PgConnection {
     dotenv::dotenv().ok();

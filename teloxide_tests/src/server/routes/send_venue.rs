@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup, ReplyParameters};
+use teloxide::types::{BusinessConnectionId, Me, ReplyMarkup, ReplyParameters};
 
 use super::{make_telegram_result, BodyChatId};
 use crate::{
@@ -28,6 +28,7 @@ pub struct SendMessageVenueBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn send_venue(
@@ -51,6 +52,8 @@ pub async fn send_venue(
     message.foursquare_type = body.foursquare_type.clone();
     message.google_place_id = body.google_place_id.clone();
     message.google_place_type = body.google_place_type.clone();
+    message.effect_id = body.message_effect_id.clone();
+    message.business_connection_id = body.business_connection_id.clone();
 
     if let Some(reply_parameters) = &body.reply_parameters {
         check_if_message_exists!(lock, reply_parameters.message_id.0);

@@ -1,17 +1,17 @@
 pub mod db;
 pub mod handlers;
 pub mod resources;
-use db::models::Phrase;
-use resources::{handler_tree, keyboards, text};
-
 use std::error::Error;
 
+use db::models::Phrase;
 use dotenv::dotenv;
 use handler_tree::handler_tree;
 use handlers::*;
-use teloxide::dispatching::dialogue::serializer::Cbor;
-use teloxide::dispatching::dialogue::{Dialogue, ErasedStorage, RedisStorage, Storage};
-use teloxide::prelude::*;
+use resources::{handler_tree, keyboards, text};
+use teloxide::{
+    dispatching::dialogue::{serializer::Cbor, Dialogue, ErasedStorage, RedisStorage, Storage},
+    prelude::*,
+};
 
 pub type MyDialogue = Dialogue<State, ErasedStorage<State>>;
 pub type HandlerResult = Result<(), Box<dyn Error + Send + Sync>>;

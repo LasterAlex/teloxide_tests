@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
+use teloxide::types::BusinessConnectionId;
 
 use super::{check_if_message_exists, BodyChatId};
 use crate::{server::routes::make_telegram_result, state::State};
@@ -11,6 +12,7 @@ pub struct PinChatMessageBody {
     pub chat_id: BodyChatId,
     pub message_id: i32,
     pub disable_notification: Option<bool>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn pin_chat_message(

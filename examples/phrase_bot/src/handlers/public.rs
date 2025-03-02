@@ -51,8 +51,9 @@ pub async fn bot_phrase(bot: Bot, msg: Message) -> HandlerResult {
 
 #[cfg(test)]
 mod tests {
-    use crate::{db, handler_tree::handler_tree, text};
     use teloxide_tests::{MockBot, MockGroupChat, MockMessageText, MockUser};
+
+    use crate::{db, handler_tree::handler_tree, text};
 
     #[tokio::test]
     async fn test_phrase() {

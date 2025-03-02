@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{DiceEmoji, ReplyMarkup, ReplyParameters};
+use teloxide::types::{BusinessConnectionId, DiceEmoji, ReplyMarkup, ReplyParameters};
 
 use super::{make_telegram_result, BodyChatId};
 use crate::{
@@ -21,6 +21,7 @@ pub struct SendMessageDiceBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn send_dice(

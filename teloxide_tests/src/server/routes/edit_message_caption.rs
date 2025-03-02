@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{MessageEntity, ParseMode, ReplyMarkup};
+use teloxide::types::{BusinessConnectionId, MessageEntity, ParseMode, ReplyMarkup};
 
 use super::{check_if_message_exists, BodyChatId};
 use crate::{
@@ -20,6 +20,7 @@ pub struct EditMessageCaptionBody {
     pub caption_entities: Option<Vec<MessageEntity>>,
     pub show_caption_above_media: Option<bool>,
     pub reply_markup: Option<ReplyMarkup>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn edit_message_caption(
@@ -40,6 +41,11 @@ pub async fn edit_message_caption(
                 message_id,
                 "caption_entities",
                 body.caption_entities.clone().unwrap_or_default(),
+            );
+            lock.messages.edit_message_field(
+                message_id,
+                "show_caption_above_media",
+                body.show_caption_above_media.unwrap_or(false),
             );
 
             let message = lock

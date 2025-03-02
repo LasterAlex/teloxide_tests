@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup, ReplyParameters};
+use teloxide::types::{BusinessConnectionId, Me, ReplyMarkup, ReplyParameters};
 
 use super::{make_telegram_result, BodyChatId};
 use crate::{
@@ -24,6 +24,7 @@ pub struct SendMessageContactBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn send_contact(
@@ -41,6 +42,8 @@ pub async fn send_contact(
     message.last_name = body.last_name.clone();
     message.vcard = body.vcard.clone();
     message.has_protected_content = body.protect_content.unwrap_or(false);
+    message.effect_id = body.message_effect_id.clone();
+    message.business_connection_id = body.business_connection_id.clone();
 
     if let Some(reply_parameters) = &body.reply_parameters {
         check_if_message_exists!(lock, reply_parameters.message_id.0);

@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup, ReplyParameters, Seconds};
+use teloxide::types::{BusinessConnectionId, LivePeriod, Me, ReplyMarkup, ReplyParameters};
 
 use super::{make_telegram_result, BodyChatId};
 use crate::{
@@ -17,7 +17,7 @@ pub struct SendMessageLocationBody {
     pub latitude: f64,
     pub longitude: f64,
     pub horizontal_accuracy: Option<f64>,
-    pub live_period: Option<Seconds>,
+    pub live_period: Option<LivePeriod>,
     pub heading: Option<u16>,
     pub proximity_alert_radius: Option<u32>,
     pub message_thread_id: Option<i64>,
@@ -26,6 +26,7 @@ pub struct SendMessageLocationBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn send_location(
@@ -44,6 +45,8 @@ pub async fn send_location(
     message.heading = body.heading;
     message.proximity_alert_radius = body.proximity_alert_radius;
     message.has_protected_content = body.protect_content.unwrap_or(false);
+    message.effect_id = body.message_effect_id.clone();
+    message.business_connection_id = body.business_connection_id.clone();
 
     if let Some(reply_parameters) = &body.reply_parameters {
         check_if_message_exists!(lock, reply_parameters.message_id.0);

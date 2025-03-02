@@ -1,6 +1,6 @@
 use teloxide::{
     dispatching::dialogue::GetChatId,
-    types::{ChatId, MessageEntity, MessageId, True, UpdateId, UserId},
+    types::{ChatId, MessageEntity, MessageId, UpdateId, UserId},
 };
 
 use crate::{dataset::*, proc_macros::Changeable};
@@ -62,42 +62,61 @@ fn test_location() {
 
 #[test]
 fn test_public_group_chat() {
-    let chat = MockGroupChat::new()
-        .title("Test")
+    let chat = MockGroupChat::new().title("Test").id(-1234);
+    let chat_photo = MockChatPhoto::new().build();
+    let chat_full_info = MockChatFullInfoGroup::new()
+        .title("Test2")
         .id(-1234)
-        .photo(MockChatPhoto::new().build());
+        .photo(chat_photo.clone());
 
     let chat_object = chat.build();
     assert_eq!(chat_object.title(), Some("Test"));
     assert_eq!(chat_object.id, ChatId(-1234));
-    assert_eq!(chat_object.photo, Some(MockChatPhoto::new().build()));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.title(), Some("Test2"));
+    assert_eq!(chat_full_info_object.id, ChatId(-1234));
+    assert_eq!(chat_full_info_object.photo, Some(chat_photo));
 }
 
 #[test]
 fn test_supergroup_chat() {
-    let chat = MockSupergroupChat::new().join_by_request(True).id(-1234);
-
-    let chat_object = chat.build();
-    assert_eq!(chat_object.id, ChatId(-1234));
-    assert_eq!(chat_object.join_by_request(), Some(True));
-}
-
-#[test]
-fn test_channel_chat() {
-    let chat = MockChannelChat::new()
-        .linked_chat_id(-12345)
-        .username("test_channel")
+    let chat = MockSupergroupChat::new().id(-1234);
+    let chat_full_info = MockChatFullInfoSupergroup::new()
+        .join_by_request(true)
         .id(-1234);
 
     let chat_object = chat.build();
     assert_eq!(chat_object.id, ChatId(-1234));
-    assert_eq!(chat_object.linked_chat_id(), Some(-12345));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.id, ChatId(-1234));
+    assert_eq!(chat_full_info_object.join_by_request(), true);
+}
+
+#[test]
+fn test_channel_chat() {
+    let chat = MockChannelChat::new().username("test_channel").id(-1234);
+    let chat_full_info = MockChatFullInfoChannel::new()
+        .username("test_channel")
+        .linked_chat_id(-12345)
+        .id(-1234);
+
+    let chat_object = chat.build();
+    assert_eq!(chat_object.id, ChatId(-1234));
     assert_eq!(chat_object.username(), Some("test_channel"));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.id, ChatId(-1234));
+    assert_eq!(chat_full_info_object.username(), Some("test_channel"));
+    assert_eq!(chat_full_info_object.linked_chat_id(), Some(-12345));
 }
 
 #[test]
 fn test_private_group_chat() {
-    let chat = MockPrivateChat::new()
+    let chat = MockPrivateChat::new().first_name("Test").id(1234);
+
+    let chat_full_info = MockChatFullInfoPrivate::new()
         .first_name("Test")
         .id(1234)
         .bio("Test bio");
@@ -105,7 +124,11 @@ fn test_private_group_chat() {
     let chat_object = chat.build();
     assert_eq!(chat_object.first_name(), Some("Test"));
     assert_eq!(chat_object.id, ChatId(1234));
-    assert_eq!(chat_object.bio(), Some("Test bio"));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.first_name(), Some("Test"));
+    assert_eq!(chat_full_info_object.id, ChatId(1234));
+    assert_eq!(chat_full_info_object.bio(), Some("Test bio"));
 }
 
 //

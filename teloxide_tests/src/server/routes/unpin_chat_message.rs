@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
+use teloxide::types::BusinessConnectionId;
 
 use super::{check_if_message_exists, BodyChatId};
 use crate::{server::routes::make_telegram_result, state::State};
@@ -10,6 +11,7 @@ use crate::{server::routes::make_telegram_result, state::State};
 pub struct UnpinChatMessageBody {
     pub chat_id: BodyChatId,
     pub message_id: Option<i32>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn unpin_chat_message(

@@ -1,7 +1,7 @@
-use crate::{get_bot_storage, handler_tree::handler_tree, text, State};
-
 use teloxide::dptree::deps;
 use teloxide_tests::{MockBot, MockCallbackQuery, MockMessagePhoto, MockMessageText};
+
+use crate::{get_bot_storage, handler_tree::handler_tree, text, State};
 
 #[tokio::test]
 async fn test_start() {

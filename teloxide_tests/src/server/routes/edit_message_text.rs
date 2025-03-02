@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use actix_web::{error::ErrorBadRequest, web, Responder, ResponseError};
 use serde::Deserialize;
 use teloxide::{
-    types::{LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup},
+    types::{BusinessConnectionId, LinkPreviewOptions, MessageEntity, ParseMode, ReplyMarkup},
     ApiError,
 };
 
@@ -23,6 +23,7 @@ pub struct EditMessageTextBody {
     pub entities: Option<Vec<MessageEntity>>,
     pub link_preview_options: Option<LinkPreviewOptions>,
     pub reply_markup: Option<ReplyMarkup>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn edit_message_text(

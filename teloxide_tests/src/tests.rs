@@ -24,7 +24,7 @@ use teloxide::{
         BotCommand, ChatAction, ChatPermissions, DiceEmoji, InlineKeyboardButton,
         InlineKeyboardMarkup, InputFile, InputMedia, InputMediaAudio, InputMediaDocument,
         InputMediaPhoto, InputMediaVideo, LabeledPrice, LinkPreviewOptions, Message, MessageEntity,
-        MessageId, PollOption, PollType, ReactionType, ReplyParameters, Seconds, Update,
+        MessageId, PollOption, PollType, ReactionType, ReplyParameters, Update,
     },
 };
 
@@ -358,7 +358,7 @@ async fn handler(
         }
         AllCommands::Location => {
             bot.send_location(msg.chat.id, 1.0, 1.0)
-                .live_period(60)
+                .live_period(60.into())
                 .reply_parameters(reply_options)
                 .await?;
         }
@@ -379,7 +379,7 @@ async fn handler(
             bot.send_poll(
                 msg.chat.id,
                 "what is test",
-                vec!["test".to_string(), "not test".to_string()],
+                vec!["test".to_string().into(), "not test".to_string().into()],
             )
             .type_(PollType::Quiz)
             .reply_parameters(reply_options)
@@ -874,10 +874,7 @@ async fn test_send_location() {
     );
     assert_eq!(last_sent_message.location().unwrap().latitude, 1.0);
     assert_eq!(last_sent_message.location().unwrap().longitude, 1.0);
-    assert_eq!(
-        last_sent_location.bot_request.live_period,
-        Some(Seconds::from_seconds(60))
-    );
+    assert_eq!(last_sent_location.bot_request.live_period, Some(60.into()));
 }
 
 #[tokio::test]
@@ -947,10 +944,12 @@ async fn test_send_poll() {
         vec![
             PollOption {
                 text: "test".to_string(),
+                text_entities: None,
                 voter_count: 0
             },
             PollOption {
                 text: "not test".to_string(),
+                text_entities: None,
                 voter_count: 0
             }
         ],

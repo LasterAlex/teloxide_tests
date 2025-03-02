@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{web, Responder};
 use serde::Deserialize;
+use teloxide::types::BusinessConnectionId;
 
 use super::BodyChatId;
 use crate::{server::routes::make_telegram_result, state::State};
@@ -11,6 +12,7 @@ pub struct SendChatActionBody {
     pub chat_id: BodyChatId,
     pub message_thread_id: Option<i64>,
     pub action: String,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn send_chat_action(

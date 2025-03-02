@@ -1,6 +1,7 @@
-use super::schema;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+
+use super::schema;
 
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = schema::users)]

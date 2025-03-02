@@ -4,7 +4,8 @@ use actix_web::{error::ErrorBadRequest, web, Responder};
 use chrono::DateTime;
 use serde::Deserialize;
 use teloxide::types::{
-    Me, MessageEntity, ParseMode, PollOption, PollType, ReplyMarkup, ReplyParameters, Seconds,
+    BusinessConnectionId, InputPollOption, Me, MessageEntity, ParseMode, PollOption, PollType,
+    ReplyMarkup, ReplyParameters, Seconds,
 };
 
 use super::{make_telegram_result, BodyChatId};
@@ -21,7 +22,7 @@ pub struct SendMessagePollBody {
     pub question: String,
     pub question_parse_mode: Option<ParseMode>,
     pub question_entities: Option<Vec<MessageEntity>>,
-    pub options: Vec<String>,
+    pub options: Vec<InputPollOption>,
     pub is_anonymous: Option<bool>,
     pub r#type: Option<PollType>,
     pub allows_multiple_answers: Option<bool>,
@@ -37,6 +38,7 @@ pub struct SendMessagePollBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 pub async fn send_poll(
@@ -50,12 +52,14 @@ pub async fn send_poll(
         MockMessagePoll::new().chat(chat);
     message.from = Some(me.user.clone());
     message.has_protected_content = body.protect_content.unwrap_or(false);
+    message.business_connection_id = body.business_connection_id.clone();
 
     message.question = body.question.clone();
     let mut options = vec![];
     for option in body.options.iter() {
         options.push(PollOption {
-            text: option.clone(),
+            text: option.text.clone(),
+            text_entities: None,
             voter_count: 0,
         });
     }
@@ -68,6 +72,8 @@ pub async fn send_poll(
     message.explanation_entities = body.explanation_entities.clone();
     message.open_period = body.open_period;
     message.close_date = DateTime::from_timestamp(body.close_date.unwrap_or(0) as i64, 0);
+    message.effect_id = body.message_effect_id.clone();
+    message.question_entities = body.question_entities.clone();
 
     if let Some(reply_parameters) = &body.reply_parameters {
         check_if_message_exists!(lock, reply_parameters.message_id.0);

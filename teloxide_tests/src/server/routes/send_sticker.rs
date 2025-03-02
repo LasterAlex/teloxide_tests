@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Mutex};
 use actix_multipart::Multipart;
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{Me, ReplyMarkup, ReplyParameters};
+use teloxide::types::{BusinessConnectionId, Me, ReplyMarkup, ReplyParameters};
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
 use crate::{
@@ -32,6 +32,8 @@ pub async fn send_sticker(
     message.from = Some(me.user.clone());
     message.has_protected_content = body.protect_content.unwrap_or(false);
     message.emoji = body.emoji.clone();
+    message.effect_id = body.message_effect_id.clone();
+    message.business_connection_id = body.business_connection_id.clone();
 
     // Idk how to get sticker kind and sticker format from this, sooooooooooo im not doing it,
     // ain't nobody testing that
@@ -78,4 +80,5 @@ pub struct SendMessageStickerBody {
     pub message_effect_id: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }

@@ -41,6 +41,7 @@ pub async fn copy_message(
     message.chat = chat;
     message.from = Some(me.user.clone());
 
+    // FIXME: Use show_caption_above_media
     if let MessageKind::Common(ref mut common) = message.kind {
         common.forward_origin = None;
         common.external_reply = None;

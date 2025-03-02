@@ -25,7 +25,7 @@ If you want to return, send /cancel";
 
 pub const CANCELED: &str = "Canceled.";
 
-pub fn delete_phrase(all_phrases: &Vec<models::Phrase>) -> String {
+pub fn delete_phrase(all_phrases: &[models::Phrase]) -> String {
     format!(
         "These are your phrases:
 
@@ -97,17 +97,17 @@ pub fn make_phrase_string(phrase: &models::Phrase) -> String {
     format!("{} - {} | {}", phrase.text, phrase.emoji, phrase.bot_text)
 }
 
-pub fn list_all_phrases(phrases: &Vec<models::Phrase>) -> String {
+pub fn list_all_phrases(phrases: &[models::Phrase]) -> String {
     phrases
         .iter()
-        .map(|phrase| make_phrase_string(phrase))
+        .map(make_phrase_string)
         .enumerate()
         .map(|(i, phrase)| format!("{}. {}", i + 1, phrase))
         .collect::<Vec<String>>()
         .join("\n\n")
 }
 
-pub fn profile(nickname: Option<String>, phrases: &Vec<models::Phrase>) -> String {
+pub fn profile(nickname: Option<String>, phrases: &[models::Phrase]) -> String {
     format!(
         "Your nickname📜: {}
 

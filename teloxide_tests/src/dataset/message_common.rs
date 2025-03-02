@@ -20,6 +20,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
             #[derive($($derive),*)]
             $pub struct $name {
                 pub author_signature: Option<String>,
+                pub effect_id: Option<String>,
                 pub forward_origin: Option<MessageOrigin>,
                 pub reply_to_message: Option<Box<Message>>,
                 pub external_reply: Option<ExternalReplyInfo>,
@@ -50,6 +51,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
                      None,
                      None,
                      None,
+                     None,
                      $name::IS_AUTOMATIC_FORWARD,
                      $name::HAS_PROTECTED_CONTENT,
                      $name::IS_FROM_OFFLINE,
@@ -63,6 +65,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
             pub(crate) fn build_message_common(self, media_kind: MediaKind) -> Message {
                 self.clone().build_message(MessageKind::Common(MessageCommon {
                     author_signature: self.author_signature,
+                    effect_id: self.effect_id,
                     forward_origin: self.forward_origin,
                     reply_to_message: self.reply_to_message,
                     external_reply: self.external_reply,
@@ -142,6 +145,7 @@ MessageCommon! {
     pub struct MockMessageAnimation {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
+        pub show_caption_above_media: bool,
         pub has_media_spoiler: bool,
         // Animation
         pub width: u32,
@@ -159,6 +163,7 @@ MessageCommon! {
 
 impl MockMessageAnimation {
     pub const HAS_MEDIA_SPOILER: bool = false;
+    pub const SHOW_CAPTION_ABOVE_MEDIA: bool = false;
     pub const WIDTH: u32 = 50;
     pub const HEIGHT: u32 = 50;
     pub const DURATION: Seconds = Seconds::from_seconds(60);
@@ -180,6 +185,7 @@ impl MockMessageAnimation {
         Self::new_message_common(
             None,
             vec![],
+            Self::SHOW_CAPTION_ABOVE_MEDIA,
             Self::HAS_MEDIA_SPOILER,
             Self::WIDTH,
             Self::HEIGHT,
@@ -207,6 +213,7 @@ impl MockMessageAnimation {
             .build_message_common(MediaKind::Animation(MediaAnimation {
                 caption: self.caption,
                 caption_entities: self.caption_entities,
+                show_caption_above_media: self.show_caption_above_media,
                 has_media_spoiler: self.has_media_spoiler,
                 animation: Animation {
                     file: FileMeta {
@@ -575,7 +582,7 @@ MessageCommon! {
         pub latitude: f64,
         pub longitude: f64,
         pub horizontal_accuracy: Option<f64>,
-        pub live_period: Option<Seconds>,
+        pub live_period: Option<LivePeriod>,
         pub heading: Option<u16>,
         pub proximity_alert_radius: Option<u32>,
     }
@@ -629,6 +636,7 @@ MessageCommon! {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
         pub media_group_id: Option<String>,
+        pub show_caption_above_media: bool,
         pub has_media_spoiler: bool,
         pub photo: Vec<PhotoSize>,
     }
@@ -636,6 +644,7 @@ MessageCommon! {
 
 impl MockMessagePhoto {
     pub const HAS_MEDIA_SPOILER: bool = false;
+    pub const SHOW_CAPTION_ABOVE_MEDIA: bool = false;
 
     /// Creates a new easily changable message photo builder
     ///
@@ -654,6 +663,7 @@ impl MockMessagePhoto {
             None,
             vec![],
             None,
+            Self::SHOW_CAPTION_ABOVE_MEDIA,
             Self::HAS_MEDIA_SPOILER,
             vec![MockPhotoSize::new().build()],
         )
@@ -674,6 +684,7 @@ impl MockMessagePhoto {
                 caption: self.caption,
                 caption_entities: self.caption_entities,
                 media_group_id: self.media_group_id,
+                show_caption_above_media: self.show_caption_above_media,
                 has_media_spoiler: self.has_media_spoiler,
                 photo: self.photo,
             }))
@@ -685,6 +696,7 @@ MessageCommon! {
     pub struct MockMessagePoll {
         pub poll_id: String,
         pub question: String,
+        pub question_entities: Option<Vec<MessageEntity>>,
         pub options: Vec<PollOption>,
         pub is_closed: bool,
         pub total_voter_count: u32,
@@ -723,6 +735,7 @@ impl MockMessagePoll {
         Self::new_message_common(
             Self::POLL_ID.to_string(),
             Self::QUESTION.to_string(),
+            None,
             vec![],
             Self::IS_CLOSED,
             Self::TOTAL_VOTER_COUNT,
@@ -752,6 +765,7 @@ impl MockMessagePoll {
                 poll: Poll {
                     id: self.poll_id,
                     question: self.question,
+                    question_entities: self.question_entities,
                     options: self.options,
                     is_closed: self.is_closed,
                     total_voter_count: self.total_voter_count,
@@ -861,6 +875,7 @@ MessageCommon! {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
         pub media_group_id: Option<String>,
+        pub show_caption_above_media: bool,
         pub has_media_spoiler: bool,
         pub video: Video,
     }
@@ -868,6 +883,7 @@ MessageCommon! {
 
 impl MockMessageVideo {
     pub const HAS_MEDIA_SPOILER: bool = false;
+    pub const SHOW_CAPTION_ABOVE_MEDIA: bool = false;
 
     /// Creates a new easily changable message video builder
     ///
@@ -883,6 +899,7 @@ impl MockMessageVideo {
             None,
             vec![],
             None,
+            Self::SHOW_CAPTION_ABOVE_MEDIA,
             Self::HAS_MEDIA_SPOILER,
             MockVideo::new().build(),
         )
@@ -903,6 +920,7 @@ impl MockMessageVideo {
                 caption: self.caption,
                 caption_entities: self.caption_entities,
                 media_group_id: self.media_group_id,
+                show_caption_above_media: self.show_caption_above_media,
                 has_media_spoiler: self.has_media_spoiler,
                 video: self.video,
             }))
