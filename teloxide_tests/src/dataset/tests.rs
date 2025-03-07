@@ -1,7 +1,8 @@
 use teloxide::{
     dispatching::dialogue::GetChatId,
-    types::{ChatId, MessageEntity, MessageId, UpdateId, UserId},
+    types::{ChatId, MessageEntity, MessageId, UpdateId, UpdateKind, UserId},
 };
+use update::MockUpdatePoll;
 
 use crate::{dataset::*, proc_macros::Changeable};
 
@@ -398,4 +399,23 @@ fn test_callback_query() {
     let query_object = query.build();
     assert_eq!(query_object.id, MockCallbackQuery::ID);
     assert_eq!(query_object.from.first_name, MockUser::FIRST_NAME);
+}
+
+//
+//
+//
+
+#[test]
+fn test_update_poll() {
+    let update = MockUpdatePoll::new().poll_id("123");
+
+    let update_object = update.into_update(&AtomicI32::new(1))[0].clone();
+
+    if let UpdateKind::Poll(poll) = update_object.kind {
+        assert_eq!(poll.question, MockMessagePoll::QUESTION);
+        assert_eq!(poll.poll_type, MockMessagePoll::POLL_TYPE);
+        assert_eq!(poll.id, "123".to_owned());
+    } else {
+        unreachable!()
+    }
 }
