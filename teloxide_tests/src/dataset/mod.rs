@@ -5,7 +5,7 @@ use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
     ChatPhoto, FileMeta, LinkPreviewOptions, LivePeriod, Location, Me, PhotoSize, Seconds, Update,
-    User, UserId, Video,
+    UpdateId, User, UserId, Video,
 };
 pub mod chat;
 pub mod chat_full_info;
@@ -13,12 +13,14 @@ pub mod chat_full_info;
 pub mod message;
 pub mod message_common;
 pub mod queries;
+pub mod update;
 pub use chat::*;
 pub use chat_full_info::*;
 pub use message::*;
 pub use message_common::*;
 pub use queries::*;
 use teloxide_tests_macros as proc_macros;
+pub use update::*;
 #[cfg(test)]
 mod tests;
 
@@ -39,6 +41,14 @@ where
             })
             .flatten()
             .collect()
+    }
+}
+
+// Just to be able to use raw updates anywhere
+impl IntoUpdate for Update {
+    fn into_update(mut self, id: &AtomicI32) -> Vec<Update> {
+        self.id = UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32);
+        vec![self]
     }
 }
 
