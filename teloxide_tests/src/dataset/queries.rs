@@ -85,7 +85,7 @@ impl MockCallbackQuery {
             from: self.from,
             message: self.message.map(|message| {
                 if !self.make_message_inaccessible {
-                    MaybeInaccessibleMessage::Regular(message)
+                    MaybeInaccessibleMessage::Regular(Box::new(message))
                 } else {
                     MaybeInaccessibleMessage::Inaccessible(InaccessibleMessage {
                         chat: message.chat,

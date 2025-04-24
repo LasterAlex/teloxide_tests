@@ -497,7 +497,6 @@ async fn handler(
                 "Absolutely Nothing",
                 "Demo",
                 "test_payload",
-                "",
                 "XTR",
                 vec![LabeledPrice {
                     label: "Stars".into(),

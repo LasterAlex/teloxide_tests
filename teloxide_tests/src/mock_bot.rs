@@ -272,7 +272,6 @@ where
                     .dependencies(deps)
                     .distribution_function(distribution_f)
                     .error_handler(error_handler)
-                    .stack_size(stack_size)
                     .build()
                     .dispatch_with_listener(
                         InsertingListener { updates },

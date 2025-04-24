@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-teloxide = { git = "https://github.com/teloxide/teloxide.git", rev = "c590976722378a3a02ad5f5dac06b30a4e013395", features = ["macros"] }
+teloxide = { version = "0.15.0", features = ["macros"] }
 tokio = { version =  "1.38", features = ["rt-multi-thread", "macros"] }
 dotenv = "0.15.0"
 log = "0.4"
