@@ -36,7 +36,7 @@
 //!
 //!     #[tokio::test]
 //!     async fn test_hello_world() {  // A testing bot dispatch
-//!         let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+//!         let mut bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
 //!         bot.dispatch().await;
 //!         let message = bot.get_responses().sent_messages.last().unwrap();
 //!         // This is a regular teloxide::types::Message!
