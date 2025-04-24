@@ -1,10 +1,11 @@
-use crate::{text, HandlerResult, MyDialogue, State};
 use teloxide::{
     dispatching::dialogue::GetChatId,
     macros::BotCommands,
     prelude::*,
     types::{InlineKeyboardButton, InlineKeyboardMarkup},
 };
+
+use crate::{text, HandlerResult, MyDialogue, State};
 
 #[derive(BotCommands, Clone)]
 #[command(rename_rule = "lowercase")]
@@ -121,4 +122,3 @@ pub async fn get_result(
     dialogue.update(State::default()).await?;
     Ok(())
 }
-

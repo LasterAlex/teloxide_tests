@@ -36,7 +36,7 @@
 //!
 //!     #[tokio::test]
 //!     async fn test_hello_world() {  // A testing bot dispatch
-//!         let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+//!         let mut bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
 //!         bot.dispatch().await;
 //!         let message = bot.get_responses().sent_messages.last().unwrap();
 //!         // This is a regular teloxide::types::Message!
@@ -58,6 +58,7 @@
 //!
 //! - /AnswerCallbackQuery
 //! - /DeleteMessage
+//! - /DeleteMessages
 //! - /EditMessageText
 //! - /EditMessageReplyMarkup
 //! - /EditMessageCaption
@@ -78,6 +79,7 @@
 //! - /SendSticker
 //! - /SendChatAction
 //! - /SendMediaGroup
+//! - /SendInvoice
 //! - /PinChatMessage
 //! - /UnpinChatMessage
 //! - /UnpinAllChatMessages
@@ -87,10 +89,12 @@
 //! - /UnbanChatMember
 //! - /RestrictChatMember
 //! - /SetMessageReaction
+//! - /SetMyCommands
+//! - /GetMe
 //!
 //! More endpoints will be added as time goes on!
 //!
-//! (do not worry about /GetMe and /GetUpdates, they are not needed for this bot!)
+//! (/GetUpdates and /GetWebhookInfo exist, but they are dummies)
 //!
 //! And also fake file downloading!
 //!
@@ -140,11 +144,31 @@
     html_logo_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040",
     html_favicon_url = "https://github.com/user-attachments/assets/627beca8-5852-4c70-97e0-5f4fcb5e2040"
 )]
+#![allow(clippy::too_long_first_doc_paragraph)]
+#![allow(clippy::to_string_in_format_args)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::map_flatten)]
+#![allow(clippy::unnecessary_unwrap)]
+#![allow(clippy::needless_question_mark)]
+#![allow(clippy::borrow_interior_mutable_const)]
+#![allow(clippy::declare_interior_mutable_const)]
+#![allow(clippy::clone_on_copy)]
+#![allow(clippy::needless_borrows_for_generic_args)]
+#![allow(clippy::search_is_some)]
+#![allow(clippy::unwrap_or_default)]
+#![allow(clippy::enum_variant_names)]
+#![allow(clippy::needless_return)]
+#![allow(clippy::bool_assert_comparison)]
+
 mod dataset;
+pub(crate) mod listener;
 pub mod mock_bot;
-mod server;
+pub mod server;
+pub(crate) mod state;
 #[cfg(test)]
 mod tests;
+pub(crate) mod utils;
 
 pub use dataset::*;
 pub use mock_bot::MockBot;

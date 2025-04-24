@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/crates/v/teloxide_tests.svg">
   </a>
   <a href="https://github.com/teloxide/teloxide">
-    <img src="https://img.shields.io/badge/teloxide%20version-0.13.0-green">
+    <img src="https://img.shields.io/badge/teloxide%20version-0.15.0-green">
   </a>
   <a href="https://t.me/teloxide_tests">
     <img src="https://img.shields.io/badge/support-t.me%2Fteloxide__tests-blueviolet">
@@ -23,7 +23,7 @@
 ## What this crate has
 
 - Easy testing of handlers with access to raw bot requests (see [hello_world_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/hello_world_bot/src/main.rs))
-- Support of dependencies, changes of `me` and multiple updates (see [album_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/album_bot/src/main.rs))
+- Support of dependencies, changes of `me`, distribution_function and multiple updates (see [album_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/album_bot/src/main.rs))
 - Syntactic sugar and native support for storage, dialogue and states (see [calculator_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/calculator_bot/src/tests.rs))
 - Fake file getting and downloading (see [file_download_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/file_download_bot/src/main.rs))
 - Ability to be used with databases (see [phrase_bot](https://github.com/LasterAlex/teloxide_tests/blob/master/examples/phrase_bot/src/main.rs))
@@ -35,7 +35,7 @@ Simplified [[`hello_world_bot`]](https://github.com/LasterAlex/teloxide_tests/bl
 #[tokio::test]
 async fn test_hello_world() {
     let message = MockMessageText::new().text("Hi!");
-    let bot = MockBot::new(message, handler_tree());
+    let mut bot = MockBot::new(message, handler_tree());
     // Sends the message as if it was from a user
     bot.dispatch().await;  
 
@@ -52,14 +52,14 @@ async fn test_hello_world() {
 ```rust,ignore
 #[tokio::test]
 async fn test_not_a_document() {
-    let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+    let mut bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
     // Syntactic sugar
     bot.dispatch_and_check_last_text("Not a document").await;
 }
 
 #[tokio::test]
 async fn test_download_document_and_check() {
-    let bot = MockBot::new(MockMessageDocument::new(), handler_tree());
+    let mut bot = MockBot::new(MockMessageDocument::new(), handler_tree());
     bot.dispatch_and_check_last_text("Downloaded!").await;
 }
 ```
@@ -68,7 +68,7 @@ async fn test_download_document_and_check() {
 ```rust,ignore
 #[tokio::test]
 async fn test_what_is_the_first_number() {
-    let bot = MockBot::new(MockCallbackQuery::new().data("add"), handler_tree());
+    let mut bot = MockBot::new(MockCallbackQuery::new().data("add"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::WhatDoYouWant).await;

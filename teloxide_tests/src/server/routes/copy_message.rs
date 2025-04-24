@@ -1,5 +1,6 @@
-use actix_web::error::ErrorBadRequest;
-use actix_web::{web, Responder};
+use std::sync::Mutex;
+
+use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
 use serde_json::json;
 use teloxide::types::{
@@ -7,10 +8,11 @@ use teloxide::types::{
     MessageEntity, MessageId, MessageKind, ParseMode, ReplyMarkup,
 };
 
-use crate::server::CopiedMessage;
-use crate::server::{routes::check_if_message_exists, MESSAGES, RESPONSES};
-
 use super::{make_telegram_result, BodyChatId};
+use crate::{
+    server::{routes::check_if_message_exists, CopiedMessage},
+    state::State,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct CopyMessageBody {
@@ -24,17 +26,22 @@ pub struct CopyMessageBody {
     pub show_caption_above_media: Option<bool>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
-    #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
     pub reply_markup: Option<ReplyMarkup>,
 }
 
-pub async fn copy_message(body: web::Json<CopyMessageBody>, me: web::Data<Me>) -> impl Responder {
+pub async fn copy_message(
+    body: web::Json<CopyMessageBody>,
+    me: web::Data<Me>,
+    state: web::Data<Mutex<State>>,
+) -> impl Responder {
+    let mut lock = state.lock().unwrap();
     let chat = body.chat_id.chat();
-    check_if_message_exists!(body.message_id);
-    let mut message = MESSAGES.get_message(body.message_id).unwrap();
+    check_if_message_exists!(lock, body.message_id);
+    let mut message = lock.messages.get_message(body.message_id).unwrap();
     message.chat = chat;
     message.from = Some(me.user.clone());
 
+    // FIXME: Use show_caption_above_media
     if let MessageKind::Common(ref mut common) = message.kind {
         common.forward_origin = None;
         common.external_reply = None;
@@ -80,14 +87,13 @@ pub async fn copy_message(body: web::Json<CopyMessageBody>, me: web::Data<Me>) -
         common.has_protected_content = body.protect_content.unwrap_or(false);
     }
 
-    let last_id = MESSAGES.max_message_id();
+    let last_id = lock.messages.max_message_id();
     message.id = MessageId(last_id + 1);
     message.chat = body.chat_id.chat();
-    let message = MESSAGES.add_message(message);
+    let message = lock.messages.add_message(message);
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.push(message.clone());
-    responses_lock.copied_messages.push(CopiedMessage {
+    lock.responses.sent_messages.push(message.clone());
+    lock.responses.copied_messages.push(CopiedMessage {
         message_id: message.id,
         bot_request: body.into_inner(),
     });

@@ -1,11 +1,11 @@
-use crate::{get_bot_storage, handler_tree::handler_tree, text, State};
-
 use teloxide::dptree::deps;
 use teloxide_tests::{MockBot, MockCallbackQuery, MockMessagePhoto, MockMessageText};
 
+use crate::{get_bot_storage, handler_tree::handler_tree, text, State};
+
 #[tokio::test]
 async fn test_start() {
-    let bot = MockBot::new(MockMessageText::new().text("/start"), handler_tree());
+    let mut bot = MockBot::new(MockMessageText::new().text("/start"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::Start).await;
@@ -27,7 +27,7 @@ async fn test_start() {
 
 #[tokio::test]
 async fn test_what_is_the_first_number() {
-    let bot = MockBot::new(MockCallbackQuery::new().data("add"), handler_tree());
+    let mut bot = MockBot::new(MockCallbackQuery::new().data("add"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::WhatDoYouWant).await;
@@ -43,7 +43,7 @@ async fn test_what_is_the_first_number() {
 
 #[tokio::test]
 async fn test_message_errors() {
-    let bot = MockBot::new(MockMessageText::new().text("not a number"), handler_tree());
+    let mut bot = MockBot::new(MockMessageText::new().text("not a number"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::GetFirstNumber {
@@ -63,7 +63,7 @@ async fn test_message_errors() {
 
 #[tokio::test]
 async fn test_what_is_the_second_number() {
-    let bot = MockBot::new(MockMessageText::new().text("5"), handler_tree());
+    let mut bot = MockBot::new(MockMessageText::new().text("5"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::GetFirstNumber {
@@ -83,7 +83,7 @@ async fn test_what_is_the_second_number() {
 
 #[tokio::test]
 async fn test_add_result() {
-    let bot = MockBot::new(MockMessageText::new().text("4"), handler_tree());
+    let mut bot = MockBot::new(MockMessageText::new().text("4"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::GetSecondNumber {
@@ -101,7 +101,7 @@ async fn test_add_result() {
 
 #[tokio::test]
 async fn test_subtract_result() {
-    let bot = MockBot::new(MockMessageText::new().text("4"), handler_tree());
+    let mut bot = MockBot::new(MockMessageText::new().text("4"), handler_tree());
 
     bot.dependencies(deps![get_bot_storage().await]);
     bot.set_state(State::GetSecondNumber {

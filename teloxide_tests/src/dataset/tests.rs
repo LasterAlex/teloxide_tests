@@ -1,9 +1,10 @@
-use crate::dataset::*;
-use crate::proc_macros::Changeable;
 use teloxide::{
     dispatching::dialogue::GetChatId,
-    types::{ChatId, MessageEntity, MessageId, True, UpdateId, UserId},
+    types::{ChatId, MessageEntity, MessageId, UpdateId, UpdateKind, UserId},
 };
+use update::MockUpdatePoll;
+
+use crate::{dataset::*, proc_macros::Changeable};
 
 #[derive(Changeable)]
 struct Test {
@@ -62,42 +63,61 @@ fn test_location() {
 
 #[test]
 fn test_public_group_chat() {
-    let chat = MockGroupChat::new()
-        .title("Test")
+    let chat = MockGroupChat::new().title("Test").id(-1234);
+    let chat_photo = MockChatPhoto::new().build();
+    let chat_full_info = MockChatFullInfoGroup::new()
+        .title("Test2")
         .id(-1234)
-        .photo(MockChatPhoto::new().build());
+        .photo(chat_photo.clone());
 
     let chat_object = chat.build();
     assert_eq!(chat_object.title(), Some("Test"));
     assert_eq!(chat_object.id, ChatId(-1234));
-    assert_eq!(chat_object.photo, Some(MockChatPhoto::new().build()));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.title(), Some("Test2"));
+    assert_eq!(chat_full_info_object.id, ChatId(-1234));
+    assert_eq!(chat_full_info_object.photo, Some(chat_photo));
 }
 
 #[test]
 fn test_supergroup_chat() {
-    let chat = MockSupergroupChat::new().join_by_request(True).id(-1234);
-
-    let chat_object = chat.build();
-    assert_eq!(chat_object.id, ChatId(-1234));
-    assert_eq!(chat_object.join_by_request(), Some(True));
-}
-
-#[test]
-fn test_channel_chat() {
-    let chat = MockChannelChat::new()
-        .linked_chat_id(-12345)
-        .username("test_channel")
+    let chat = MockSupergroupChat::new().id(-1234);
+    let chat_full_info = MockChatFullInfoSupergroup::new()
+        .join_by_request(true)
         .id(-1234);
 
     let chat_object = chat.build();
     assert_eq!(chat_object.id, ChatId(-1234));
-    assert_eq!(chat_object.linked_chat_id(), Some(-12345));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.id, ChatId(-1234));
+    assert_eq!(chat_full_info_object.join_by_request(), true);
+}
+
+#[test]
+fn test_channel_chat() {
+    let chat = MockChannelChat::new().username("test_channel").id(-1234);
+    let chat_full_info = MockChatFullInfoChannel::new()
+        .username("test_channel")
+        .linked_chat_id(-12345)
+        .id(-1234);
+
+    let chat_object = chat.build();
+    assert_eq!(chat_object.id, ChatId(-1234));
     assert_eq!(chat_object.username(), Some("test_channel"));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.id, ChatId(-1234));
+    assert_eq!(chat_full_info_object.username(), Some("test_channel"));
+    assert_eq!(chat_full_info_object.linked_chat_id(), Some(-12345));
 }
 
 #[test]
 fn test_private_group_chat() {
-    let chat = MockPrivateChat::new()
+    let chat = MockPrivateChat::new().first_name("Test").id(1234);
+
+    let chat_full_info = MockChatFullInfoPrivate::new()
         .first_name("Test")
         .id(1234)
         .bio("Test bio");
@@ -105,7 +125,11 @@ fn test_private_group_chat() {
     let chat_object = chat.build();
     assert_eq!(chat_object.first_name(), Some("Test"));
     assert_eq!(chat_object.id, ChatId(1234));
-    assert_eq!(chat_object.bio(), Some("Test bio"));
+
+    let chat_full_info_object = chat_full_info.build();
+    assert_eq!(chat_full_info_object.first_name(), Some("Test"));
+    assert_eq!(chat_full_info_object.id, ChatId(1234));
+    assert_eq!(chat_full_info_object.bio(), Some("Test bio"));
 }
 
 //
@@ -150,9 +174,9 @@ fn test_message_common_text() {
 fn test_into_update() {
     let message = MockMessageText::new().text("text");
 
-    let update = message.into_update(1.into())[0].clone();
+    let update = message.into_update(&AtomicI32::new(42))[0].clone();
 
-    assert_eq!(update.id, UpdateId(1));
+    assert_eq!(update.id, UpdateId(42));
     assert_eq!(update.chat_id(), Some(ChatId(MockUser::ID as i64)));
 }
 
@@ -375,4 +399,23 @@ fn test_callback_query() {
     let query_object = query.build();
     assert_eq!(query_object.id, MockCallbackQuery::ID);
     assert_eq!(query_object.from.first_name, MockUser::FIRST_NAME);
+}
+
+//
+//
+//
+
+#[test]
+fn test_update_poll() {
+    let update = MockUpdatePoll::new().poll_id("123");
+
+    let update_object = update.into_update(&AtomicI32::new(1))[0].clone();
+
+    if let UpdateKind::Poll(poll) = update_object.kind {
+        assert_eq!(poll.question, MockMessagePoll::QUESTION);
+        assert_eq!(poll.poll_type, MockMessagePoll::POLL_TYPE);
+        assert_eq!(poll.id, "123".to_owned());
+    } else {
+        unreachable!()
+    }
 }

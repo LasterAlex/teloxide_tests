@@ -1,11 +1,7 @@
-use crate::proc_macros::Changeable;
 use teloxide::types::*;
-use teloxide::types::{
-    Chat, ChatId, ChatKind, ChatLocation, ChatPermissions, ChatPhoto, ChatPrivate, ChatPublic,
-    Message, PublicChatChannel, PublicChatGroup, PublicChatKind, PublicChatSupergroup, True,
-};
 
-use super::{MockChatFullInfo, MockUser};
+use super::MockUser;
+use crate::proc_macros::Changeable;
 
 macro_rules! Chat {
     (
@@ -17,30 +13,14 @@ macro_rules! Chat {
         #[derive($($derive),*)]
         $pub struct $name {  // This is basically a template
             pub id: ChatId,
-            pub photo: Option<ChatPhoto>,
-            pub available_reactions: Option<Vec<ReactionType>>,
-            pub pinned_message: Option<Box<Message>>,
-            pub message_auto_delete_time: Option<Seconds>,
-            pub has_hidden_members: bool,
-            pub has_aggressive_anti_spam_enabled: bool,
-            pub chat_full_info: ChatFullInfo,
             $($fpub $field : $type,)*
         }
         impl $name {
             pub const ID: i64 = -12345678;  // Make them into a constant cuz why not
-            pub const HAS_HIDDEN_MEMBERS: bool = false;
-            pub const AGGRESSIVE_ANTI_SPAM_ENABLED: bool = false;
 
-            pub(crate) fn new_chat($($field:$type,)*) -> Self{
+            pub(crate) fn new_chat($($field:$type,)*) -> Self {
                 Self {  // To not repeat this over and over again
                     id: ChatId(Self::ID),
-                    photo: None,
-                    available_reactions: None,
-                    pinned_message: None,
-                    message_auto_delete_time: None,
-                    has_hidden_members: Self::HAS_HIDDEN_MEMBERS,
-                    has_aggressive_anti_spam_enabled: Self::AGGRESSIVE_ANTI_SPAM_ENABLED,
-                    chat_full_info: MockChatFullInfo::new().build(),
                     $($field,)*
                 }
             }
@@ -49,20 +29,13 @@ macro_rules! Chat {
                 Chat {
                     id: self.id,
                     kind: chat_kind,
-                    available_reactions: self.available_reactions,
-                    photo: self.photo,
-                    pinned_message: self.pinned_message,
-                    message_auto_delete_time: self.message_auto_delete_time,
-                    has_hidden_members: self.has_hidden_members,
-                    has_aggressive_anti_spam_enabled: self.has_aggressive_anti_spam_enabled,
-                    chat_full_info: self.chat_full_info,
                 }
             }
         }
     }
 }
 
-macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat myself
+macro_rules! ChatPublic {  // A specialization of Chat!, again, to not repeat myself
     (
         #[derive($($derive:meta),*)]
         $pub:vis struct $name:ident {
@@ -73,41 +46,30 @@ macro_rules! PublicChat {  // A specialization of Chat!, again, to not repeat my
             #[derive($($derive),*)]
             $pub struct $name {
                 pub title: Option<String>,
-                pub description: Option<String>,
-                pub invite_link: Option<String>,
-                pub has_protected_content: Option<True>,
                 $($fpub $field : $type,)*
             }
         }
         impl $name {
-            pub(crate) fn new_public_chat($($field:$type,)*) -> Self {
+            pub(crate) fn new_chat_public($($field:$type,)*) -> Self {
                  $name::new_chat(
-                     None,
-                     None,
-                     None,
                      None,
                      $($field,)*
                  )
             }
 
-            pub(crate) fn build_public_chat(self, public_chat_kind: PublicChatKind) -> Chat {
+            pub(crate) fn build_chat_public(self, chat_public_kind: PublicChatKind) -> Chat {
                 self.clone().build_chat(ChatKind::Public(ChatPublic {
                     title: self.title,
-                    kind: public_chat_kind,
-                    description: self.description,
-                    invite_link: self.invite_link,
-                    has_protected_content: self.has_protected_content,
+                    kind: chat_public_kind,
                 }))
             }
         }
     }
 }
 
-PublicChat! {
+ChatPublic! {
     #[derive(Changeable, Clone)]
-    pub struct MockGroupChat {
-        pub permissions: Option<ChatPermissions>,
-    }
+    pub struct MockGroupChat { }
 }
 
 impl MockGroupChat {
@@ -122,7 +84,7 @@ impl MockGroupChat {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_public_chat(None)
+        Self::new_chat_public()
     }
 
     /// Builds the group chat
@@ -135,23 +97,19 @@ impl MockGroupChat {
     /// ```
     ///
     pub fn build(self) -> Chat {
-        self.clone()
-            .build_public_chat(PublicChatKind::Group(PublicChatGroup {
-                permissions: self.permissions,
-            }))
+        self.clone().build_chat_public(PublicChatKind::Group)
     }
 }
 
-PublicChat! {
+ChatPublic! {
     #[derive(Changeable, Clone)]
     pub struct MockChannelChat {
-        pub linked_chat_id: Option<i64>,
         pub username: Option<String>,
     }
 }
 
 impl MockChannelChat {
-    /// Creates a new easily changable channel chat builder
+    /// Creates a new easily changable channel builder
     ///
     /// Example:
     /// ```
@@ -164,7 +122,7 @@ impl MockChannelChat {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_public_chat(None, None)
+        Self::new_chat_public(None)
     }
 
     /// Builds the channel chat
@@ -179,34 +137,24 @@ impl MockChannelChat {
     ///
     pub fn build(self) -> Chat {
         self.clone()
-            .build_public_chat(PublicChatKind::Channel(PublicChatChannel {
-                linked_chat_id: self.linked_chat_id,
+            .build_chat_public(PublicChatKind::Channel(PublicChatChannel {
                 username: self.username,
             }))
     }
 }
 
-PublicChat! {
+ChatPublic! {
     #[derive(Changeable, Clone)]
     pub struct MockSupergroupChat {
         pub username: Option<String>,
-        pub active_usernames: Option<Vec<String>>,
         pub is_forum: bool,
-        pub sticker_set_name: Option<String>,
-        pub can_set_sticker_set: Option<bool>,
-        pub permissions: Option<ChatPermissions>,
-        pub slow_mode_delay: Option<Seconds>,
-        pub linked_chat_id: Option<i64>,
-        pub location: Option<ChatLocation>,
-        pub join_to_send_messages: Option<True>,
-        pub join_by_request: Option<True>,
     }
 }
 
 impl MockSupergroupChat {
     pub const IS_FORUM: bool = false;
 
-    /// Creates a new easily changable supergroup chat builder
+    /// Creates a new easily changable supergroup chat full info builder
     ///
     /// Example:
     /// ```
@@ -217,19 +165,7 @@ impl MockSupergroupChat {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_public_chat(
-            None,
-            None,
-            Self::IS_FORUM,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        Self::new_chat_public(None, Self::IS_FORUM)
     }
 
     /// Builds the supergroup chat
@@ -243,18 +179,9 @@ impl MockSupergroupChat {
     ///
     pub fn build(self) -> Chat {
         self.clone()
-            .build_public_chat(PublicChatKind::Supergroup(PublicChatSupergroup {
+            .build_chat_public(PublicChatKind::Supergroup(PublicChatSupergroup {
                 username: self.username,
-                active_usernames: self.active_usernames,
                 is_forum: self.is_forum,
-                sticker_set_name: self.sticker_set_name,
-                can_set_sticker_set: self.can_set_sticker_set,
-                permissions: self.permissions,
-                slow_mode_delay: self.slow_mode_delay,
-                linked_chat_id: self.linked_chat_id,
-                location: self.location,
-                join_to_send_messages: self.join_to_send_messages,
-                join_by_request: self.join_by_request,
             }))
     }
 }
@@ -265,9 +192,6 @@ Chat! {
         pub username: Option<String>,
         pub first_name: Option<String>,
         pub last_name: Option<String>,
-        pub bio: Option<String>,
-        pub has_private_forwards: Option<True>,
-        pub has_restricted_voice_and_video_messages: Option<True>,
     }
 }
 
@@ -283,7 +207,7 @@ impl MockPrivateChat {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_chat(None, None, None, None, None, None).id(MockUser::ID as i64)
+        Self::new_chat(None, None, None).id(MockUser::ID as i64)
     }
 
     /// Builds the private chat
@@ -300,9 +224,6 @@ impl MockPrivateChat {
             username: self.username,
             first_name: self.first_name,
             last_name: self.last_name,
-            bio: self.bio,
-            has_private_forwards: self.has_private_forwards,
-            has_restricted_voice_and_video_messages: self.has_restricted_voice_and_video_messages,
         }))
     }
 }

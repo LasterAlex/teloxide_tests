@@ -48,18 +48,19 @@ async fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText};
+
+    use super::*;
 
     #[tokio::test]
     async fn test_not_a_document() {
-        let bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
+        let mut bot = MockBot::new(MockMessageText::new().text("Hi!"), handler_tree());
         bot.dispatch_and_check_last_text("Not a document").await;
     }
 
     #[tokio::test]
     async fn test_download_document_and_check() {
-        let bot = MockBot::new(MockMessageDocument::new(), handler_tree());
+        let mut bot = MockBot::new(MockMessageDocument::new(), handler_tree());
         bot.dispatch_and_check_last_text("Downloaded!").await;
     }
 }

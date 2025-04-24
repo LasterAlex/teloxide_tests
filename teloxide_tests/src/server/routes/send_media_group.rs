@@ -1,28 +1,34 @@
-use crate::server::{SentMediaGroup, FILES, MESSAGES, RESPONSES};
-use crate::{
-    MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
-    MockVideo,
-};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Mutex};
 
 use actix_multipart::Multipart;
-use actix_web::Responder;
-use actix_web::{error::ErrorBadRequest, web};
-use rand::distributions::{Alphanumeric, DistString};
+use actix_web::{error::ErrorBadRequest, web, Responder};
+use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
 use serde_json::Value;
-use teloxide::types::{Me, Message, MessageEntity, MessageId, ParseMode, ReplyParameters, Seconds};
-
-use crate::server::routes::check_if_message_exists;
+use teloxide::types::{
+    BusinessConnectionId, Me, Message, MessageEntity, MessageId, ParseMode, ReplyParameters,
+    Seconds,
+};
 
 use super::{
     get_raw_multipart_fields, make_telegram_result, Attachment, BodyChatId, MediaGroupInputMedia,
     MediaGroupInputMediaAudio, MediaGroupInputMediaDocument, MediaGroupInputMediaPhoto,
     MediaGroupInputMediaVideo,
 };
+use crate::{
+    server::{routes::check_if_message_exists, SentMediaGroup},
+    state::State,
+    MockMessageAudio, MockMessageDocument, MockMessagePhoto, MockMessageVideo, MockPhotoSize,
+    MockVideo,
+};
 
-pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl Responder {
+pub async fn send_media_group(
+    mut payload: Multipart,
+    me: web::Data<Me>,
+    state: web::Data<Mutex<State>>,
+) -> impl Responder {
     let (fields, attachments) = get_raw_multipart_fields(&mut payload).await;
+    let mut lock = state.lock().unwrap();
     let body = SendMediaGroupBody::serialize_raw_fields(&fields, &attachments).unwrap();
     if body.media.len() > 10 {
         return ErrorBadRequest("Too many media items").into();
@@ -31,20 +37,26 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
     }
     let chat = body.chat_id.chat();
     let protect_content = body.protect_content;
+    let message_effect_id = body.message_effect_id.clone();
+    let business_connection_id = body.business_connection_id.clone();
     let mut reply_to_message = None;
     if let Some(reply_parameters) = &body.reply_parameters {
-        check_if_message_exists!(reply_parameters.message_id.0);
+        check_if_message_exists!(lock, reply_parameters.message_id.0);
         // All of messages in the media group are replying to the same message
-        reply_to_message = Some(Box::new(MESSAGES.get_message(reply_parameters.message_id.0).unwrap()));
+        reply_to_message = Some(Box::new(
+            lock.messages
+                .get_message(reply_parameters.message_id.0)
+                .unwrap(),
+        ));
     }
-    let media_group_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+    let media_group_id = Alphanumeric.sample_string(&mut rand::rng(), 16);
 
     let mut messages: Vec<Message> = vec![];
 
     for media in &body.media {
-        let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-        let file_unique_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
-        let last_id = MESSAGES.max_message_id();
+        let file_id = Alphanumeric.sample_string(&mut rand::rng(), 16);
+        let file_unique_id = Alphanumeric.sample_string(&mut rand::rng(), 8);
+        let last_id = lock.messages.max_message_id();
         let message: Message;
         match media {
             MediaGroupInputMedia::InputMediaAudio(audio) => {
@@ -60,6 +72,8 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.performer = audio.performer.clone();
                 mock_message.title = audio.title.clone();
                 mock_message.duration = audio.duration.unwrap_or(Seconds::from_seconds(1));
+                mock_message.effect_id = message_effect_id.clone();
+                mock_message.business_connection_id = business_connection_id.clone();
 
                 mock_message.file_name = Some(audio.file_name.clone());
                 mock_message.file_id = file_id.clone();
@@ -70,7 +84,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.audio().unwrap().file.clone(),
                     path: audio.file_name.clone(),
                 });
@@ -86,6 +100,8 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.caption_entities =
                     document.caption_entities.clone().unwrap_or_default();
                 mock_message.media_group_id = Some(media_group_id.clone());
+                mock_message.effect_id = message_effect_id.clone();
+                mock_message.business_connection_id = business_connection_id.clone();
 
                 mock_message.file_name = Some(document.file_name.clone());
                 mock_message.file_id = file_id.clone();
@@ -96,7 +112,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.document().unwrap().file.clone(),
                     path: document.file_name.clone(),
                 });
@@ -111,6 +127,8 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.caption = photo.caption.clone();
                 mock_message.caption_entities = photo.caption_entities.clone().unwrap_or_default();
                 mock_message.media_group_id = Some(media_group_id.clone());
+                mock_message.effect_id = message_effect_id.clone();
+                mock_message.business_connection_id = business_connection_id.clone();
 
                 let mut mock_photo = MockPhotoSize::new();
 
@@ -123,7 +141,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.photo().unwrap().first().unwrap().clone().file,
                     path: photo.file_name.clone(),
                 });
@@ -138,6 +156,8 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.caption = video.caption.clone();
                 mock_message.caption_entities = video.caption_entities.clone().unwrap_or_default();
                 mock_message.media_group_id = Some(media_group_id.clone());
+                mock_message.effect_id = message_effect_id.clone();
+                mock_message.business_connection_id = business_connection_id.clone();
 
                 let mut mock_video = MockVideo::new();
 
@@ -155,7 +175,7 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
                 mock_message.id = MessageId(last_id + 1);
                 message = mock_message.build();
 
-                FILES.lock().unwrap().push(teloxide::types::File {
+                lock.files.push(teloxide::types::File {
                     meta: message.video().unwrap().file.clone(),
                     path: video.file_name.clone(),
                 });
@@ -163,12 +183,11 @@ pub async fn send_media_group(mut payload: Multipart, me: web::Data<Me>) -> impl
         }
 
         messages.push(message.clone());
-        MESSAGES.add_message(message);
+        lock.messages.add_message(message);
     }
 
-    let mut responses_lock = RESPONSES.lock().unwrap();
-    responses_lock.sent_messages.extend(messages.clone());
-    responses_lock.sent_media_group.push(SentMediaGroup {
+    lock.responses.sent_messages.extend(messages.clone());
+    lock.responses.sent_media_group.push(SentMediaGroup {
         messages: messages.clone(),
         bot_request: body,
     });
@@ -184,6 +203,7 @@ pub struct SendMediaGroupBody {
     pub protect_content: Option<bool>,
     pub message_effect_id: Option<String>,
     pub reply_parameters: Option<ReplyParameters>,
+    pub business_connection_id: Option<BusinessConnectionId>,
 }
 
 impl SendMediaGroupBody {
@@ -320,6 +340,9 @@ impl SendMediaGroupBody {
             message_effect_id: fields.get("message_effect_id").map(|s| s.to_string()),
             reply_parameters: fields
                 .get("reply_parameters")
+                .map(|s| serde_json::from_str(s).unwrap()),
+            business_connection_id: fields
+                .get("business_connection_id")
                 .map(|s| serde_json::from_str(s).unwrap()),
         })
     }

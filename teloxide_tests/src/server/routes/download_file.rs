@@ -1,4 +1,4 @@
-use std::fmt::Error;
+use std::{fmt::Error, sync::Mutex};
 
 use actix_web::{
     error::ErrorBadRequest,
@@ -7,12 +7,16 @@ use actix_web::{
 };
 use futures_util::{future::ok, stream::once};
 
-use crate::server::FILES;
+use crate::state::State;
 
-pub async fn download_file(path: web::Path<(String, String)>) -> HttpResponse {
-    if FILES
+pub async fn download_file(
+    path: web::Path<(String, String)>,
+    state: web::Data<Mutex<State>>,
+) -> HttpResponse {
+    if state
         .lock()
         .unwrap()
+        .files
         .clone()
         .into_iter()
         .find(|f| f.path == path.1)

@@ -11,7 +11,9 @@ pub async fn bot_phrase(bot: Bot, msg: Message) -> HandlerResult {
             let reply_from_id = reply_from.clone().id.0 as i64;
             let user_phrases = db::get_user_phrases(user_from_id).unwrap();
             // Gets all the phrases and tries to find a matching one in the db
-            let phrase = user_phrases.iter().find(|phrase| phrase.text.to_lowercase() == text.to_lowercase());
+            let phrase = user_phrases
+                .iter()
+                .find(|phrase| phrase.text.to_lowercase() == text.to_lowercase());
 
             if let Some(phrase) = phrase {
                 // If successfull, start making the test string
@@ -49,8 +51,9 @@ pub async fn bot_phrase(bot: Bot, msg: Message) -> HandlerResult {
 
 #[cfg(test)]
 mod tests {
-    use crate::{db, handler_tree::handler_tree, text};
     use teloxide_tests::{MockBot, MockGroupChat, MockMessageText, MockUser};
+
+    use crate::{db, handler_tree::handler_tree, text};
 
     #[tokio::test]
     async fn test_phrase() {
@@ -67,7 +70,7 @@ mod tests {
             .from(MockUser::new().first_name("me").id(1234).build())
             .reply_to_message(reply_message.build());
 
-        let bot = MockBot::new(me_message, handler_tree());
+        let mut bot = MockBot::new(me_message, handler_tree());
         // !!! IMPORTANT !!! same as in test_delete_phrase in private handlers, do all db stuff
         // after creating the bot
         db::full_user_redeletion(1234, Some("nick1".to_string()));
@@ -101,7 +104,7 @@ mod tests {
             .chat(chat.clone())
             .from(MockUser::new().first_name("me").id(1234).build());
 
-        let bot = MockBot::new(me_message.clone(), handler_tree());
+        let mut bot = MockBot::new(me_message.clone(), handler_tree());
         db::full_user_redeletion(1234, None);
         db::create_phrase(
             1234,

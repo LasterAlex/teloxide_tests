@@ -7,4 +7,3 @@ pub const PLEASE_SEND_TEXT: &str = "Please send text, not anything else";
 pub const YOUR_RESULT: &str = "Your result: ";
 pub const SORRY_BOT_UPDATED: &str =
     "Sorry, bot updated and we lost where you were. Please try again.";
-

@@ -1,4 +1,5 @@
-pub const START: &str = "Hello! This bot is made to ask or say something to someone completely anonymously!
+pub const START: &str =
+    "Hello! This bot is made to ask or say something to someone completely anonymously!
 
 This link allows anyone to message you secretly: {deep_link}";
 

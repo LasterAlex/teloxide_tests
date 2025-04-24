@@ -1,15 +1,16 @@
-use crate::{add_deep_link, handler_tree::handler_tree, text, State};
 use teloxide::{dispatching::dialogue::InMemStorage, dptree::deps};
 use teloxide_tests::{MockBot, MockMessagePhoto, MockMessageText};
+
+use crate::{add_deep_link, handler_tree::handler_tree, text, State};
 
 #[tokio::test]
 async fn test_start() {
     // Just a regular start
     let mock_message = MockMessageText::new().text("/start");
-    let bot = MockBot::new(mock_message.clone(), handler_tree());
+    let mut bot = MockBot::new(mock_message.clone(), handler_tree());
 
     bot.dependencies(deps![InMemStorage::<State>::new()]);
-    let me = bot.me.lock().unwrap().clone(); // Yeah, we can access the default 'me' like that
+    let me = bot.me.clone(); // Yeah, we can access the default 'me' like that
 
     bot.dispatch_and_check_last_text_and_state(
         &add_deep_link(text::START, me, mock_message.chat.id),
@@ -20,10 +21,10 @@ async fn test_start() {
 
 #[tokio::test]
 async fn test_with_deep_link() {
-    // Because https://t.me/some_bot?start=987654321 is the same as sending "/start 987654321", 
+    // Because https://t.me/some_bot?start=987654321 is the same as sending "/start 987654321",
     // we can simulate it with this
     let mock_message = MockMessageText::new().text("/start 987654321");
-    let bot = MockBot::new(mock_message, handler_tree());
+    let mut bot = MockBot::new(mock_message, handler_tree());
 
     bot.dependencies(deps![InMemStorage::<State>::new()]);
 
@@ -38,9 +39,9 @@ async fn test_with_deep_link() {
 async fn test_send_message() {
     // The text we want to send to a 987654321 user
     let mock_message = MockMessageText::new().text("I love you!");
-    let bot = MockBot::new(mock_message.clone(), handler_tree());
+    let mut bot = MockBot::new(mock_message.clone(), handler_tree());
 
-    let me = bot.me.lock().unwrap().clone();
+    let me = bot.me.clone();
     bot.dependencies(deps![InMemStorage::<State>::new()]);
     bot.set_state(State::WriteToSomeone { id: 987654321 }).await;
 
@@ -57,7 +58,7 @@ async fn test_send_message() {
     assert_eq!(
         sent_message.text().unwrap(),
         text::YOU_HAVE_A_NEW_MESSAGE.replace("{message}", "I love you!")
-    );  // Just checking that the text and sender are correct
+    ); // Just checking that the text and sender are correct
     assert_eq!(sent_message.chat.id.0, 987654321);
 
     assert_eq!(
@@ -70,7 +71,7 @@ async fn test_send_message() {
 #[tokio::test]
 async fn test_wrong_link() {
     let mock_message = MockMessageText::new().text("/start not_id");
-    let bot = MockBot::new(mock_message, handler_tree());
+    let mut bot = MockBot::new(mock_message, handler_tree());
     bot.dependencies(deps![InMemStorage::<State>::new()]);
 
     bot.dispatch_and_check_last_text(text::WRONG_LINK).await;
@@ -79,7 +80,7 @@ async fn test_wrong_link() {
 #[tokio::test]
 async fn test_not_a_text() {
     let mock_message = MockMessagePhoto::new();
-    let bot = MockBot::new(mock_message, handler_tree());
+    let mut bot = MockBot::new(mock_message, handler_tree());
     bot.dependencies(deps![InMemStorage::<State>::new()]);
 
     bot.set_state(State::WriteToSomeone { id: 987654321 }).await;

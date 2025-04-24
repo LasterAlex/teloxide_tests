@@ -1,39 +1,54 @@
 //! A set of mocked structs for testing purposes. Read more in teloxide_tests crate.
 use std::sync::atomic::{AtomicI32, Ordering};
 
-use chrono::{DateTime, Utc};
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    ChatFullInfo, ChatPhoto, FileMeta, LinkPreviewOptions, Location, Me, PhotoSize, Seconds, Update, User, UserId, Video
+    ChatPhoto, FileMeta, LinkPreviewOptions, LivePeriod, Location, Me, PhotoSize, Seconds, Update,
+    UpdateId, User, UserId, Video,
 };
 pub mod chat;
+pub mod chat_full_info;
 
 pub mod message;
 pub mod message_common;
 pub mod queries;
+pub mod update;
 pub use chat::*;
+pub use chat_full_info::*;
 pub use message::*;
 pub use message_common::*;
 pub use queries::*;
 use teloxide_tests_macros as proc_macros;
+pub use update::*;
 #[cfg(test)]
 mod tests;
 
 pub trait IntoUpdate {
     /// Converts the mocked struct into an update vector, incrementing the id by 1
-    fn into_update(self, id: AtomicI32) -> Vec<Update>;
+    fn into_update(self, id: &AtomicI32) -> Vec<Update>;
 }
 
 impl<T> IntoUpdate for Vec<T>
 where
     T: IntoUpdate,
 {
-    fn into_update(self, id: AtomicI32) -> Vec<Update> {
+    fn into_update(self, id: &AtomicI32) -> Vec<Update> {
         self.into_iter()
-            .map(|u| u.into_update(id.fetch_add(1, Ordering::Relaxed).into()))
+            .map(|u| {
+                id.fetch_add(1, Ordering::Relaxed);
+                u.into_update(id)
+            })
             .flatten()
             .collect()
+    }
+}
+
+// Just to be able to use raw updates anywhere
+impl IntoUpdate for Update {
+    fn into_update(mut self, id: &AtomicI32) -> Vec<Update> {
+        self.id = UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32);
+        vec![self]
     }
 }
 
@@ -117,6 +132,7 @@ pub struct MockMe {
     pub can_join_groups: bool,
     pub can_read_all_group_messages: bool,
     pub supports_inline_queries: bool,
+    pub can_connect_to_business: bool,
 }
 
 impl MockMe {
@@ -129,6 +145,7 @@ impl MockMe {
     pub const CAN_JOIN_GROUPS: bool = false;
     pub const CAN_READ_ALL_GROUP_MESSAGES: bool = false;
     pub const SUPPORTS_INLINE_QUERIES: bool = false;
+    pub const CAN_CONNECT_TO_BUSINESS: bool = false;
 
     /// Creates a new easily changable me builder
     ///
@@ -151,6 +168,7 @@ impl MockMe {
             can_join_groups: Self::CAN_JOIN_GROUPS,
             can_read_all_group_messages: Self::CAN_READ_ALL_GROUP_MESSAGES,
             supports_inline_queries: Self::SUPPORTS_INLINE_QUERIES,
+            can_connect_to_business: Self::CAN_CONNECT_TO_BUSINESS,
         }
     }
 
@@ -178,6 +196,7 @@ impl MockMe {
             can_join_groups: self.can_join_groups,
             can_read_all_group_messages: self.can_read_all_group_messages,
             supports_inline_queries: self.supports_inline_queries,
+            can_connect_to_business: self.can_connect_to_business,
         }
     }
 }
@@ -243,7 +262,7 @@ pub struct MockLocation {
     pub latitude: f64,
     pub longitude: f64,
     pub horizontal_accuracy: Option<f64>,
-    pub live_period: Option<Seconds>,
+    pub live_period: Option<LivePeriod>,
     pub heading: Option<u16>,
     pub proximity_alert_radius: Option<u32>,
 }
@@ -421,62 +440,6 @@ impl MockVideo {
                 unique_id: self.file_unique_id,
                 size: self.file_size,
             },
-        }
-    }
-}
-
-#[derive(Changeable, Clone)]
-pub struct MockChatFullInfo {
-    pub accent_color_id: Option<u8>,
-    pub background_custom_emoji_id: Option<String>,
-    pub profile_accent_color_id: Option<u8>,
-    pub profile_background_custom_emoji_id: Option<String>,
-    pub emoji_status_custom_emoji_id: Option<String>,
-    pub emoji_status_expiration_date: Option<DateTime<Utc>>,
-    pub has_visible_history: bool,
-}
-
-impl MockChatFullInfo {
-    /// Creates a new easily changable chat full info builder
-    ///
-    /// # Examples
-    /// ```
-    /// let chat_full_info = teloxide_tests::MockChatFullInfo::new()
-    ///     .accent_color_id(1)
-    ///     .build();
-    /// assert_eq!(chat_full_info.accent_color_id, Some(1));
-    /// ```
-    ///
-    pub fn new() -> Self {
-        Self {
-            accent_color_id: None,
-            background_custom_emoji_id: None,
-            profile_accent_color_id: None,
-            profile_background_custom_emoji_id: None,
-            emoji_status_custom_emoji_id: None,
-            emoji_status_expiration_date: None,
-            has_visible_history: true,
-        }
-    }
-
-    /// Builds the chat full info
-    ///
-    /// # Examples
-    /// ```
-    /// let mock_chat_full_info = teloxide_tests::MockChatFullInfo::new();
-    /// let chat_full_info = mock_chat_full_info.build();
-    /// assert_eq!(chat_full_info.has_visible_history, true);
-    /// ```
-    ///
-    pub fn build(self) -> ChatFullInfo {
-        ChatFullInfo {
-            accent_color_id: self.accent_color_id,
-            background_custom_emoji_id: self.background_custom_emoji_id,
-            profile_accent_color_id: self.profile_accent_color_id,
-            profile_background_custom_emoji_id: self.profile_background_custom_emoji_id,
-            emoji_status_custom_emoji_id: self.emoji_status_custom_emoji_id,
-            emoji_status_expiration_date: self.emoji_status_expiration_date,
-            has_visible_history: self.has_visible_history,
         }
     }
 }

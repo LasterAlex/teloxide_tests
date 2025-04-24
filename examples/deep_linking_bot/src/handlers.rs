@@ -1,5 +1,6 @@
-use crate::{add_deep_link, text, HandlerResult, MyDialogue, StartCommand, State};
 use teloxide::{prelude::*, types::Me};
+
+use crate::{add_deep_link, text, HandlerResult, MyDialogue, StartCommand, State};
 
 pub async fn start(
     bot: Bot,

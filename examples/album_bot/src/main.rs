@@ -1,15 +1,19 @@
 //! This is a copy of the repo
 //! https://github.com/LasterAlex/AlbumTeloxideBot/blob/main/src/main.rs
-use std::collections::HashMap;
-use std::error::Error;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{Arc, Mutex},
+};
 
 use dotenv::dotenv;
-use teloxide::dispatching::UpdateHandler;
-use teloxide::prelude::*;
-use teloxide::types::{
-    InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
-    UpdateKind,
+use teloxide::{
+    dispatching::UpdateHandler,
+    prelude::*,
+    types::{
+        InputFile, InputMedia, InputMediaAudio, InputMediaDocument, InputMediaPhoto,
+        InputMediaVideo, UpdateKind,
+    },
 };
 use tokio::time::{sleep, Duration};
 
@@ -34,7 +38,7 @@ async fn get_album(msg: Message, album: AlbumStorage) -> Option<Vec<Message>> {
         .lock()
         .unwrap()
         .entry(msg.chat.id.to_string())
-        .or_insert_with(Vec::new) // If there is no entry
+        .or_default() // If there is no entry
         .push(msg.clone());
 
     // Record length
@@ -101,11 +105,10 @@ async fn main() {
 async fn example_handler(bot: Bot, msg: Message, album_mutex: AlbumStorage) -> HandlerResult {
     let album = get_album(msg.clone(), album_mutex).await; // Get either all the messages, or
                                                            // None, which means that it is not the last message in the album, and we chould return
-    let album_messages: Vec<Message>; // Uninitialized variable, so that scoping is correct
-    match album {
-        Some(album_unwrapped) => album_messages = album_unwrapped,
+    let album_messages: Vec<Message> = match album {
+        Some(album_unwrapped) => album_unwrapped,
         None => return Ok(()), // If not the last message, return
-    }
+    };
 
     // Now we have all the media group messages in the album_messages variable
     // And parameter msg is the last message in the album
@@ -159,13 +162,18 @@ async fn example_handler(bot: Bot, msg: Message, album_mutex: AlbumStorage) -> H
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use teloxide::dptree::deps;
     use teloxide_tests::{MockBot, MockMessagePhoto, MockMessageText};
 
+    use super::*;
+
     #[tokio::test]
     async fn test_get_one_message() {
-        let bot = MockBot::new(MockMessagePhoto::new(), handler_tree());
+        let mut bot = MockBot::new_with_distribution_function(
+            MockMessagePhoto::new(),
+            handler_tree(),
+            default_distribution_function,
+        );
         let album_storage: AlbumStorage = Arc::new(Mutex::new(HashMap::new()));
 
         bot.dependencies(deps![album_storage]);
@@ -175,28 +183,30 @@ mod tests {
 
     #[tokio::test]
     async fn test_multiple_text_messages() {
-        let bot = MockBot::new(vec![MockMessageText::new(); 3], handler_tree());
+        let mut bot = MockBot::new_with_distribution_function(
+            vec![MockMessageText::new(); 3],
+            handler_tree(),
+            default_distribution_function,
+        );
         let album_storage: AlbumStorage = Arc::new(Mutex::new(HashMap::new()));
 
         bot.dependencies(deps![album_storage]);
-        // ATTENTION!!! This is NOT how it would work in real life. Because we are simulating
-        // an update, there is no distribution function, so in reality you would see that behaviour
-        // only if you set the distribution function to always return None.
-        // I don't consider it a big deal, the default distribution function is more for real
-        // users, who may send multiple messages in a row, for testing no distribution function is
-        // fine
-        bot.dispatch_and_check_last_text("Detected 3 messages without media group!")
+        // This is 3 messages with the text "Detected 1 messages without media group!"
+        // They aren't bundled exactly because distribution_function only processes in parallel
+        // updates with a media group
+        bot.dispatch_and_check_last_text("Detected 1 messages without media group!")
             .await;
-        // In reality it would be 3 messages with the text "Detected 1 messages without media group!"
+        assert_eq!(bot.get_responses().sent_messages.len(), 3);
     }
 
     #[tokio::test]
     async fn test_get_album() {
         // This sends all three messages consecutively, making an album simulation, because
         // telegram would've sent them exactly the same way
-        let bot = MockBot::new(
+        let mut bot = MockBot::new_with_distribution_function(
             vec![MockMessagePhoto::new().media_group_id("123"); 3],
             handler_tree(),
+            default_distribution_function,
         );
         let album_storage: AlbumStorage = Arc::new(Mutex::new(HashMap::new()));
 
@@ -214,6 +224,6 @@ mod tests {
             Some("Detected 3 messages!")
         );
         assert_eq!(sent_media_group.messages.len(), 3);
-        assert_eq!(sent_messages.len(), 3);  // Just a sanity check
+        assert_eq!(sent_messages.len(), 3); // Just a sanity check
     }
 }

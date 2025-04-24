@@ -1,28 +1,31 @@
-use std::collections::HashMap;
-use std::str::from_utf8;
+use std::{collections::HashMap, str::from_utf8};
+
+use actix_web::{error::ResponseError, http::header::ContentType, HttpResponse};
+use futures_util::{stream::StreamExt as _, TryStreamExt};
+use rand::distr::{Alphanumeric, SampleString};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use teloxide::{
+    types::{Chat, MessageEntity, ParseMode, Seconds},
+    ApiError,
+};
 
 use crate::dataset::{MockPrivateChat, MockSupergroupChat};
-use actix_web::HttpResponse;
-use futures_util::stream::StreamExt as _;
-use futures_util::TryStreamExt;
-use rand::distributions::{Alphanumeric, DistString};
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use teloxide::types::{
-    Chat, ForceReply, KeyboardMarkup, KeyboardRemove, MessageEntity, ParseMode, ReplyMarkup,
-    Seconds, True,
-};
 
 pub mod answer_callback_query;
 pub mod ban_chat_member;
 pub mod copy_message;
 pub mod delete_message;
+pub mod delete_messages;
 pub mod download_file;
 pub mod edit_message_caption;
 pub mod edit_message_reply_markup;
 pub mod edit_message_text;
 pub mod forward_message;
 pub mod get_file;
+pub mod get_me;
+pub mod get_updates;
+pub mod get_webhook_info;
 pub mod pin_chat_message;
 pub mod restrict_chat_member;
 pub mod send_animation;
@@ -31,6 +34,7 @@ pub mod send_chat_action;
 pub mod send_contact;
 pub mod send_dice;
 pub mod send_document;
+pub mod send_invoice;
 pub mod send_location;
 pub mod send_media_group;
 pub mod send_message;
@@ -41,10 +45,11 @@ pub mod send_venue;
 pub mod send_video;
 pub mod send_video_note;
 pub mod send_voice;
+pub mod set_message_reaction;
+pub mod set_my_commands;
 pub mod unban_chat_member;
 pub mod unpin_all_chat_messages;
 pub mod unpin_chat_message;
-pub mod set_message_reaction;
 
 /// Telegram accepts both `i64` and `String` for chat_id,
 /// so it is a wrapper for both
@@ -165,9 +170,49 @@ pub trait SerializeRawFields {
         Self: Sized;
 }
 
+#[derive(Debug, Serialize)]
+struct TelegramResponse {
+    ok: bool,
+    description: String,
+}
+
+#[derive(Debug, PartialEq, Hash, Eq, Clone)]
+struct BotApiError {
+    error: ApiError,
+}
+
+impl BotApiError {
+    pub fn new(error: ApiError) -> Self {
+        Self { error }
+    }
+}
+
+impl std::fmt::Display for BotApiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.error.fmt(f)
+    }
+}
+
+impl ResponseError for BotApiError {
+    fn status_code(&self) -> actix_web::http::StatusCode {
+        actix_web::http::StatusCode::BAD_REQUEST
+    }
+
+    fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
+        let response = TelegramResponse {
+            ok: false,
+            description: self.error.to_string(),
+        };
+        HttpResponse::build(self.status_code())
+            .insert_header(ContentType::json())
+            .body(serde_json::to_string(&response).unwrap())
+    }
+}
+
+// TODO: replace usages with appropriate error values from teloxide::ApiError.
 macro_rules! check_if_message_exists {
-    ($msg_id:expr) => {
-        if MESSAGES.get_message($msg_id).is_none() {
+    ($lock:expr, $msg_id:expr) => {
+        if $lock.messages.get_message($msg_id).is_none() {
             return ErrorBadRequest("Message not found").into();
         }
     };
@@ -202,10 +247,7 @@ pub async fn get_raw_multipart_fields(
                     .enumerate()
                     .map(|(i, s)| {
                         if i == 0 {
-                            format!(
-                                "{s}{}",
-                                Alphanumeric.sample_string(&mut rand::thread_rng(), 5)
-                            )
+                            format!("{s}{}", Alphanumeric.sample_string(&mut rand::rng(), 5))
                         } else {
                             s.to_string()
                         }
@@ -236,7 +278,9 @@ pub async fn get_raw_multipart_fields(
             Attachment {
                 raw_name: data.0.to_string(),
                 file_name: filename.to_string(),
-                file_data: from_utf8(&data.1).unwrap().to_string(),
+                file_data: from_utf8(&data.1)
+                    .unwrap_or("error_getting_data")
+                    .to_string(),
             },
         );
     }
@@ -255,112 +299,4 @@ where
         })
         .to_string(),
     )
-}
-
-pub fn deserialize_reply_markup(value: Value) -> Option<ReplyMarkup> {
-    let selective = value
-        .get("selective")
-        .map(|x| serde_json::from_value(x.clone()).ok())
-        .flatten()
-        == Some(true);
-    let input_field_placeholder: Option<String> = value
-        .get("input_field_placeholder")
-        .map(|x| serde_json::from_value(x.clone()).ok())
-        .flatten();
-    if value.get("keyboard").is_some() {
-        let is_persistent: bool = value
-            .get("is_persistent")
-            .map(|x| serde_json::from_value(x.clone()).ok())
-            .flatten()
-            == Some(true);
-        let one_time_keyboard = value
-            .get("one_time_keyboard")
-            .map(|x| serde_json::from_value(x.clone()).ok())
-            .flatten()
-            == Some(true);
-        let resize_keyboard = value
-            .get("resize_keyboard")
-            .map(|x| serde_json::from_value(x.clone()).ok())
-            .flatten()
-            == Some(true);
-
-        return Some(ReplyMarkup::Keyboard(KeyboardMarkup {
-            keyboard: serde_json::from_value(value["keyboard"].clone()).unwrap(),
-            is_persistent,
-            selective,
-            input_field_placeholder: input_field_placeholder.unwrap_or("".to_string()),
-            one_time_keyboard,
-            resize_keyboard,
-        }));
-    } else if value.get("inline_keyboard").is_some() {
-        return serde_json::from_value(value).ok();
-    } else if value.get("remove_keyboard").is_some() {
-        return Some(ReplyMarkup::KeyboardRemove(KeyboardRemove {
-            remove_keyboard: True,
-            selective,
-        }));
-    } else if value.get("force_reply").is_some() {
-        return Some(ReplyMarkup::ForceReply(ForceReply {
-            force_reply: True,
-            input_field_placeholder,
-            selective,
-        }));
-    }
-
-    return None;
-}
-
-pub(crate) mod reply_markup_deserialize {
-    use super::deserialize_reply_markup;
-    use serde::{Deserialize, Deserializer};
-    use serde_json::Value;
-    use teloxide::types::ReplyMarkup;
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<ReplyMarkup>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let value: Option<Value> = Option::deserialize(deserializer)?;
-        match value {
-            Some(value) => {
-                if !value.is_null() {
-                    Ok(deserialize_reply_markup(value))
-                } else {
-                    Ok(None)
-                }
-            }
-            None => {
-                Ok(None)
-            }
-        }
-    }
-
-    #[test]
-    fn test() {
-        use teloxide::types::KeyboardRemove;
-        #[derive(serde::Deserialize, Debug, PartialEq)]
-        struct Struct {
-            #[serde(default, with = "crate::server::routes::reply_markup_deserialize")]
-            reply_markup: Option<ReplyMarkup>,
-        }
-
-        {
-            let s: Struct =
-                serde_json::from_str("{\"reply_markup\": {\"remove_keyboard\":\"True\"}}").unwrap();
-            assert_eq!(
-                s,
-                Struct {
-                    reply_markup: Some(ReplyMarkup::KeyboardRemove(KeyboardRemove {
-                        remove_keyboard: teloxide::types::True,
-                        selective: false
-                    }))
-                }
-            );
-        }
-
-        {
-            let s: Struct = serde_json::from_str("{}").unwrap();
-            assert_eq!(s, Struct { reply_markup: None })
-        }
-    }
 }

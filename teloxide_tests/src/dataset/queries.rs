@@ -1,11 +1,9 @@
 use std::sync::atomic::{AtomicI32, Ordering};
 
-use crate::proc_macros::Changeable;
 use teloxide::types::*;
 
-use super::MockMessageText;
-
-use super::MockUser;
+use super::{MockMessageText, MockUser};
+use crate::proc_macros::Changeable;
 
 #[derive(Changeable, Clone)]
 pub struct MockCallbackQuery {
@@ -87,7 +85,7 @@ impl MockCallbackQuery {
             from: self.from,
             message: self.message.map(|message| {
                 if !self.make_message_inaccessible {
-                    MaybeInaccessibleMessage::Regular(message)
+                    MaybeInaccessibleMessage::Regular(Box::new(message))
                 } else {
                     MaybeInaccessibleMessage::Inaccessible(InaccessibleMessage {
                         chat: message.chat,
@@ -109,15 +107,17 @@ impl crate::dataset::IntoUpdate for MockCallbackQuery {
     /// # Example
     /// ```
     /// use teloxide_tests::IntoUpdate;
+    /// use teloxide::types::{UpdateId, UpdateKind::CallbackQuery};
+    /// use std::sync::atomic::AtomicI32;
+    ///
     /// let mock_callback_query = teloxide_tests::MockCallbackQuery::new();
-    /// let update = mock_callback_query.clone().into_update(1.into())[0].clone();
-    /// assert_eq!(update.id, teloxide::types::UpdateId(1));
-    /// assert_eq!(update.kind, teloxide::types::UpdateKind::CallbackQuery(
-    ///     mock_callback_query.build())
-    /// );
+    /// let update = mock_callback_query.clone().into_update(&AtomicI32::new(42))[0].clone();
+    ///
+    /// assert_eq!(update.id, UpdateId(42));
+    /// assert_eq!(update.kind, CallbackQuery(mock_callback_query.build()));
     /// ```
     ///
-    fn into_update(self, id: AtomicI32) -> Vec<Update> {
+    fn into_update(self, id: &AtomicI32) -> Vec<Update> {
         vec![Update {
             id: UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32),
             kind: UpdateKind::CallbackQuery(self.build()),

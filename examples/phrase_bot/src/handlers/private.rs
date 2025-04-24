@@ -1,10 +1,10 @@
-use teloxide::prelude::*;
-use teloxide::types::KeyboardRemove;
-use teloxide::{macros::BotCommands, payloads::SendMessageSetters};
+use teloxide::{
+    macros::BotCommands, payloads::SendMessageSetters, prelude::*, types::KeyboardRemove,
+};
 
-use crate::db::models;
-use crate::keyboards::menu_keyboard;
-use crate::{db, keyboards, text, HandlerResult, MyDialogue, State};
+use crate::{
+    db, db::models, keyboards, keyboards::menu_keyboard, text, HandlerResult, MyDialogue, State,
+};
 
 #[derive(BotCommands, Clone)]
 #[command(rename_rule = "lowercase")]
@@ -228,16 +228,16 @@ pub async fn added_phrase(
 
 #[cfg(test)]
 mod tests {
-    use crate::{get_bot_storage, handler_tree::handler_tree};
-
-    use super::*;
     use dptree::deps;
     use teloxide::types::ReplyMarkup;
     use teloxide_tests::{MockBot, MockMessageDocument, MockMessageText, MockUser};
 
+    use super::*;
+    use crate::{get_bot_storage, handler_tree::handler_tree};
+
     #[tokio::test]
     async fn test_start() {
-        let bot = MockBot::new(MockMessageText::new().text("/start"), handler_tree());
+        let mut bot = MockBot::new(MockMessageText::new().text("/start"), handler_tree());
         // This fully deletes the user to test its creation
         let _ = db::delete_user(MockUser::ID as i64);
 
@@ -262,7 +262,7 @@ mod tests {
     #[tokio::test]
     async fn test_cancel() {
         // Cancel is universal, so only one test is needed
-        let bot = MockBot::new(MockMessageText::new().text("/cancel"), handler_tree());
+        let mut bot = MockBot::new(MockMessageText::new().text("/cancel"), handler_tree());
 
         bot.dependencies(deps![get_bot_storage().await]);
         bot.set_state(State::ChangeNickname).await;
@@ -288,7 +288,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_profile() {
-        let bot = MockBot::new(
+        let mut bot = MockBot::new(
             MockMessageText::new().text(keyboards::PROFILE_BUTTON),
             handler_tree(),
         );
@@ -313,7 +313,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_change_nickname() {
-        let bot = MockBot::new(
+        let mut bot = MockBot::new(
             MockMessageText::new().text(keyboards::CHANGE_NICKNAME_BUTTON),
             handler_tree(),
         );
@@ -327,7 +327,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_changed_nickname() {
-        let bot = MockBot::new(MockMessageText::new().text("nickname"), handler_tree());
+        let mut bot = MockBot::new(MockMessageText::new().text("nickname"), handler_tree());
 
         db::full_user_redeletion(MockUser::ID as i64, None);
 
@@ -361,7 +361,7 @@ mod tests {
         // might race condition themselves. Because of that, write all db queries __after__
         // creating the bot. Bot creation makes a lock that prevents other tests from starting,
         // before this one finishes
-        let bot = MockBot::new(
+        let mut bot = MockBot::new(
             MockMessageText::new().text(keyboards::REMOVE_PHRASE_BUTTON),
             handler_tree(),
         );
@@ -392,7 +392,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_deleted_phrase() {
-        let bot = MockBot::new(MockMessageText::new().text("not a number"), handler_tree());
+        let mut bot = MockBot::new(MockMessageText::new().text("not a number"), handler_tree());
 
         db::full_user_redeletion(MockUser::ID as i64, None);
         db::create_phrase(
@@ -440,7 +440,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_phrase() {
-        let bot = MockBot::new(
+        let mut bot = MockBot::new(
             MockMessageText::new().text(keyboards::ADD_PHRASE_BUTTON),
             handler_tree(),
         );
@@ -457,7 +457,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_what_is_new_phrase_text() {
-        let bot = MockBot::new(MockMessageText::new().text("🤗🤗🤗🤗"), handler_tree());
+        let mut bot = MockBot::new(MockMessageText::new().text("🤗🤗🤗🤗"), handler_tree());
 
         bot.dependencies(deps![get_bot_storage().await]);
         bot.set_state(State::WhatIsNewPhraseEmoji).await;
@@ -477,7 +477,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_what_is_new_phrase_bot_text() {
-        let bot = MockBot::new(MockMessageText::new().text("hug"), handler_tree());
+        let mut bot = MockBot::new(MockMessageText::new().text("hug"), handler_tree());
 
         bot.dependencies(deps![get_bot_storage().await]);
         bot.set_state(State::WhatIsNewPhraseText {
@@ -497,7 +497,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_added_phrase() {
-        let bot = MockBot::new(
+        let mut bot = MockBot::new(
             MockMessageText::new().text("(me) hugged (reply)"),
             handler_tree(),
         );
