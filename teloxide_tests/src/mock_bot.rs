@@ -453,8 +453,8 @@ where
                 .await
                 .expect("Failed to update dialogue");
         } else {
-            log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
-            panic!("No storage was detected!");
+            log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ? Did you specify the type ::<State> ?");
+            panic!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ? Did you specify the type ::<State> ?");
         }
     }
 
@@ -514,8 +514,8 @@ where
                 .ok()
                 .flatten()
         } else {
-            log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ?");
-            panic!("No storage was detected!");
+            log::error!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ? Did you specify the type ::<State> ?");
+            panic!("No storage was detected! Did you add it to bot.dependencies(deps![get_bot_storage().await]); ? Did you specify the type ::<State> ?");
         }
     }
 
