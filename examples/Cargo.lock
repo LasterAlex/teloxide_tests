@@ -597,6 +597,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 
 [[package]]
+name = "colored"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fde0e0ec90c9dfb3b4b1a0891a7dcd0e2bffde2f7efed5fe7c9bb00e5bfb915e"
+dependencies = [
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "combine"
 version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -954,10 +963,11 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "dptree"
-version = "0.3.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d81175dab5ec79c30e0576df2ed2c244e1721720c302000bb321b107e82e265c"
+checksum = "d12280a6070b0c46830fcb4011f77ac56e9e1ca224c039f1d61d2024fa1ee870"
 dependencies = [
+ "colored",
  "futures",
 ]
 
@@ -3117,9 +3127,9 @@ checksum = "20f34339676cdcab560c9a82300c4c2581f68b9369aedf0fae86f2ff9565ff3e"
 
 [[package]]
 name = "teloxide"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17cb7c03a9217286fe11021dc72d5a674acbb0d3b24ba38d04f7efe7920e4948"
+checksum = "d407992f53f23d781dfef19bddfbf33ec63a9f24f2bfb2808cf7bd3890d4be29"
 dependencies = [
  "aquamarine",
  "bytes",
@@ -3146,9 +3156,9 @@ dependencies = [
 
 [[package]]
 name = "teloxide-core"
-version = "0.11.2"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa2f70a3cd58c2b31ca899691b99573a40c6da713ab230bb78bbb4fb0b5c751a"
+checksum = "dd7c27c35350ddf2965403b7ffe122ae8b8090c6882f520e31717e81cc839296"
 dependencies = [
  "bitflags",
  "bytes",
@@ -3178,9 +3188,9 @@ dependencies = [
 
 [[package]]
 name = "teloxide-macros"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3118a980ed2ec11f73d9495a6606905bd74726e3ffe95a42fbeb187ded8fdbf4"
+checksum = "300fadcaf0c182f19b5ca10bf23a45dc9a48925f00c704405fd90ee2c03942f9"
 dependencies = [
  "heck",
  "proc-macro2",
