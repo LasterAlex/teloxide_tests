@@ -4,8 +4,8 @@ use actix_web::{error::ErrorBadRequest, web, Responder};
 use chrono::DateTime;
 use serde::Deserialize;
 use teloxide::types::{
-    BusinessConnectionId, InputPollOption, Me, MessageEntity, ParseMode, PollOption, PollType,
-    ReplyMarkup, ReplyParameters, Seconds,
+    BusinessConnectionId, EffectId, InputPollOption, Me, MessageEntity, ParseMode, PollOption,
+    PollType, ReplyMarkup, ReplyParameters, Seconds,
 };
 
 use super::{make_telegram_result, BodyChatId};
@@ -35,7 +35,7 @@ pub struct SendMessagePollBody {
     pub is_closed: Option<bool>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
-    pub message_effect_id: Option<String>,
+    pub message_effect_id: Option<EffectId>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
     pub business_connection_id: Option<BusinessConnectionId>,

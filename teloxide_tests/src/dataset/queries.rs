@@ -7,7 +7,7 @@ use crate::proc_macros::Changeable;
 
 #[derive(Changeable, Clone)]
 pub struct MockCallbackQuery {
-    pub id: String,
+    pub id: CallbackQueryId,
     pub from: User,
     pub message: Option<Message>,
     pub inline_message_id: Option<String>,
@@ -26,14 +26,14 @@ impl MockCallbackQuery {
     /// # Examples
     /// ```
     /// let callback_query = teloxide_tests::MockCallbackQuery::new()
-    ///     .id("id")
+    ///     .id("id".into())
     ///     .build();
     /// assert_eq!(callback_query.id, "id".into());
     /// ```
     ///
     pub fn new() -> Self {
         Self {
-            id: Self::ID.to_string(),
+            id: Self::ID.into(),
             from: MockUser::new().build(),
             message: Some(
                 MockMessageText::new()
@@ -84,7 +84,7 @@ impl MockCallbackQuery {
     ///
     pub fn build(self) -> CallbackQuery {
         CallbackQuery {
-            id: self.id.into(),
+            id: self.id,
             from: self.from,
             message: self.message.map(|message| {
                 if !self.make_message_inaccessible {

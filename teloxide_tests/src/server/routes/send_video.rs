@@ -6,7 +6,8 @@ use mime::Mime;
 use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
 use teloxide::types::{
-    BusinessConnectionId, Me, MessageEntity, ParseMode, ReplyMarkup, ReplyParameters, Seconds,
+    BusinessConnectionId, EffectId, FileId, FileUniqueId, Me, MessageEntity, ParseMode,
+    ReplyMarkup, ReplyParameters, Seconds,
 };
 
 use super::{get_raw_multipart_fields, make_telegram_result, BodyChatId};
@@ -53,12 +54,12 @@ pub async fn send_video(
         message.reply_markup = Some(markup);
     }
 
-    let file_id = Alphanumeric.sample_string(&mut rand::rng(), 16);
-    let file_unique_id = Alphanumeric.sample_string(&mut rand::rng(), 8);
+    let file_id = FileId(Alphanumeric.sample_string(&mut rand::rng(), 16));
+    let file_unique_id = FileUniqueId(Alphanumeric.sample_string(&mut rand::rng(), 8));
 
     message.video = MockVideo::new()
-        .file_id(file_id.clone())
-        .file_unique_id(file_unique_id.clone())
+        .file_id(file_id)
+        .file_unique_id(file_unique_id)
         .file_size(body.file_data.bytes().len() as u32)
         .file_name(body.file_name.clone())
         .width(body.width.unwrap_or(100))
@@ -100,7 +101,7 @@ pub struct SendMessageVideoBody {
     pub supports_streaming: Option<bool>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
-    pub message_effect_id: Option<String>,
+    pub message_effect_id: Option<EffectId>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
     pub business_connection_id: Option<BusinessConnectionId>,

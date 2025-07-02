@@ -4,8 +4,8 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    ChatPhoto, FileMeta, LinkPreviewOptions, LivePeriod, Location, Me, PhotoSize, Seconds, Update,
-    UpdateId, User, UserId, Video,
+    ChatPhoto, FileId, FileMeta, FileUniqueId, LinkPreviewOptions, LivePeriod, Location, Me,
+    PhotoSize, Seconds, Update, UpdateId, User, UserId, Video,
 };
 pub mod chat;
 pub mod chat_full_info;
@@ -211,10 +211,10 @@ impl MockMe {
 
 #[derive(Changeable, Clone)]
 pub struct MockChatPhoto {
-    pub small_file_id: String,
-    pub small_file_unique_id: String,
-    pub big_file_id: String,
-    pub big_file_unique_id: String,
+    pub small_file_id: FileId,
+    pub small_file_unique_id: FileUniqueId,
+    pub big_file_id: FileId,
+    pub big_file_unique_id: FileUniqueId,
 }
 
 impl MockChatPhoto {
@@ -228,17 +228,17 @@ impl MockChatPhoto {
     /// # Examples
     /// ```
     /// let chat_photo = teloxide_tests::MockChatPhoto::new()
-    ///     .small_file_id("small_file_id")
+    ///     .small_file_id("small_file_id".into())
     ///     .build();
     /// assert_eq!(chat_photo.small_file_id, "small_file_id".into());
     /// ```
     ///
     pub fn new() -> Self {
         Self {
-            small_file_id: Self::SMALL_FILE_ID.to_string(),
-            small_file_unique_id: Self::SMALL_FILE_UNIQUE_ID.to_string(),
-            big_file_id: Self::BIG_FILE_ID.to_string(),
-            big_file_unique_id: Self::BIG_FILE_UNIQUE_ID.to_string(),
+            small_file_id: Self::SMALL_FILE_ID.into(),
+            small_file_unique_id: Self::SMALL_FILE_UNIQUE_ID.into(),
+            big_file_id: Self::BIG_FILE_ID.into(),
+            big_file_unique_id: Self::BIG_FILE_UNIQUE_ID.into(),
         }
     }
 
@@ -256,10 +256,10 @@ impl MockChatPhoto {
     ///
     pub fn build(self) -> ChatPhoto {
         ChatPhoto {
-            small_file_id: self.small_file_id.into(),
-            small_file_unique_id: self.small_file_unique_id.into(),
-            big_file_id: self.big_file_id.into(),
-            big_file_unique_id: self.big_file_unique_id.into(),
+            small_file_id: self.small_file_id,
+            small_file_unique_id: self.small_file_unique_id,
+            big_file_id: self.big_file_id,
+            big_file_unique_id: self.big_file_unique_id,
         }
     }
 }
@@ -325,8 +325,8 @@ pub struct MockPhotoSize {
     pub width: u32,
     pub height: u32,
     // FileMeta
-    pub file_id: String,
-    pub file_unique_id: String,
+    pub file_id: FileId,
+    pub file_unique_id: FileUniqueId,
     pub file_size: u32,
 }
 
@@ -351,8 +351,8 @@ impl MockPhotoSize {
         Self {
             width: Self::WIDTH,
             height: Self::HEIGHT,
-            file_id: Self::FILE_ID.to_string(),
-            file_unique_id: Self::UNIQUE_FILE_ID.to_string(),
+            file_id: Self::FILE_ID.into(),
+            file_unique_id: Self::UNIQUE_FILE_ID.into(),
             file_size: Self::FILE_SIZE,
         }
     }
@@ -369,8 +369,8 @@ impl MockPhotoSize {
     pub fn build(self) -> PhotoSize {
         PhotoSize {
             file: FileMeta {
-                id: self.file_id.into(),
-                unique_id: self.file_unique_id.into(),
+                id: self.file_id,
+                unique_id: self.file_unique_id,
                 size: self.file_size,
             },
             width: self.width,
@@ -388,8 +388,8 @@ pub struct MockVideo {
     pub file_name: Option<String>,
     pub mime_type: Option<Mime>,
     // FileMeta
-    pub file_id: String,
-    pub file_unique_id: String,
+    pub file_id: FileId,
+    pub file_unique_id: FileUniqueId,
     pub file_size: u32,
 }
 
@@ -419,8 +419,8 @@ impl MockVideo {
             thumbnail: None,
             file_name: None,
             mime_type: None,
-            file_id: Self::FILE_ID.to_string(),
-            file_unique_id: Self::UNIQUE_FILE_ID.to_string(),
+            file_id: Self::FILE_ID.into(),
+            file_unique_id: Self::UNIQUE_FILE_ID.into(),
             file_size: Self::FILE_SIZE,
         }
     }
@@ -443,8 +443,8 @@ impl MockVideo {
             file_name: self.file_name,
             mime_type: self.mime_type,
             file: FileMeta {
-                id: self.file_id.into(),
-                unique_id: self.file_unique_id.into(),
+                id: self.file_id,
+                unique_id: self.file_unique_id,
                 size: self.file_size,
             },
         }

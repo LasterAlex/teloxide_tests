@@ -2,7 +2,7 @@ use std::sync::atomic::Ordering;
 
 use chrono::{DateTime, Utc};
 use teloxide::types::{
-    MessageEntity, Poll, PollOption, PollType, Seconds, Update, UpdateId, UpdateKind,
+    MessageEntity, Poll, PollId, PollOption, PollType, Seconds, Update, UpdateId, UpdateKind,
 };
 use teloxide_tests_macros::Changeable;
 
@@ -10,7 +10,7 @@ use super::{IntoUpdate, MockMessagePoll};
 
 #[derive(Changeable, Clone)]
 pub struct MockUpdatePoll {
-    pub poll_id: String,
+    pub poll_id: PollId,
     pub question: String,
     pub question_entities: Option<Vec<MessageEntity>>,
     pub options: Vec<PollOption>,
@@ -32,9 +32,9 @@ impl MockUpdatePoll {
     /// # Example
     /// ```
     /// let update = teloxide_tests::MockUpdatePoll::new()
-    ///     .poll_id("123456");
+    ///     .poll_id("123456".into());
     ///
-    /// assert_eq!(update.poll_id, "123456");
+    /// assert_eq!(update.poll_id, "123456".into());
     /// ```
     pub fn new() -> Self {
         let poll = MockMessagePoll::new();
@@ -62,7 +62,7 @@ impl IntoUpdate for MockUpdatePoll {
         vec![Update {
             id: UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32),
             kind: UpdateKind::Poll(Poll {
-                id: self.poll_id.into(),
+                id: self.poll_id,
                 question: self.question,
                 question_entities: self.question_entities,
                 options: self.options,

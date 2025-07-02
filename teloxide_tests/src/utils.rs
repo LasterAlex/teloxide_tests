@@ -38,9 +38,9 @@ pub fn find_file(value: Value) -> Option<FileMeta> {
     if let Value::Object(map) = value {
         for (k, v) in map {
             if k == "file_id" {
-                file_id = Some(v.as_str().unwrap().to_string());
+                file_id = Some(v.as_str().unwrap().to_string().into());
             } else if k == "file_unique_id" {
-                file_unique_id = Some(v.as_str().unwrap().to_string());
+                file_unique_id = Some(v.as_str().unwrap().to_string().into());
             } else if k == "file_size" {
                 file_size = Some(v.as_u64().unwrap() as u32);
             } else if let Some(found) = find_file(v) {
@@ -50,8 +50,8 @@ pub fn find_file(value: Value) -> Option<FileMeta> {
     }
     if let (Some(id), Some(unique_id)) = (file_id, file_unique_id) {
         return Some(FileMeta {
-            id: id.into(),
-            unique_id: unique_id.into(),
+            id,
+            unique_id,
             size: file_size.unwrap_or(0),
         });
     }

@@ -20,10 +20,10 @@ macro_rules! ChatFullInfo {
             pub has_hidden_members: bool,
             pub has_aggressive_anti_spam_enabled: bool,
             pub accent_color_id: Option<u8>,
-            pub background_custom_emoji_id: Option<String>,
+            pub background_custom_emoji_id: Option<CustomEmojiId>,
             pub profile_accent_color_id: Option<u8>,
-            pub profile_background_custom_emoji_id: Option<String>,
-            pub emoji_status_custom_emoji_id: Option<String>,
+            pub profile_background_custom_emoji_id: Option<CustomEmojiId>,
+            pub emoji_status_custom_emoji_id: Option<CustomEmojiId>,
             pub emoji_status_expiration_date: Option<DateTime<Utc>>,
             pub has_visible_history: bool,
             pub max_reaction_count: u8,
@@ -65,16 +65,10 @@ macro_rules! ChatFullInfo {
                     has_hidden_members: self.has_hidden_members,
                     has_aggressive_anti_spam_enabled: self.has_aggressive_anti_spam_enabled,
                     accent_color_id: self.accent_color_id,
-                    background_custom_emoji_id: self
-                        .background_custom_emoji_id
-                        .map(Into::into),
+                    background_custom_emoji_id: self.background_custom_emoji_id,
                     profile_accent_color_id: self.profile_accent_color_id,
-                    profile_background_custom_emoji_id: self
-                        .profile_background_custom_emoji_id
-                        .map(Into::into),
-                    emoji_status_custom_emoji_id: self
-                        .emoji_status_custom_emoji_id
-                        .map(Into::into),
+                    profile_background_custom_emoji_id: self.profile_background_custom_emoji_id,
+                    emoji_status_custom_emoji_id: self.emoji_status_custom_emoji_id,
                     emoji_status_expiration_date: self.emoji_status_expiration_date,
                     has_visible_history: self.has_visible_history,
                     max_reaction_count: self.max_reaction_count,
