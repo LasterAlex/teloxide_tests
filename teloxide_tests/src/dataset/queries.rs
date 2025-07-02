@@ -28,7 +28,7 @@ impl MockCallbackQuery {
     /// let callback_query = teloxide_tests::MockCallbackQuery::new()
     ///     .id("id")
     ///     .build();
-    /// assert_eq!(callback_query.id, "id");
+    /// assert_eq!(callback_query.id, "id".into());
     /// ```
     ///
     pub fn new() -> Self {
@@ -76,12 +76,15 @@ impl MockCallbackQuery {
     /// ```
     /// let mock_callback_query = teloxide_tests::MockCallbackQuery::new();
     /// let callback_query = mock_callback_query.build();
-    /// assert_eq!(callback_query.id, teloxide_tests::MockCallbackQuery::ID);  // ID is a default value
+    /// assert_eq!(
+    ///     callback_query.id,
+    ///     teloxide_tests::MockCallbackQuery::ID.into()
+    /// );  // ID is a default value
     /// ```
     ///
     pub fn build(self) -> CallbackQuery {
         CallbackQuery {
-            id: self.id,
+            id: self.id.into(),
             from: self.from,
             message: self.message.map(|message| {
                 if !self.make_message_inaccessible {

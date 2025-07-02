@@ -16,7 +16,7 @@ pub async fn get_file(
     state: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let lock = state.lock().unwrap();
-    let Some(file) = lock.files.iter().find(|f| f.id == query.file_id) else {
+    let Some(file) = lock.files.iter().find(|f| f.id.0 == query.file_id) else {
         return ErrorBadRequest("File not found").into();
     };
     make_telegram_result(file)

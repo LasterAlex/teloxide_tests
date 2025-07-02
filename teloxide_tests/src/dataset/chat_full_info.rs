@@ -65,10 +65,16 @@ macro_rules! ChatFullInfo {
                     has_hidden_members: self.has_hidden_members,
                     has_aggressive_anti_spam_enabled: self.has_aggressive_anti_spam_enabled,
                     accent_color_id: self.accent_color_id,
-                    background_custom_emoji_id: self.background_custom_emoji_id,
+                    background_custom_emoji_id: self
+                        .background_custom_emoji_id
+                        .map(Into::into),
                     profile_accent_color_id: self.profile_accent_color_id,
-                    profile_background_custom_emoji_id: self.profile_background_custom_emoji_id,
-                    emoji_status_custom_emoji_id: self.emoji_status_custom_emoji_id,
+                    profile_background_custom_emoji_id: self
+                        .profile_background_custom_emoji_id
+                        .map(Into::into),
+                    emoji_status_custom_emoji_id: self
+                        .emoji_status_custom_emoji_id
+                        .map(Into::into),
                     emoji_status_expiration_date: self.emoji_status_expiration_date,
                     has_visible_history: self.has_visible_history,
                     max_reaction_count: self.max_reaction_count,
@@ -169,10 +175,12 @@ ChatFullInfoPublic! {
     pub struct MockChatFullInfoChannel {
         pub username: Option<String>,
         pub linked_chat_id: Option<i64>,
+        pub can_send_paid_media: bool,
     }
 }
 
 impl MockChatFullInfoChannel {
+    pub const CAN_SEND_PAID_MEDIA: bool = false;
     /// Creates a new easily changable channel chat full info builder
     ///
     /// Example:
@@ -186,7 +194,7 @@ impl MockChatFullInfoChannel {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_chat_full_info_public(None, None)
+        Self::new_chat_full_info_public(None, None, Self::CAN_SEND_PAID_MEDIA)
     }
 
     /// Builds the channel chat full info
@@ -205,6 +213,7 @@ impl MockChatFullInfoChannel {
                 ChatFullInfoPublicChannel {
                     username: self.username,
                     linked_chat_id: self.linked_chat_id,
+                    can_send_paid_media: self.can_send_paid_media,
                 },
             ))
     }

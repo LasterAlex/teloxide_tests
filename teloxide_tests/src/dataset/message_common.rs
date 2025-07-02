@@ -65,7 +65,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
             pub(crate) fn build_message_common(self, media_kind: MediaKind) -> Message {
                 self.clone().build_message(MessageKind::Common(MessageCommon {
                     author_signature: self.author_signature,
-                    effect_id: self.effect_id,
+                    effect_id: self.effect_id.map(Into::into),
                     forward_origin: self.forward_origin,
                     reply_to_message: self.reply_to_message,
                     external_reply: self.external_reply,
@@ -217,8 +217,8 @@ impl MockMessageAnimation {
                 has_media_spoiler: self.has_media_spoiler,
                 animation: Animation {
                     file: FileMeta {
-                        id: self.file_id,
-                        unique_id: self.file_unique_id,
+                        id: self.file_id.into(),
+                        unique_id: self.file_unique_id.into(),
                         size: self.file_size,
                     },
                     width: self.width,
@@ -300,11 +300,11 @@ impl MockMessageAudio {
             .build_message_common(MediaKind::Audio(MediaAudio {
                 caption: self.caption,
                 caption_entities: self.caption_entities,
-                media_group_id: self.media_group_id,
+                media_group_id: self.media_group_id.map(Into::into),
                 audio: Audio {
                     file: FileMeta {
-                        id: self.file_id,
-                        unique_id: self.file_unique_id,
+                        id: self.file_id.into(),
+                        unique_id: self.file_unique_id.into(),
                         size: self.file_size,
                     },
                     duration: self.duration,
@@ -405,7 +405,10 @@ impl MockMessageDocument {
     /// let message = teloxide_tests::MockMessageDocument::new()
     ///     .file_id("12345")
     ///     .build();
-    /// assert_eq!(message.document().unwrap().file.id, "12345");  // FILE_ID is a default value
+    /// assert_eq!(
+    ///     message.document().unwrap().file.id,
+    ///     "12345".into()
+    /// ); // FILE_ID is a default value
     /// ```
     ///
     pub fn new() -> Self {
@@ -428,7 +431,10 @@ impl MockMessageDocument {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageDocument::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.document().unwrap().file.id, teloxide_tests::MockMessageDocument::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(
+    ///     message.document().unwrap().file.id,
+    ///     teloxide_tests::MockMessageDocument::FILE_ID.into()
+    /// );  // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -436,11 +442,11 @@ impl MockMessageDocument {
             .build_message_common(MediaKind::Document(MediaDocument {
                 caption: self.caption,
                 caption_entities: self.caption_entities,
-                media_group_id: self.media_group_id,
+                media_group_id: self.media_group_id.map(Into::into),
                 document: Document {
                     file: FileMeta {
-                        id: self.file_id,
-                        unique_id: self.file_unique_id,
+                        id: self.file_id.into(),
+                        unique_id: self.file_unique_id.into(),
                         size: self.file_size,
                     },
                     thumbnail: self.thumbnail,
@@ -683,7 +689,7 @@ impl MockMessagePhoto {
             .build_message_common(MediaKind::Photo(MediaPhoto {
                 caption: self.caption,
                 caption_entities: self.caption_entities,
-                media_group_id: self.media_group_id,
+                media_group_id: self.media_group_id.map(Into::into),
                 show_caption_above_media: self.show_caption_above_media,
                 has_media_spoiler: self.has_media_spoiler,
                 photo: self.photo,
@@ -728,7 +734,7 @@ impl MockMessagePoll {
     ///     .poll_id("123456")
     ///     .build();
     ///
-    /// assert_eq!(message.poll().unwrap().id, "123456");
+    /// assert_eq!(message.poll().unwrap().id, "123456".into());
     /// ```
     ///
     pub fn new() -> Self {
@@ -756,14 +762,17 @@ impl MockMessagePoll {
     /// ```
     /// let mock_message = teloxide_tests::MockMessagePoll::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.poll().unwrap().id, teloxide_tests::MockMessagePoll::POLL_ID);  // POLL_ID is a default value
+    /// assert_eq!(
+    ///     message.poll().unwrap().id,
+    ///     teloxide_tests::MockMessagePoll::POLL_ID.into()
+    /// ); // POLL_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
         self.clone()
             .build_message_common(MediaKind::Poll(MediaPoll {
                 poll: Poll {
-                    id: self.poll_id,
+                    id: self.poll_id.into(),
                     question: self.question,
                     question_entities: self.question_entities,
                     options: self.options,
@@ -816,7 +825,7 @@ impl MockMessageSticker {
     /// ```
     /// let message = teloxide_tests::MockMessageSticker::new().file_id("12345").build();
     ///
-    /// assert_eq!(message.sticker().unwrap().file.id, "12345");
+    /// assert_eq!(message.sticker().unwrap().file.id, "12345".into());
     /// ```
     ///
     pub fn new() -> Self {
@@ -844,7 +853,10 @@ impl MockMessageSticker {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageSticker::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.sticker().unwrap().file.id, teloxide_tests::MockMessageSticker::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(
+    ///     message.sticker().unwrap().file.id,
+    ///     teloxide_tests::MockMessageSticker::FILE_ID.into()
+    /// );  // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -852,8 +864,8 @@ impl MockMessageSticker {
             .build_message_common(MediaKind::Sticker(MediaSticker {
                 sticker: Sticker {
                     file: FileMeta {
-                        id: self.file_id,
-                        unique_id: self.file_unique_id,
+                        id: self.file_id.into(),
+                        unique_id: self.file_unique_id.into(),
                         size: self.file_size,
                     },
                     width: self.width,
@@ -890,8 +902,10 @@ impl MockMessageVideo {
     /// # Example
     /// ```
     /// let message =
-    /// teloxide_tests::MockMessageVideo::new().video(teloxide_tests::MockVideo::new().file_id("12345").build()).build();
-    /// assert_eq!(message.video().unwrap().file.id, "12345");
+    /// teloxide_tests::MockMessageVideo::new()
+    ///     .video(teloxide_tests::MockVideo::new().file_id("12345").build())
+    ///     .build();
+    /// assert_eq!(message.video().unwrap().file.id, "12345".into());
     /// ```
     ///
     pub fn new() -> Self {
@@ -911,7 +925,10 @@ impl MockMessageVideo {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageVideo::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.video().unwrap().file.id, teloxide_tests::MockVideo::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(
+    ///     message.video().unwrap().file.id,
+    ///     teloxide_tests::MockVideo::FILE_ID.into()
+    /// ); // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -919,7 +936,7 @@ impl MockMessageVideo {
             .build_message_common(MediaKind::Video(MediaVideo {
                 caption: self.caption,
                 caption_entities: self.caption_entities,
-                media_group_id: self.media_group_id,
+                media_group_id: self.media_group_id.map(Into::into),
                 show_caption_above_media: self.show_caption_above_media,
                 has_media_spoiler: self.has_media_spoiler,
                 video: self.video,
@@ -972,7 +989,10 @@ impl MockMessageVideoNote {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageVideoNote::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.video_note().unwrap().file.id, teloxide_tests::MockMessageVideoNote::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(
+    ///     message.video_note().unwrap().file.id,
+    ///     teloxide_tests::MockMessageVideoNote::FILE_ID.into()
+    /// );  // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -980,8 +1000,8 @@ impl MockMessageVideoNote {
             .build_message_common(MediaKind::VideoNote(MediaVideoNote {
                 video_note: VideoNote {
                     file: FileMeta {
-                        id: self.file_id,
-                        unique_id: self.file_unique_id,
+                        id: self.file_id.into(),
+                        unique_id: self.file_unique_id.into(),
                         size: self.file_size,
                     },
                     length: self.length,
@@ -1039,7 +1059,10 @@ impl MockMessageVoice {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageVoice::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.voice().unwrap().file.id, teloxide_tests::MockMessageVoice::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(
+    ///     message.voice().unwrap().file.id,
+    ///     teloxide_tests::MockMessageVoice::FILE_ID.into()
+    /// );  // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -1047,8 +1070,8 @@ impl MockMessageVoice {
             .build_message_common(MediaKind::Voice(MediaVoice {
                 voice: Voice {
                     file: FileMeta {
-                        id: self.file_id,
-                        unique_id: self.file_unique_id,
+                        id: self.file_id.into(),
+                        unique_id: self.file_unique_id.into(),
                         size: self.file_size,
                     },
                     duration: self.duration,

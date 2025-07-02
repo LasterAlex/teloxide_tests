@@ -1,6 +1,9 @@
 use teloxide::{
     dispatching::dialogue::GetChatId,
-    types::{ChatId, MessageEntity, MessageId, UpdateId, UpdateKind, UserId},
+    types::{
+        CallbackQueryId, ChatId, FileId, MediaGroupId, MessageEntity, MessageId, PollId, UpdateId,
+        UpdateKind, UserId,
+    },
 };
 use update::MockUpdatePoll;
 
@@ -207,7 +210,10 @@ fn test_message_common_audio() {
         message_object.caption_entities(),
         Some(vec![MessageEntity::bold(0, 3)]).as_deref()
     );
-    assert_eq!(message_object.media_group_id(), Some("123"));
+    assert_eq!(
+        message_object.media_group_id(),
+        Some(&MediaGroupId("123".to_string()))
+    );
 }
 
 #[test]
@@ -328,7 +334,7 @@ fn test_message_common_sticker() {
     let message_object = message.build();
     assert_eq!(
         message_object.sticker().unwrap().file.id,
-        MockMessageSticker::FILE_ID
+        FileId(MockMessageSticker::FILE_ID.to_string())
     );
 }
 
@@ -397,7 +403,10 @@ fn test_message_common_migration_from_chat() {
 fn test_callback_query() {
     let query = MockCallbackQuery::new();
     let query_object = query.build();
-    assert_eq!(query_object.id, MockCallbackQuery::ID);
+    assert_eq!(
+        query_object.id,
+        CallbackQueryId(MockCallbackQuery::ID.into())
+    );
     assert_eq!(query_object.from.first_name, MockUser::FIRST_NAME);
 }
 
@@ -414,7 +423,7 @@ fn test_update_poll() {
     if let UpdateKind::Poll(poll) = update_object.kind {
         assert_eq!(poll.question, MockMessagePoll::QUESTION);
         assert_eq!(poll.poll_type, MockMessagePoll::POLL_TYPE);
-        assert_eq!(poll.id, "123".to_owned());
+        assert_eq!(poll.id, PollId("123".to_owned()));
     } else {
         unreachable!()
     }

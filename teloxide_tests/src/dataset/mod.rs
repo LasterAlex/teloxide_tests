@@ -133,6 +133,7 @@ pub struct MockMe {
     pub can_read_all_group_messages: bool,
     pub supports_inline_queries: bool,
     pub can_connect_to_business: bool,
+    pub has_main_web_app: bool,
 }
 
 impl MockMe {
@@ -146,6 +147,7 @@ impl MockMe {
     pub const CAN_READ_ALL_GROUP_MESSAGES: bool = false;
     pub const SUPPORTS_INLINE_QUERIES: bool = false;
     pub const CAN_CONNECT_TO_BUSINESS: bool = false;
+    pub const HAS_MAIN_WEB_APP: bool = false;
 
     /// Creates a new easily changable me builder
     ///
@@ -169,6 +171,7 @@ impl MockMe {
             can_read_all_group_messages: Self::CAN_READ_ALL_GROUP_MESSAGES,
             supports_inline_queries: Self::SUPPORTS_INLINE_QUERIES,
             can_connect_to_business: Self::CAN_CONNECT_TO_BUSINESS,
+            has_main_web_app: Self::HAS_MAIN_WEB_APP,
         }
     }
 
@@ -197,6 +200,7 @@ impl MockMe {
             can_read_all_group_messages: self.can_read_all_group_messages,
             supports_inline_queries: self.supports_inline_queries,
             can_connect_to_business: self.can_connect_to_business,
+            has_main_web_app: self.has_main_web_app,
         }
     }
 }
@@ -226,7 +230,7 @@ impl MockChatPhoto {
     /// let chat_photo = teloxide_tests::MockChatPhoto::new()
     ///     .small_file_id("small_file_id")
     ///     .build();
-    /// assert_eq!(chat_photo.small_file_id, "small_file_id");
+    /// assert_eq!(chat_photo.small_file_id, "small_file_id".into());
     /// ```
     ///
     pub fn new() -> Self {
@@ -244,15 +248,18 @@ impl MockChatPhoto {
     /// ```
     /// let mock_chat_photo = teloxide_tests::MockChatPhoto::new();
     /// let chat_photo = mock_chat_photo.build();
-    /// assert_eq!(chat_photo.small_file_id, teloxide_tests::MockChatPhoto::SMALL_FILE_ID);  // SMALL_FILE_ID is a default value
+    /// assert_eq!(
+    ///     chat_photo.small_file_id,
+    ///     teloxide_tests::MockChatPhoto::SMALL_FILE_ID.into()
+    /// ); // SMALL_FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> ChatPhoto {
         ChatPhoto {
-            small_file_id: self.small_file_id,
-            small_file_unique_id: self.small_file_unique_id,
-            big_file_id: self.big_file_id,
-            big_file_unique_id: self.big_file_unique_id,
+            small_file_id: self.small_file_id.into(),
+            small_file_unique_id: self.small_file_unique_id.into(),
+            big_file_id: self.big_file_id.into(),
+            big_file_unique_id: self.big_file_unique_id.into(),
         }
     }
 }
@@ -362,8 +369,8 @@ impl MockPhotoSize {
     pub fn build(self) -> PhotoSize {
         PhotoSize {
             file: FileMeta {
-                id: self.file_id,
-                unique_id: self.file_unique_id,
+                id: self.file_id.into(),
+                unique_id: self.file_unique_id.into(),
                 size: self.file_size,
             },
             width: self.width,
@@ -436,8 +443,8 @@ impl MockVideo {
             file_name: self.file_name,
             mime_type: self.mime_type,
             file: FileMeta {
-                id: self.file_id,
-                unique_id: self.file_unique_id,
+                id: self.file_id.into(),
+                unique_id: self.file_unique_id.into(),
                 size: self.file_size,
             },
         }

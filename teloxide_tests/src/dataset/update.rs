@@ -62,7 +62,7 @@ impl IntoUpdate for MockUpdatePoll {
         vec![Update {
             id: UpdateId(id.fetch_add(1, Ordering::Relaxed) as u32),
             kind: UpdateKind::Poll(Poll {
-                id: self.poll_id,
+                id: self.poll_id.into(),
                 question: self.question,
                 question_entities: self.question_entities,
                 options: self.options,

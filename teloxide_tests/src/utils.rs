@@ -50,8 +50,8 @@ pub fn find_file(value: Value) -> Option<FileMeta> {
     }
     if let (Some(id), Some(unique_id)) = (file_id, file_unique_id) {
         return Some(FileMeta {
-            id,
-            unique_id,
+            id: id.into(),
+            unique_id: unique_id.into(),
             size: file_size.unwrap_or(0),
         });
     }
