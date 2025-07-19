@@ -20,6 +20,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
             #[derive($($derive),*)]
             $pub struct $name {
                 pub author_signature: Option<String>,
+                pub paid_star_count: Option<u32>,
                 pub effect_id: Option<EffectId>,
                 pub forward_origin: Option<MessageOrigin>,
                 pub reply_to_message: Option<Box<Message>>,
@@ -52,6 +53,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
                      None,
                      None,
                      None,
+                     None,
                      $name::IS_AUTOMATIC_FORWARD,
                      $name::HAS_PROTECTED_CONTENT,
                      $name::IS_FROM_OFFLINE,
@@ -65,6 +67,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
             pub(crate) fn build_message_common(self, media_kind: MediaKind) -> Message {
                 self.clone().build_message(MessageKind::Common(MessageCommon {
                     author_signature: self.author_signature,
+                    paid_star_count: self.paid_star_count,
                     effect_id: self.effect_id,
                     forward_origin: self.forward_origin,
                     reply_to_message: self.reply_to_message,

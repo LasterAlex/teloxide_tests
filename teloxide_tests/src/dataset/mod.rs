@@ -385,6 +385,8 @@ pub struct MockVideo {
     pub height: u32,
     pub duration: Seconds,
     pub thumbnail: Option<PhotoSize>,
+    pub cover: Option<Vec<PhotoSize>>,
+    pub start_timestamp: Option<Seconds>,
     pub file_name: Option<String>,
     pub mime_type: Option<Mime>,
     // FileMeta
@@ -417,6 +419,8 @@ impl MockVideo {
             height: Self::HEIGHT,
             duration: Self::DURATION,
             thumbnail: None,
+            cover: None,
+            start_timestamp: None,
             file_name: None,
             mime_type: None,
             file_id: Self::FILE_ID.into(),
@@ -440,6 +444,8 @@ impl MockVideo {
             height: self.height,
             duration: self.duration,
             thumbnail: self.thumbnail,
+            cover: self.cover,
+            start_timestamp: self.start_timestamp,
             file_name: self.file_name,
             mime_type: self.mime_type,
             file: FileMeta {
