@@ -20,10 +20,10 @@ macro_rules! ChatFullInfo {
             pub has_hidden_members: bool,
             pub has_aggressive_anti_spam_enabled: bool,
             pub accent_color_id: Option<u8>,
-            pub background_custom_emoji_id: Option<String>,
+            pub background_custom_emoji_id: Option<CustomEmojiId>,
             pub profile_accent_color_id: Option<u8>,
-            pub profile_background_custom_emoji_id: Option<String>,
-            pub emoji_status_custom_emoji_id: Option<String>,
+            pub profile_background_custom_emoji_id: Option<CustomEmojiId>,
+            pub emoji_status_custom_emoji_id: Option<CustomEmojiId>,
             pub emoji_status_expiration_date: Option<DateTime<Utc>>,
             pub has_visible_history: bool,
             pub max_reaction_count: u8,
@@ -169,10 +169,12 @@ ChatFullInfoPublic! {
     pub struct MockChatFullInfoChannel {
         pub username: Option<String>,
         pub linked_chat_id: Option<i64>,
+        pub can_send_paid_media: bool,
     }
 }
 
 impl MockChatFullInfoChannel {
+    pub const CAN_SEND_PAID_MEDIA: bool = false;
     /// Creates a new easily changable channel chat full info builder
     ///
     /// Example:
@@ -186,7 +188,7 @@ impl MockChatFullInfoChannel {
     /// ```
     ///
     pub fn new() -> Self {
-        Self::new_chat_full_info_public(None, None)
+        Self::new_chat_full_info_public(None, None, Self::CAN_SEND_PAID_MEDIA)
     }
 
     /// Builds the channel chat full info
@@ -205,6 +207,7 @@ impl MockChatFullInfoChannel {
                 ChatFullInfoPublicChannel {
                     username: self.username,
                     linked_chat_id: self.linked_chat_id,
+                    can_send_paid_media: self.can_send_paid_media,
                 },
             ))
     }

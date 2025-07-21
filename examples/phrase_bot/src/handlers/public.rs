@@ -53,7 +53,7 @@ pub async fn bot_phrase(bot: Bot, msg: Message) -> HandlerResult {
 mod tests {
     use teloxide_tests::{MockBot, MockGroupChat, MockMessageText, MockUser};
 
-    use crate::{db, handler_tree::handler_tree, text};
+    use crate::{db, dptree::deps, get_bot_storage, handler_tree::handler_tree, text};
 
     #[tokio::test]
     async fn test_phrase() {
@@ -71,6 +71,7 @@ mod tests {
             .reply_to_message(reply_message.build());
 
         let mut bot = MockBot::new(me_message, handler_tree());
+        bot.dependencies(deps![get_bot_storage().await]);
         // !!! IMPORTANT !!! same as in test_delete_phrase in private handlers, do all db stuff
         // after creating the bot
         db::full_user_redeletion(1234, Some("nick1".to_string()));
@@ -105,6 +106,7 @@ mod tests {
             .from(MockUser::new().first_name("me").id(1234).build());
 
         let mut bot = MockBot::new(me_message.clone(), handler_tree());
+        bot.dependencies(deps![get_bot_storage().await]);
         db::full_user_redeletion(1234, None);
         db::create_phrase(
             1234,

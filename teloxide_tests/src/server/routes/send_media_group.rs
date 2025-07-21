@@ -6,8 +6,8 @@ use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
 use serde_json::Value;
 use teloxide::types::{
-    BusinessConnectionId, Me, Message, MessageEntity, MessageId, ParseMode, ReplyParameters,
-    Seconds,
+    BusinessConnectionId, EffectId, FileId, FileUniqueId, Me, MediaGroupId, Message, MessageEntity,
+    MessageId, ParseMode, ReplyParameters, Seconds,
 };
 
 use super::{
@@ -49,13 +49,13 @@ pub async fn send_media_group(
                 .unwrap(),
         ));
     }
-    let media_group_id = Alphanumeric.sample_string(&mut rand::rng(), 16);
+    let media_group_id = MediaGroupId(Alphanumeric.sample_string(&mut rand::rng(), 16));
 
     let mut messages: Vec<Message> = vec![];
 
     for media in &body.media {
-        let file_id = Alphanumeric.sample_string(&mut rand::rng(), 16);
-        let file_unique_id = Alphanumeric.sample_string(&mut rand::rng(), 8);
+        let file_id = FileId(Alphanumeric.sample_string(&mut rand::rng(), 16));
+        let file_unique_id = FileUniqueId(Alphanumeric.sample_string(&mut rand::rng(), 8));
         let last_id = lock.messages.max_message_id();
         let message: Message;
         match media {
@@ -76,8 +76,8 @@ pub async fn send_media_group(
                 mock_message.business_connection_id = business_connection_id.clone();
 
                 mock_message.file_name = Some(audio.file_name.clone());
-                mock_message.file_id = file_id.clone();
-                mock_message.file_unique_id = file_unique_id.clone();
+                mock_message.file_id = file_id;
+                mock_message.file_unique_id = file_unique_id;
                 mock_message.file_size = audio.file_data.bytes().len() as u32;
                 mock_message.mime_type = mime_guess::from_path(&audio.file_name).first();
 
@@ -104,8 +104,8 @@ pub async fn send_media_group(
                 mock_message.business_connection_id = business_connection_id.clone();
 
                 mock_message.file_name = Some(document.file_name.clone());
-                mock_message.file_id = file_id.clone();
-                mock_message.file_unique_id = file_unique_id.clone();
+                mock_message.file_id = file_id;
+                mock_message.file_unique_id = file_unique_id;
                 mock_message.file_size = document.file_data.bytes().len() as u32;
                 mock_message.mime_type = mime_guess::from_path(&document.file_name).first();
 
@@ -132,8 +132,8 @@ pub async fn send_media_group(
 
                 let mut mock_photo = MockPhotoSize::new();
 
-                mock_photo.file_id = file_id.clone();
-                mock_photo.file_unique_id = file_unique_id.clone();
+                mock_photo.file_id = file_id;
+                mock_photo.file_unique_id = file_unique_id;
                 mock_photo.file_size = photo.file_data.bytes().len() as u32;
 
                 mock_message.photo = vec![mock_photo.build()];
@@ -165,8 +165,8 @@ pub async fn send_media_group(
                 mock_video.width = video.width.unwrap_or(100);
                 mock_video.height = video.height.unwrap_or(100);
                 mock_video.duration = video.duration.unwrap_or(Seconds::from_seconds(1));
-                mock_video.file_id = file_id.clone();
-                mock_video.file_unique_id = file_unique_id.clone();
+                mock_video.file_id = file_id;
+                mock_video.file_unique_id = file_unique_id;
                 mock_video.file_size = video.file_data.bytes().len() as u32;
                 mock_video.file_name = Some(video.file_name.clone());
 
@@ -201,7 +201,7 @@ pub struct SendMediaGroupBody {
     pub media: Vec<MediaGroupInputMedia>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
-    pub message_effect_id: Option<String>,
+    pub message_effect_id: Option<EffectId>,
     pub reply_parameters: Option<ReplyParameters>,
     pub business_connection_id: Option<BusinessConnectionId>,
 }
@@ -337,7 +337,9 @@ impl SendMediaGroupBody {
                 .get("disable_notification")
                 .map(|s| s.parse().unwrap()),
             protect_content: fields.get("protect_content").map(|s| s.parse().unwrap()),
-            message_effect_id: fields.get("message_effect_id").map(|s| s.to_string()),
+            message_effect_id: fields
+                .get("message_effect_id")
+                .map(|s| s.to_string().into()),
             reply_parameters: fields
                 .get("reply_parameters")
                 .map(|s| serde_json::from_str(s).unwrap()),

@@ -15,7 +15,6 @@ use teloxide::{
         dialogue::{ErasedStorage, GetChatId, InMemStorage, Storage},
         UpdateHandler,
     },
-    dptree::di::DependencySupplier,
     error_handlers::ErrorHandler,
     prelude::*,
     types::{MaybeInaccessibleMessage, Me, UpdateKind},

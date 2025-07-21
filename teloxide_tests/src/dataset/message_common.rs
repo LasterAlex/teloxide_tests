@@ -20,7 +20,7 @@ macro_rules! MessageCommon {  // Rust was supposed to be used without inheritanc
             #[derive($($derive),*)]
             $pub struct $name {
                 pub author_signature: Option<String>,
-                pub effect_id: Option<String>,
+                pub effect_id: Option<EffectId>,
                 pub forward_origin: Option<MessageOrigin>,
                 pub reply_to_message: Option<Box<Message>>,
                 pub external_reply: Option<ExternalReplyInfo>,
@@ -155,8 +155,8 @@ MessageCommon! {
         pub file_name: Option<String>,
         pub mime_type: Option<Mime>,
         // FileMeta
-        pub file_id: String,
-        pub file_unique_id: String,
+        pub file_id: FileId,
+        pub file_unique_id: FileUniqueId,
         pub file_size: u32,
     }
 }
@@ -193,8 +193,8 @@ impl MockMessageAnimation {
             None,
             None,
             None,
-            Self::FILE_ID.to_string(),
-            Self::UNIQUE_FILE_ID.to_string(),
+            Self::FILE_ID.into(),
+            Self::UNIQUE_FILE_ID.into(),
             Self::FILE_SIZE,
         )
     }
@@ -237,7 +237,7 @@ MessageCommon! {
     pub struct MockMessageAudio {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
-        pub media_group_id: Option<String>,
+        pub media_group_id: Option<MediaGroupId>,
         // Audio
         pub duration: Seconds,
         pub performer: Option<String>,
@@ -246,8 +246,8 @@ MessageCommon! {
         pub file_name: Option<String>,
         pub mime_type: Option<Mime>,
         // FileMeta
-        pub file_id: String,
-        pub file_unique_id: String,
+        pub file_id: FileId,
+        pub file_unique_id: FileUniqueId,
         pub file_size: u32,
     }
 }
@@ -280,8 +280,8 @@ impl MockMessageAudio {
             None,
             None,
             None,
-            Self::FILE_ID.to_string(),
-            Self::UNIQUE_FILE_ID.to_string(),
+            Self::FILE_ID.into(),
+            Self::UNIQUE_FILE_ID.into(),
             Self::FILE_SIZE,
         )
     }
@@ -381,14 +381,14 @@ MessageCommon! {
     pub struct MockMessageDocument {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
-        pub media_group_id: Option<String>,
+        pub media_group_id: Option<MediaGroupId>,
         // Document
         pub thumbnail: Option<PhotoSize>,
         pub file_name: Option<String>,
         pub mime_type: Option<Mime>,
         // FileMeta
-        pub file_id: String,
-        pub file_unique_id: String,
+        pub file_id: FileId,
+        pub file_unique_id: FileUniqueId,
         pub file_size: u32,
     }
 }
@@ -403,9 +403,9 @@ impl MockMessageDocument {
     /// # Example
     /// ```
     /// let message = teloxide_tests::MockMessageDocument::new()
-    ///     .file_id("12345")
+    ///     .file_id("12345".into())
     ///     .build();
-    /// assert_eq!(message.document().unwrap().file.id, "12345");  // FILE_ID is a default value
+    /// assert_eq!(message.document().unwrap().file.id, "12345".into());  // FILE_ID is a default value
     /// ```
     ///
     pub fn new() -> Self {
@@ -416,8 +416,8 @@ impl MockMessageDocument {
             None,
             None,
             None,
-            Self::FILE_ID.to_string(),
-            Self::UNIQUE_FILE_ID.to_string(),
+            Self::FILE_ID.into(),
+            Self::UNIQUE_FILE_ID.into(),
             Self::FILE_SIZE,
         )
     }
@@ -428,7 +428,7 @@ impl MockMessageDocument {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageDocument::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.document().unwrap().file.id, teloxide_tests::MockMessageDocument::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(message.document().unwrap().file.id, teloxide_tests::MockMessageDocument::FILE_ID.into());  // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -635,7 +635,7 @@ MessageCommon! {
     pub struct MockMessagePhoto {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
-        pub media_group_id: Option<String>,
+        pub media_group_id: Option<MediaGroupId>,
         pub show_caption_above_media: bool,
         pub has_media_spoiler: bool,
         pub photo: Vec<PhotoSize>,
@@ -694,7 +694,7 @@ impl MockMessagePhoto {
 MessageCommon! {
     #[derive(Changeable, Clone)]
     pub struct MockMessagePoll {
-        pub poll_id: String,
+        pub poll_id: PollId,
         pub question: String,
         pub question_entities: Option<Vec<MessageEntity>>,
         pub options: Vec<PollOption>,
@@ -725,15 +725,15 @@ impl MockMessagePoll {
     /// # Example
     /// ```
     /// let message = teloxide_tests::MockMessagePoll::new()
-    ///     .poll_id("123456")
+    ///     .poll_id("123456".into())
     ///     .build();
     ///
-    /// assert_eq!(message.poll().unwrap().id, "123456");
+    /// assert_eq!(message.poll().unwrap().id, "123456".into());
     /// ```
     ///
     pub fn new() -> Self {
         Self::new_message_common(
-            Self::POLL_ID.to_string(),
+            Self::POLL_ID.into(),
             Self::QUESTION.to_string(),
             None,
             vec![],
@@ -756,7 +756,7 @@ impl MockMessagePoll {
     /// ```
     /// let mock_message = teloxide_tests::MockMessagePoll::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.poll().unwrap().id, teloxide_tests::MockMessagePoll::POLL_ID);  // POLL_ID is a default value
+    /// assert_eq!(message.poll().unwrap().id, teloxide_tests::MockMessagePoll::POLL_ID.into()); // POLL_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -794,8 +794,8 @@ MessageCommon! {
         pub set_name: Option<String>,
         pub needs_repainting: bool,
         // File meta
-        pub file_id: String,
-        pub file_unique_id: String,
+        pub file_id: FileId,
+        pub file_unique_id: FileUniqueId,
         pub file_size: u32,
     }
 }
@@ -814,9 +814,9 @@ impl MockMessageSticker {
     ///
     /// # Example
     /// ```
-    /// let message = teloxide_tests::MockMessageSticker::new().file_id("12345").build();
+    /// let message = teloxide_tests::MockMessageSticker::new().file_id("12345".into()).build();
     ///
-    /// assert_eq!(message.sticker().unwrap().file.id, "12345");
+    /// assert_eq!(message.sticker().unwrap().file.id, "12345".into());
     /// ```
     ///
     pub fn new() -> Self {
@@ -832,8 +832,8 @@ impl MockMessageSticker {
             None,
             None,
             false,
-            Self::FILE_ID.to_string(),
-            Self::FILE_UNIQUE_ID.to_string(),
+            Self::FILE_ID.into(),
+            Self::FILE_UNIQUE_ID.into(),
             Self::FILE_SIZE,
         )
     }
@@ -844,7 +844,7 @@ impl MockMessageSticker {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageSticker::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.sticker().unwrap().file.id, teloxide_tests::MockMessageSticker::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(message.sticker().unwrap().file.id, teloxide_tests::MockMessageSticker::FILE_ID.into()); // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -874,7 +874,7 @@ MessageCommon! {
     pub struct MockMessageVideo {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
-        pub media_group_id: Option<String>,
+        pub media_group_id: Option<MediaGroupId>,
         pub show_caption_above_media: bool,
         pub has_media_spoiler: bool,
         pub video: Video,
@@ -890,8 +890,8 @@ impl MockMessageVideo {
     /// # Example
     /// ```
     /// let message =
-    /// teloxide_tests::MockMessageVideo::new().video(teloxide_tests::MockVideo::new().file_id("12345").build()).build();
-    /// assert_eq!(message.video().unwrap().file.id, "12345");
+    /// teloxide_tests::MockMessageVideo::new().video(teloxide_tests::MockVideo::new().file_id("12345".into()).build()).build();
+    /// assert_eq!(message.video().unwrap().file.id, "12345".into());
     /// ```
     ///
     pub fn new() -> Self {
@@ -911,7 +911,7 @@ impl MockMessageVideo {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageVideo::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.video().unwrap().file.id, teloxide_tests::MockVideo::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(message.video().unwrap().file.id, teloxide_tests::MockVideo::FILE_ID.into()); // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -934,8 +934,8 @@ MessageCommon! {
         pub duration: Seconds,
         pub thumbnail: Option<PhotoSize>,
         // File meta
-        pub file_id: String,
-        pub file_unique_id: String,
+        pub file_id: FileId,
+        pub file_unique_id: FileUniqueId,
         pub file_size: u32,
     }
 }
@@ -960,8 +960,8 @@ impl MockMessageVideoNote {
             Self::LENGTH,
             Self::DURATION,
             None,
-            Self::FILE_ID.to_string(),
-            Self::FILE_UNIQUE_ID.to_string(),
+            Self::FILE_ID.into(),
+            Self::FILE_UNIQUE_ID.into(),
             Self::FILE_SIZE,
         )
     }
@@ -972,7 +972,7 @@ impl MockMessageVideoNote {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageVideoNote::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.video_note().unwrap().file.id, teloxide_tests::MockMessageVideoNote::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(message.video_note().unwrap().file.id, teloxide_tests::MockMessageVideoNote::FILE_ID.into());  // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {
@@ -1000,8 +1000,8 @@ MessageCommon! {
         pub caption: Option<String>,
         pub caption_entities: Vec<MessageEntity>,
         // File meta
-        pub file_id: String,
-        pub file_unique_id: String,
+        pub file_id: FileId,
+        pub file_unique_id: FileUniqueId,
         pub file_size: u32,
     }
 }
@@ -1027,8 +1027,8 @@ impl MockMessageVoice {
             None,
             None,
             vec![],
-            Self::FILE_ID.to_string(),
-            Self::FILE_UNIQUE_ID.to_string(),
+            Self::FILE_ID.into(),
+            Self::FILE_UNIQUE_ID.into(),
             Self::FILE_SIZE,
         )
     }
@@ -1039,7 +1039,7 @@ impl MockMessageVoice {
     /// ```
     /// let mock_message = teloxide_tests::MockMessageVoice::new();
     /// let message = mock_message.build();
-    /// assert_eq!(message.voice().unwrap().file.id, teloxide_tests::MockMessageVoice::FILE_ID);  // FILE_ID is a default value
+    /// assert_eq!(message.voice().unwrap().file.id, teloxide_tests::MockMessageVoice::FILE_ID.into());  // FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> Message {

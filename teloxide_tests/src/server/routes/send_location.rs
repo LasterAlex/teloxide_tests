@@ -2,7 +2,9 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
-use teloxide::types::{BusinessConnectionId, LivePeriod, Me, ReplyMarkup, ReplyParameters};
+use teloxide::types::{
+    BusinessConnectionId, EffectId, LivePeriod, Me, ReplyMarkup, ReplyParameters,
+};
 
 use super::{make_telegram_result, BodyChatId};
 use crate::{
@@ -23,7 +25,7 @@ pub struct SendMessageLocationBody {
     pub message_thread_id: Option<i64>,
     pub disable_notification: Option<bool>,
     pub protect_content: Option<bool>,
-    pub message_effect_id: Option<String>,
+    pub message_effect_id: Option<EffectId>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reply_parameters: Option<ReplyParameters>,
     pub business_connection_id: Option<BusinessConnectionId>,

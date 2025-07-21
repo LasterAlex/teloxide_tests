@@ -325,7 +325,7 @@ async fn handler(
                 .await?;
         }
         AllCommands::EditCaption => {
-            let photo = InputFile::file_id("fileid".to_string());
+            let photo = InputFile::file_id("fileid".into());
             let photo_message = bot.send_photo(msg.chat.id, photo).await?;
             bot.edit_message_caption(msg.chat.id, photo_message.id)
                 .caption("edited")

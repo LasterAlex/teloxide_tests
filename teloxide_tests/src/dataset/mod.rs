@@ -4,8 +4,8 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use mime::Mime;
 use proc_macros::Changeable;
 use teloxide::types::{
-    ChatPhoto, FileMeta, LinkPreviewOptions, LivePeriod, Location, Me, PhotoSize, Seconds, Update,
-    UpdateId, User, UserId, Video,
+    ChatPhoto, FileId, FileMeta, FileUniqueId, LinkPreviewOptions, LivePeriod, Location, Me,
+    PhotoSize, Seconds, Update, UpdateId, User, UserId, Video,
 };
 pub mod chat;
 pub mod chat_full_info;
@@ -133,6 +133,7 @@ pub struct MockMe {
     pub can_read_all_group_messages: bool,
     pub supports_inline_queries: bool,
     pub can_connect_to_business: bool,
+    pub has_main_web_app: bool,
 }
 
 impl MockMe {
@@ -146,6 +147,7 @@ impl MockMe {
     pub const CAN_READ_ALL_GROUP_MESSAGES: bool = false;
     pub const SUPPORTS_INLINE_QUERIES: bool = false;
     pub const CAN_CONNECT_TO_BUSINESS: bool = false;
+    pub const HAS_MAIN_WEB_APP: bool = false;
 
     /// Creates a new easily changable me builder
     ///
@@ -169,6 +171,7 @@ impl MockMe {
             can_read_all_group_messages: Self::CAN_READ_ALL_GROUP_MESSAGES,
             supports_inline_queries: Self::SUPPORTS_INLINE_QUERIES,
             can_connect_to_business: Self::CAN_CONNECT_TO_BUSINESS,
+            has_main_web_app: Self::HAS_MAIN_WEB_APP,
         }
     }
 
@@ -197,6 +200,7 @@ impl MockMe {
             can_read_all_group_messages: self.can_read_all_group_messages,
             supports_inline_queries: self.supports_inline_queries,
             can_connect_to_business: self.can_connect_to_business,
+            has_main_web_app: self.has_main_web_app,
         }
     }
 }
@@ -207,10 +211,10 @@ impl MockMe {
 
 #[derive(Changeable, Clone)]
 pub struct MockChatPhoto {
-    pub small_file_id: String,
-    pub small_file_unique_id: String,
-    pub big_file_id: String,
-    pub big_file_unique_id: String,
+    pub small_file_id: FileId,
+    pub small_file_unique_id: FileUniqueId,
+    pub big_file_id: FileId,
+    pub big_file_unique_id: FileUniqueId,
 }
 
 impl MockChatPhoto {
@@ -224,17 +228,17 @@ impl MockChatPhoto {
     /// # Examples
     /// ```
     /// let chat_photo = teloxide_tests::MockChatPhoto::new()
-    ///     .small_file_id("small_file_id")
+    ///     .small_file_id("small_file_id".into())
     ///     .build();
-    /// assert_eq!(chat_photo.small_file_id, "small_file_id");
+    /// assert_eq!(chat_photo.small_file_id, "small_file_id".into());
     /// ```
     ///
     pub fn new() -> Self {
         Self {
-            small_file_id: Self::SMALL_FILE_ID.to_string(),
-            small_file_unique_id: Self::SMALL_FILE_UNIQUE_ID.to_string(),
-            big_file_id: Self::BIG_FILE_ID.to_string(),
-            big_file_unique_id: Self::BIG_FILE_UNIQUE_ID.to_string(),
+            small_file_id: Self::SMALL_FILE_ID.into(),
+            small_file_unique_id: Self::SMALL_FILE_UNIQUE_ID.into(),
+            big_file_id: Self::BIG_FILE_ID.into(),
+            big_file_unique_id: Self::BIG_FILE_UNIQUE_ID.into(),
         }
     }
 
@@ -244,7 +248,10 @@ impl MockChatPhoto {
     /// ```
     /// let mock_chat_photo = teloxide_tests::MockChatPhoto::new();
     /// let chat_photo = mock_chat_photo.build();
-    /// assert_eq!(chat_photo.small_file_id, teloxide_tests::MockChatPhoto::SMALL_FILE_ID);  // SMALL_FILE_ID is a default value
+    /// assert_eq!(
+    ///     chat_photo.small_file_id,
+    ///     teloxide_tests::MockChatPhoto::SMALL_FILE_ID.into()
+    /// ); // SMALL_FILE_ID is a default value
     /// ```
     ///
     pub fn build(self) -> ChatPhoto {
@@ -318,8 +325,8 @@ pub struct MockPhotoSize {
     pub width: u32,
     pub height: u32,
     // FileMeta
-    pub file_id: String,
-    pub file_unique_id: String,
+    pub file_id: FileId,
+    pub file_unique_id: FileUniqueId,
     pub file_size: u32,
 }
 
@@ -344,8 +351,8 @@ impl MockPhotoSize {
         Self {
             width: Self::WIDTH,
             height: Self::HEIGHT,
-            file_id: Self::FILE_ID.to_string(),
-            file_unique_id: Self::UNIQUE_FILE_ID.to_string(),
+            file_id: Self::FILE_ID.into(),
+            file_unique_id: Self::UNIQUE_FILE_ID.into(),
             file_size: Self::FILE_SIZE,
         }
     }
@@ -381,8 +388,8 @@ pub struct MockVideo {
     pub file_name: Option<String>,
     pub mime_type: Option<Mime>,
     // FileMeta
-    pub file_id: String,
-    pub file_unique_id: String,
+    pub file_id: FileId,
+    pub file_unique_id: FileUniqueId,
     pub file_size: u32,
 }
 
@@ -412,8 +419,8 @@ impl MockVideo {
             thumbnail: None,
             file_name: None,
             mime_type: None,
-            file_id: Self::FILE_ID.to_string(),
-            file_unique_id: Self::UNIQUE_FILE_ID.to_string(),
+            file_id: Self::FILE_ID.into(),
+            file_unique_id: Self::UNIQUE_FILE_ID.into(),
             file_size: Self::FILE_SIZE,
         }
     }

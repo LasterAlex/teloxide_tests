@@ -2,13 +2,14 @@ use std::sync::Mutex;
 
 use actix_web::{error::ErrorBadRequest, web, Responder};
 use serde::Deserialize;
+use teloxide::types::FileId;
 
 use super::make_telegram_result;
 use crate::state::State;
 
 #[derive(Deserialize)]
 pub struct GetFileQuery {
-    file_id: String,
+    file_id: FileId,
 }
 
 pub async fn get_file(
