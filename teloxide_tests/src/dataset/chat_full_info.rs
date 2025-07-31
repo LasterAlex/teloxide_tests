@@ -27,6 +27,7 @@ macro_rules! ChatFullInfo {
             pub emoji_status_expiration_date: Option<DateTime<Utc>>,
             pub has_visible_history: bool,
             pub max_reaction_count: u8,
+            pub accepted_gift_types: AcceptedGiftTypes,
             $($fpub $field : $type,)*
         }
         impl $name {
@@ -35,6 +36,12 @@ macro_rules! ChatFullInfo {
             pub const AGGRESSIVE_ANTI_SPAM_ENABLED: bool = false;
             pub const HAS_VISIBLE_HISTORY: bool = true;
             pub const MAX_REACTION_COUNT: u8 = 100;
+            pub const ACCEPTED_GIFT_TYPES: AcceptedGiftTypes = AcceptedGiftTypes {
+                unlimited_gifts: false,
+                limited_gifts: false,
+                unique_gifts: false,
+                premium_subscription: false,
+            };
 
             pub(crate) fn new_chat_full_info($($field:$type,)*) -> Self{
                 Self {  // To not repeat this over and over again
@@ -52,6 +59,7 @@ macro_rules! ChatFullInfo {
                     emoji_status_expiration_date: None,
                     has_visible_history: Self::HAS_VISIBLE_HISTORY,
                     max_reaction_count: Self::MAX_REACTION_COUNT,
+                    accepted_gift_types: Self::ACCEPTED_GIFT_TYPES,
                     $($field,)*
                 }
             }
@@ -73,6 +81,7 @@ macro_rules! ChatFullInfo {
                     has_visible_history: self.has_visible_history,
                     max_reaction_count: self.max_reaction_count,
                     kind: chat_full_info_kind,
+                    accepted_gift_types: self.accepted_gift_types,
                 }
             }
         }
